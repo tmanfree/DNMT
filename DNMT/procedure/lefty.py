@@ -118,3 +118,18 @@ def mac_search(ipaddr, macaddr,username,password):
                 print("Mac address not found.")
     print ("-------- COMPLETE --------")
     #print ('############################')
+
+#if being run by itself
+if __name__ == "__main__":
+    #import files to load config and parse CLI
+    import config
+    import argparse
+
+    config.load_sw_base_conf()
+    parser = argparse.ArgumentParser(description='Navigate mac address tables to find a specified MAC.')
+    parser.add_argument('startip', metavar='IP',
+                        help='The IP to start looking for the mac address at')
+    parser.add_argument('macaddr', metavar='MAC',
+                        help='The MAC address to search for ')
+    args = parser.parse_args()
+    mac_search(args.startip, normalize_mac(args.macaddr), config.username, config.password)

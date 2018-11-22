@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 
 import argparse
-import config
 import sys
 
 
 from procedure import lefty
+from procedure import config
 # load username & password from config.text
 config.load_sw_base_conf()
 
