@@ -23,7 +23,8 @@ setuptools.setup(
     url=URL,
     packages=setuptools.find_packages(),
     install_requires=[
-        'netmiko>=2.3.0'
+        'netmiko>=2.3.0',
+        'pysnmp>=4.4.6'
             ],
     classifiers=[
         "Programming Language :: Python :: 3",
