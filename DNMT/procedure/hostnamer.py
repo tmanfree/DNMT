@@ -9,8 +9,10 @@ import sys
 
 
 def snmpproc(ipaddr,dns_hostname,dns_domain,snmp_ro, snmp_rw):
-    reg_Hostname = re.compile(".*=(.*)")  # Group 0: hostname, Group 1: domain name
+    reg_FQDN = re.compile("([^.]*)\.(.*)")  # Group 0: hostname, Group 1: domain name
 
+
+####TEST
     #get hostname from switch
     errorIndication, errorStatus, errorIndex, varBinds = next(
         getCmd(SnmpEngine(),
@@ -26,9 +28,12 @@ def snmpproc(ipaddr,dns_hostname,dns_domain,snmp_ro, snmp_rw):
         print('%s at %s' % (errorStatus.prettyPrint(),
                             errorIndex and varBinds[int(errorIndex) - 1][0] or '?'))
     else:
-        sw_reg_hostname = reg_Hostname.search(varBinds[0])
+        dns_oid, dns_value = varBinds[0]
+        dns_value=str(dns_value)
+        sw_reg_hostname = reg_FQDN.search(dns_value)
         sw_hostname = sw_reg_hostname.group(1)
-        if dns_hostname.casefold() == sw_hostname.casefold():
+        #check to see if the hostname and dns are the same
+        if dns_hostname.casefold() != sw_hostname.casefold():
         #Send the new
             errorIndication, errorStatus, errorIndex, varBinds = next(
                 setCmd(SnmpEngine(),
@@ -46,6 +51,12 @@ def snmpproc(ipaddr,dns_hostname,dns_domain,snmp_ro, snmp_rw):
             else:
                 #return successful
                 return True
+        else:
+            #they are the same
+            print("hostnames are already up to date\n"
+                  "DNS:{}\n"
+                  "Switch:{}\n".format(dns_hostname, sw_hostname))
+            return True
         #if sending was not successful
     return False
 
