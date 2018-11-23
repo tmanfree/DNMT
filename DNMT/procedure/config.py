@@ -15,6 +15,10 @@ def load_sw_base_conf():
 
     global username
     global password
+    global ro
+    global rw
 
     username = config['SWITCHCRED']['username']
     password = config['SWITCHCRED']['password']
+    ro = config['SNMP']['ro']
+    rw = config['SNMP']['rw']
