@@ -38,6 +38,7 @@ def dnmt():
     hostnameupdate_parser = direct_parser.add_parser("HostnameUpdate", help= "Check switch hostnames with their DNS names & update")
     hostnameupdate_parser.add_argument('iplist', metavar='FILENAME',
                         help='The list that contains the ip addresses to check')
+    hostnameupdate_parser.add_argument('-c', '--check', help="Compare hostname, do not change", action="store_true")
 
 
 
@@ -59,8 +60,8 @@ def dnmt():
             OpCode = input("Enter the operation you want to do:\n"
                                "(1) MAC Searcher - Track down MACs through CDP Neighbour\n"
                                "(2) Hostname Updater\n"                       
-                               "(3) Enable Logging\n"
-                               "(q) Quit\n"
+                               "(L) Enable Logging\n"
+                               "(Q) Quit\n"
                                "Choice=")
         # if Mac Searcher selected, use the 'lefty' function
             if OpCode == '1':
@@ -71,9 +72,9 @@ def dnmt():
             elif OpCode == '2':
                 iplist = input("Enter the name of the file containing IPs of switches to update:")
                 hostnamer.hostname_update(iplist,config.username,config.password,config.ro,config.rw)
-            elif OpCode == '3':
+            elif OpCode.upper() == 'L':
                 print("Under construction")
-            elif OpCode == 'q':
+            elif OpCode.upper() == 'Q':
                 print("Exiting")
                 completebool = True
                 sys.exit()
@@ -81,7 +82,8 @@ def dnmt():
         if args.direct == "MACSearch":
             lefty.mac_search(args.ipaddr, args.macaddr, config.username, config.password)
         elif args.direct == "HostnameUpdate":
-            hostnamer.hostname_update(args.iplist,config.username,config.password,config.ro,config.rw)
+            #hostnamer.hostname_update(args.iplist,config.username,config.password,config.ro,config.rw,args.check)
+            hostnamer.hostname_update(args.iplist, config, args.check)
     #input_vals = {'IP':args.ipfile}
 
 if __name__ == "__main__":
