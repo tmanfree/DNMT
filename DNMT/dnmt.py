@@ -32,8 +32,11 @@ def dnmt():
     macsearch_parser = direct_parser.add_parser("MACSearch", help= "Search for a mac address beginning on a specified switch")
     macsearch_parser.add_argument('ipaddr', metavar='IP',
                         help='The IP to start looking for the mac address at')
-    macsearch_parser.add_argument('macaddr', metavar='MAC',
-                        help='The MAC address to search for ')
+    #macsearch_parser.add_argument('macaddr', metavar='MAC',
+    #                    help='The MAC address to search for ')
+    macsearch_parser.add_argument('-m', '--mac', metavar='macaddr', help="A single mac address to search for")
+    macsearch_parser.add_argument('-b', '--batchfile',metavar = 'BATCHFILE',help="File with mac address for batch mode")
+
     #parser commands for hostname updater
     hostnameupdate_parser = direct_parser.add_parser("HostnameUpdate", help= "Check switch hostnames with their DNS names & update")
     hostnameupdate_parser.add_argument('iplist', metavar='FILENAME',
@@ -80,7 +83,12 @@ def dnmt():
                 sys.exit()
     elif 'direct' in args:
         if args.direct == "MACSearch":
-            lefty.mac_search(args.ipaddr, args.macaddr, config.username, config.password)
+            if 'batchfile' in args and args.batchfile:
+                lefty.batch_search(args.ipaddr, args.batchfile, config.username, config.password)
+            elif 'mac' in args and args.mac:
+                #lefty.mac_search(args.ipaddr, args.mac, config.username, config.password)
+                #lefty.unified_search(ipaddr, maclist, username, password
+                lefty.unified_search(args.ipaddr, [lefty.normalize_mac(args.mac)], config.username, config.password)
         elif args.direct == "HostnameUpdate":
             #hostnamer.hostname_update(args.iplist,config.username,config.password,config.ro,config.rw,args.check)
             hostnamer.hostname_update(args.iplist, config, args.check)

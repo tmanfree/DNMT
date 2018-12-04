@@ -27,6 +27,7 @@ def snmpproc(ipaddr,dns_hostname,dns_domain,snmp_ro, snmp_rw, check_flag):
     else: # if getting the hostname from snmp was successful
         dns_oid, dns_value = varBinds[0] #grab dns value & oid
         dns_value=str(dns_value) # change dns_value to string rather than DisplayString
+        #add error handling here for if there is no domain name {TODO}
         sw_reg_hostname = reg_FQDN.search(dns_value)
         sw_hostname = sw_reg_hostname.group(1) #extract the hostname from the FQDN
         #check to see if the hostname and dns are the same
@@ -34,7 +35,7 @@ def snmpproc(ipaddr,dns_hostname,dns_domain,snmp_ro, snmp_rw, check_flag):
         #Send the new hostname if they are different
             print("hostnames are different\n"
                   "IP:{}\n"
-                  "DNS:{}\n"
+                  "DNS   :{}\n"
                   "Switch:{}\n".format(ipaddr, dns_hostname, sw_hostname))
             if not check_flag:
                 print("Attempting to update hostname on switch...")
@@ -61,7 +62,7 @@ def snmpproc(ipaddr,dns_hostname,dns_domain,snmp_ro, snmp_rw, check_flag):
         else:  #they are the same
             print("hostnames are up to date\n"
                   "IP:{}\n"
-                  "DNS:{}\n"
+                  "DNS   :{}\n"
                   "Switch:{}\n".format(ipaddr, dns_hostname, sw_hostname))
             return True
         #if sending was not successful
@@ -103,20 +104,22 @@ def loginproc(ipaddr,dns_hostname,dns_domain,username,password,enable_pw,check_f
         if sw_hostname.casefold() != dns_hostname.casefold():
             print("hostnames are different\n"
                   "IP:{}\n"
-                  "DNS:{}\n"
+                  "DNS   :{}\n"
                   "Switch:{}\n".format(ipaddr, dns_hostname, sw_hostname))
             if not check_flag:
                 command_str = "hostname " + dns_hostname.upper()
                 net_connect.enable()
                 output = net_connect.send_config_set([command_str])
+                #net_connect.save_config()
+                #net_connect.commit()
+                #net_connect.send_command('wr mem')
                 #print (output)
 
         else:
             print("hostnames are up to date\n"
                   "IP:{}\n"
-                  "DNS:{}\n"
+                  "DNS   :{}\n"
                   "Switch:{}\n".format(ipaddr, dns_hostname, sw_hostname))
-
 
             # Close Connection
         net_connect.disconnect()
