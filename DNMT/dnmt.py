@@ -5,7 +5,7 @@ import sys
 import datetime # for logging timestamping
 
 #local procedure imports
-from procedure import lefty
+from procedure.lefty import Lefty
 from procedure import config
 from procedure import hostnamer
 
@@ -14,12 +14,13 @@ import argcomplete
 
 
 def dnmt():
+
+
     # load username & password from config.text
     config.load_sw_base_conf()
 
      ####adding CLI Parsing
     parser = argparse.ArgumentParser(description='Navigate mac address tables to find a specified MAC.')
-    #subparsers = parser.add_subparsers(help="Choose between interactive or direct functionality")
     subparsers = parser.add_subparsers(help="Choose between interactive or direct functionality")
 
 
@@ -28,9 +29,7 @@ def dnmt():
     interactive_parser.add_argument('--interactive',default="True", required=False, help="placeholder variable, ignore")
 
     #create subcategory for direct commands (non-interactive) Add parsers here
-    #direct_parser = subparsers.add_parser("direct", help= "Non Interactive Commands")
     direct_parser = subparsers.add_parser("direct", help= "Non Interactive Commands").add_subparsers(dest="direct")
-    #direct_parser.add_subparsers(dest = "direct") = subparsers.add_parser("direct", help= "Non Interactive Commands")
 
     #parser commands for MAC Search
     macsearch_parser = direct_parser.add_parser("MACSearch", help= "Search for a mac address beginning on a specified switch")
@@ -48,12 +47,11 @@ def dnmt():
     hostnameupdate_parser.add_argument('-c', '--check', help="Compare hostname, do not change", action="store_true")
 
 
-
-    #parser.add_argument('ipfile', metavar='IPFILE',
-    #                    help='The file that contains IP addresses to check')
     argcomplete.autocomplete(parser)
     args = parser.parse_args()
-    #print (args)
+
+    macsearcher = Lefty(args,config)
+
     ### complete CLI Parsing
 
 
@@ -73,9 +71,9 @@ def dnmt():
         # if Mac Searcher selected, use the 'lefty' function
             if OpCode == '1':
                 #add error handling
-                ipaddr = input("Enter the switch to start searching on:")
+                macsearcher.args.ipaddr = input("Enter the switch to start searching on:")
                 macaddr = input("Enter the mac address to search for (can be last 4 digits)")
-                lefty.mac_search(ipaddr,macaddr,config.username,config.password)
+                macsearcher.unified_search([macsearcher.normalize_mac(macaddr)])
             elif OpCode == '2':
                 iplist = input("Enter the name of the file containing IPs of switches to update:")
                 hostnamer.hostname_update(iplist,config.username,config.password,config.ro,config.rw)
@@ -87,19 +85,19 @@ def dnmt():
                 sys.exit()
     elif 'direct' in args:
         if args.direct == "MACSearch":
-            lefty.log_array = []
+            #lefty.log_array = []
             if 'batchfile' in args and args.batchfile:
-                lefty.batch_search(args, config)
+                macsearcher.batch_search()
             elif 'mac' in args and args.mac:
-                lefty.unified_search(args, [lefty.normalize_mac(args.mac)], config)
+                macsearcher.unified_search([macsearcher.normalize_mac(args.mac)])
             print("Job Complete")
-            [print("%s\nPort info:%s" % (entry['location'], entry['info'])) for entry in lefty.log_array]
+            [print("%s\nPort info:%s" % (entry['location'], entry['info'])) for entry in macsearcher.log_array]
             if 'csv' in args:
 #                print("Logging Test:\nMAC,Switch_IP,Port")
 #                [print("%s" % (entry['csv'])) for entry in lefty.log_array]
                 with open(args.csv, 'w', encoding='utf-8') as f:
                     print("MAC,Switch_IP,Port,Info",file=f)
-                    [print("%s" % (entry['csv']),file=f) for entry in lefty.log_array]
+                    [print("%s" % (entry['csv']),file=f) for entry in macsearcher.log_array]
 
         elif args.direct == "HostnameUpdate":
             hostnamer.hostname_update(args.iplist, config, args.check)
