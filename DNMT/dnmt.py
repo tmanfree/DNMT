@@ -2,6 +2,7 @@
 
 import argparse
 import sys
+import datetime # for logging timestamping
 
 #local procedure imports
 from procedure import lefty
@@ -32,10 +33,10 @@ def dnmt():
     macsearch_parser = direct_parser.add_parser("MACSearch", help= "Search for a mac address beginning on a specified switch")
     macsearch_parser.add_argument('ipaddr', metavar='IP',
                         help='The IP to start looking for the mac address at')
-    #macsearch_parser.add_argument('macaddr', metavar='MAC',
-    #                    help='The MAC address to search for ')
     macsearch_parser.add_argument('-m', '--mac', metavar='macaddr', help="A single mac address to search for")
     macsearch_parser.add_argument('-b', '--batchfile',metavar = 'BATCHFILE',help="File with mac address for batch mode")
+    macsearch_parser.add_argument('-v', '--verbose', help="run in verbose mode", default=False, action="store_true")
+    macsearch_parser.add_argument('-c', '--csv', help="save to a specified csv file" )
 
     #parser commands for hostname updater
     hostnameupdate_parser = direct_parser.add_parser("HostnameUpdate", help= "Check switch hostnames with their DNS names & update")
@@ -83,16 +84,22 @@ def dnmt():
                 sys.exit()
     elif 'direct' in args:
         if args.direct == "MACSearch":
+            lefty.log_array = []
             if 'batchfile' in args and args.batchfile:
-                lefty.batch_search(args.ipaddr, args.batchfile, config.username, config.password)
+                lefty.batch_search(args, config)
             elif 'mac' in args and args.mac:
-                #lefty.mac_search(args.ipaddr, args.mac, config.username, config.password)
-                #lefty.unified_search(ipaddr, maclist, username, password
-                lefty.unified_search(args.ipaddr, [lefty.normalize_mac(args.mac)], config.username, config.password)
+                lefty.unified_search(args, [lefty.normalize_mac(args.mac)], config)
+            print("Job Complete")
+            [print("%s\nPort info:%s" % (entry['location'], entry['info'])) for entry in lefty.log_array]
+            if 'csv' in args:
+#                print("Logging Test:\nMAC,Switch_IP,Port")
+#                [print("%s" % (entry['csv'])) for entry in lefty.log_array]
+                with open(args.csv, 'w', encoding='utf-8') as f:
+                    print("MAC,Switch_IP,Port,Info",file=f)
+                    [print("%s" % (entry['csv']),file=f) for entry in lefty.log_array]
+
         elif args.direct == "HostnameUpdate":
-            #hostnamer.hostname_update(args.iplist,config.username,config.password,config.ro,config.rw,args.check)
             hostnamer.hostname_update(args.iplist, config, args.check)
-    #input_vals = {'IP':args.ipfile}
 
 if __name__ == "__main__":
     dnmt()
