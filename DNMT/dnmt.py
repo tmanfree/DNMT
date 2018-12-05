@@ -9,6 +9,9 @@ from procedure import lefty
 from procedure import config
 from procedure import hostnamer
 
+#3rd party imports
+import argcomplete
+
 
 def dnmt():
     # load username & password from config.text
@@ -48,7 +51,7 @@ def dnmt():
 
     #parser.add_argument('ipfile', metavar='IPFILE',
     #                    help='The file that contains IP addresses to check')
-
+    argcomplete.autocomplete(parser)
     args = parser.parse_args()
     #print (args)
     ### complete CLI Parsing

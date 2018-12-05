@@ -6,7 +6,7 @@ DESCRIPTION = "Direct Network Management Tool"
 URL = "https://github.com/tmanfree/DNMT"
 EMAIL = "tmanfree@hotmail.com"
 AUTHOR = "Thomas Mandzie"
-VERSION = "0.0.1"
+VERSION = "0.0.2"
 
 
 with open("README.md", "r") as fh:
@@ -24,7 +24,8 @@ setuptools.setup(
     packages=setuptools.find_packages(),
     install_requires=[
         'netmiko>=2.3.0',
-        'pysnmp>=4.4.6'
+        'pysnmp>=4.4.6',
+        'argcomplete>=1.9.4'
             ],
     classifiers=[
         "Programming Language :: Python :: 3",
