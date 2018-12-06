@@ -18,9 +18,9 @@ in interactive or direct mode.
 with dns hostnames, updating the switch hostname if they are different.
 
 
-##Detailed function breakdowns
+## Detailed function breakdowns
 
-####MAC Search
+#### MAC Search
 
 **Description**: This function can operate in either batch or single mode. Both require
 an IP address to begin searching at
