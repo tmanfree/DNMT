@@ -17,10 +17,23 @@ in interactive or direct mode.
 * **Hostname Updater** - *dnmt.py direct MACSearch IP MAC* . This will compare switch hostnames
 with dns hostnames, updating the switch hostname if they are different.
 
+## Requirements
+
+* Python 3.5
+* Python packages listed in setup.py
+* a config.text file where you will run the command with the following information in it:
+    * [SWITCHCRED]
+    * username=*USERNAME*
+    * password=*PASSWORD*
+    * enable=*ENABLEPASS*
+    * [SNMP]
+    * ro=*SNMPV2ROSTRING*
+    * rw=*SNMPV2RWSTRING*
+
 
 ## Detailed function breakdowns
 
-#### MAC Search
+### MAC Search
 
 **Description**: This function can operate in either batch or single mode. Both require
 an IP address to begin searching at
@@ -46,7 +59,24 @@ This command will search for MAC address *AAAA.BBBB.CCCC* starting from IP addre
 This command will search for all MAC addresses listed in *macfile.txt* 
  starting from IP address 1.1.1.1 and store results in *output.csv*
 
+### Hostname Updater
 
+**Description**: This function will take a list of ip addresses from a file and
+compare their hostnames in DNS to their switch hostname. if the check flag is not set,
+it will then update the switch hostname.
+
+**Input Required:** 
+* *FILENAME:* Supply the function with a file (*FILENAME*) that has ip addresses to check    
+    
+**Optional Flags:**
+* *-c,--check*: flag to only check the hostnames. Will not update if different  
+    
+Example commands:
+
+**dnmt direct HostnameUpdate -c *IPList.txt***
+
+This command will check all of the hostnames for IP addresses listed in IPList.txt. 
+It will not update if there is a difference, due to the -c flag.
 
 
 
