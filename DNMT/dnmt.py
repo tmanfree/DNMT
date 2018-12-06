@@ -85,19 +85,9 @@ def dnmt():
                 sys.exit()
     elif 'direct' in args:
         if args.direct == "MACSearch":
-            #lefty.log_array = []
-            if 'batchfile' in args and args.batchfile:
-                macsearcher.batch_search()
-            elif 'mac' in args and args.mac:
-                macsearcher.unified_search([macsearcher.normalize_mac(args.mac)])
-            print("Job Complete")
-            [print("%s\nPort info:%s" % (entry['location'], entry['info'])) for entry in macsearcher.log_array]
-            if 'csv' in args:
-#                print("Logging Test:\nMAC,Switch_IP,Port")
-#                [print("%s" % (entry['csv'])) for entry in lefty.log_array]
-                with open(args.csv, 'w', encoding='utf-8') as f:
-                    print("MAC,Switch_IP,Port,Info",file=f)
-                    [print("%s" % (entry['csv']),file=f) for entry in macsearcher.log_array]
+            macsearcher.begin_search()
+            macsearcher.print_complete()
+
 
         elif args.direct == "HostnameUpdate":
             hostnamer.hostname_update(args.iplist, config, args.check)

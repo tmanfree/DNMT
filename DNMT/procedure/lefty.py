@@ -7,10 +7,12 @@ import sys
 
 class Lefty:
     def __init__(self, args, config):
-        # initialize values that will be used
+        # initialize values
         self.log_array = []
         self.args = args
         self.config = config
+
+
 
     def create_connection(self):
         if 'verbose' in self.args and self.args.verbose:
@@ -41,16 +43,16 @@ class Lefty:
                 print("Please enter a mac address in a group of 4")
                 sys.exit()
 
-
-    def batch_search(self):
-        maclist = []
-        file = open(self.args.batchfile, "r")
-        for mac in file:
-            maclist.append(self.normalize_mac(mac))
-        file.close()
+    def begin_search(self):
+        if 'batchfile' in self.args and self.args.batchfile:
+            maclist = []
+            file = open(self.args.batchfile, "r")
+            for mac in file:
+                maclist.append(self.normalize_mac(mac))
+            file.close()
+        elif 'mac' in self.args and self.args.mac:
+            maclist = [self.normalize_mac(self.args.mac)]
         self.unified_search(maclist)
-
-
 
     def unified_search(self, maclist):
 
@@ -136,9 +138,15 @@ class Lefty:
                 self.unified_search(sw_dict[addr_key])
         #print("-------- COMPLETE --------")
 
+    def print_complete(self):
+        print("Job Complete")
+        [print("%s\nPort info:%s" % (entry['location'], entry['info'])) for entry in self.log_array]
+        if 'csv' in self.args:
+            with open(args.csv, 'w', encoding='utf-8') as f:
+                print("MAC,Switch_IP,Port,Info", file=f)
+                [print("%s" % (entry['csv']), file=f) for entry in self.log_array]
 
-
-    #if being run by itself (outdated, since changing to class)
+    #if being run by itself
 if __name__ == "__main__":
     #import files to load config and parse CLI
     import config
@@ -154,16 +162,6 @@ if __name__ == "__main__":
     parser.add_argument('-c', '--csv', help="save to a specified csv file")
     args = parser.parse_args()
     macsearcher = Lefty(args,config)
-    if 'batchfile' in args and args.batchfile:
-        macsearcher.batch_search()
-    elif 'mac' in args and args.mac:
-        macsearcher.unified_search([macsearcher.normalize_mac(args.mac)])
-    print("Job Complete")
-    [print("%s\nPort info:%s" % (entry['location'], entry['info'])) for entry in macsearcher.log_array]
-    if 'csv' in args:
-        #                print("Logging Test:\nMAC,Switch_IP,Port")
-        #                [print("%s" % (entry['csv'])) for entry in lefty.log_array]
-        with open(args.csv, 'w', encoding='utf-8') as f:
-            print("MAC,Switch_IP,Port,Info", file=f)
-            [print("%s" % (entry['csv']), file=f) for entry in macsearcher.log_array]
+    macsearcher.begin_search()
+    macsearcher.print_complete()
 
