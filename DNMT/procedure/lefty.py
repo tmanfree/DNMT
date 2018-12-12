@@ -93,7 +93,7 @@ class Lefty:
                                 'show etherchannel summary | include ' + reg_find.group(0))
                         port_reg_find = reg_PC_port.search(output)
                         # currently the following command gets multiple matches on things like 1/0/1 (11,12,13, etc)
-                        port_info = net_connect.send_command("show int status | i {} ".format(port_reg_find.group(0)))
+                        port_info = net_connect.send_command("show int status | i ({}) ".format(port_reg_find.group(0)))
                         output = net_connect.send_command("show cdp neigh {} detail".format(port_reg_find.group(0)))
                         # check if the cdp neigh information is a phone
                         reg_find = reg_CDP_Phone.search(output)
@@ -176,6 +176,7 @@ class Lefty:
         print("Job Complete")
         [print("%s\nPort info:%s" % (entry['location'], entry['info'])) for entry in self.log_array]
         if 'csv' in self.args:
+            print("Printing to CSV")
             with open(args.csv, 'w', encoding='utf-8') as f:
                 print("MAC,Switch_IP,Port,Info", file=f)
                 [print("%s" % (entry['csv']), file=f) for entry in self.log_array]
