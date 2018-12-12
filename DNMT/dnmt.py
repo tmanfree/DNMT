@@ -107,7 +107,7 @@ def dnmt():
         elif args.direct == "SNMPTest":
             hostnamer.snmp_test(args.ipaddr, config, args.oid)
         elif args.direct == "WriteTest":
-            hostnamer.snmp_test(args.ipaddr, config)
+            hostnamer.write_test(args.ipaddr, config)
 
 if __name__ == "__main__":
     dnmt()
