@@ -1,25 +1,28 @@
 #!/usr/bin/env python3
 
 from netmiko import ConnectHandler
+import random
 import re
 import socket
+import time
 from pysnmp.hlapi import *
-
 import sys
 
+
 def write_test(ipaddr,config):
+    randnum = random.randint(1,100)
     errorIndication, errorStatus, errorIndex, varBinds = next(
         setCmd(SnmpEngine(),
                CommunityData(config.rw),
                UdpTransportTarget((ipaddr, 161)),
                ContextData(),
-               ObjectType(ObjectIdentity('CISCO-CONFIG-COPY-MIB', 'ccCopySourceFileType', 8
+               ObjectType(ObjectIdentity('CISCO-CONFIG-COPY-MIB', 'ccCopySourceFileType', randnum
                                          ).addAsn1MibSource('file:///usr/share/snmp',
                                                             'http://mibs.snmplabs.com/asn1/@mib@'), 4),
-               ObjectType(ObjectIdentity('CISCO-CONFIG-COPY-MIB', 'ccCopyDestFileType', 8
+               ObjectType(ObjectIdentity('CISCO-CONFIG-COPY-MIB', 'ccCopyDestFileType', randnum
                                          ).addAsn1MibSource('file:///usr/share/snmp',
                                                             'http://mibs.snmplabs.com/asn1/@mib@'), 3),
-               ObjectType(ObjectIdentity('CISCO-CONFIG-COPY-MIB', 'ccCopyEntryRowStatus', 8
+               ObjectType(ObjectIdentity('CISCO-CONFIG-COPY-MIB', 'ccCopyEntryRowStatus', randnum
                                          ).addAsn1MibSource('file:///usr/share/snmp',
                                                             'http://mibs.snmplabs.com/asn1/@mib@'), 4))
     )
@@ -29,23 +32,59 @@ def write_test(ipaddr,config):
         print('%s at %s' % (errorStatus.prettyPrint(),
                             errorIndex and varBinds[int(errorIndex) - 1][0] or '?'))
     else:  # hostname was updated successfully
-        errorIndication, errorStatus, errorIndex, varBinds = next(
-            getCmd(SnmpEngine(),
-                   CommunityData(config.ro),
-                   UdpTransportTarget((ipaddr, 161)),
-                   ContextData(),
-                   ObjectType(ObjectIdentity('CISCO-CONFIG-COPY-MIB', 'ccCopyState', 8
-                                         ).addAsn1MibSource('file:///usr/share/snmp',
-                                                            'http://mibs.snmplabs.com/asn1/@mib@')))
-        )
-        if errorIndication:  # check for errors
-            print(errorIndication)
-        elif errorStatus:  # error status (confirm this)
-            print('%s at %s' % (errorStatus.prettyPrint(),
-                                errorIndex and varBinds[int(errorIndex) - 1][0] or '?'))
-        else:  # hostname was updated successfully
-            for varBind in varBinds:
-                print(' = '.join([x.prettyPrint() for x in varBind]))
+        complete = False
+        secs = 0
+
+        while not complete and secs < 30:
+            errorIndication, errorStatus, errorIndex, varBinds = next(
+                getCmd(SnmpEngine(),
+                       CommunityData(config.ro),
+                       UdpTransportTarget((ipaddr, 161)),
+                       ContextData(),
+                       ObjectType(ObjectIdentity('CISCO-CONFIG-COPY-MIB', 'ccCopyState', randnum
+                                             ).addAsn1MibSource('file:///usr/share/snmp',
+                                                                'http://mibs.snmplabs.com/asn1/@mib@')))
+            )
+            if errorIndication:  # check for errors
+                print(errorIndication)
+            elif errorStatus:  # error status (confirm this)
+                print('%s at %s' % (errorStatus.prettyPrint(),
+                                    errorIndex and varBinds[int(errorIndex) - 1][0] or '?'))
+            else:
+                return_oid, return_value = varBinds[0]
+                return_value = str(return_value)  # change value to string rather than DisplayString
+                ### temp printing
+                for varBind in varBinds:
+                    print(' = '.join([x.prettyPrint() for x in varBind]))
+                ### temp print end
+                if return_value == "successful":
+                    complete = True
+                else:
+                    time.sleep(1)
+                    secs += 1
+        if complete:
+            #clear the copy table
+            errorIndication, errorStatus, errorIndex, varBinds = next(
+                setCmd(SnmpEngine(),
+                       CommunityData(config.rw),
+                       UdpTransportTarget((ipaddr, 161)),
+                       ContextData(),
+                       ObjectType(ObjectIdentity('CISCO-CONFIG-COPY-MIB', 'ccCopyEntryRowStatus', randnum
+                                                 ).addAsn1MibSource('file:///usr/share/snmp',
+                                                                    'http://mibs.snmplabs.com/asn1/@mib@'), 6))
+            )
+            if errorIndication:  # check for errors
+                print(errorIndication)
+            elif errorStatus:  # error status (confirm this)
+                print('%s at %s' % (errorStatus.prettyPrint(),
+                                    errorIndex and varBinds[int(errorIndex) - 1][0] or '?'))
+            else:
+                print ("job complete")
+
+
+
+
+
 
 
 
