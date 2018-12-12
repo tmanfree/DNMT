@@ -7,6 +7,76 @@ from pysnmp.hlapi import *
 
 import sys
 
+def write_test(ipaddr,config):
+    errorIndication, errorStatus, errorIndex, varBinds = next(
+        setCmd(SnmpEngine(),
+               CommunityData(config.rw),
+               UdpTransportTarget((ipaddr, 161)),
+               ContextData(),
+               ObjectType(ObjectIdentity('CISCO-CONFIG-COPY-MIB', 'ccCopySourceFileType', 8
+                                         ).addAsn1MibSource('file:///usr/share/snmp',
+                                                            'http://mibs.snmplabs.com/asn1/@mib@'), 4),
+               ObjectType(ObjectIdentity('CISCO-CONFIG-COPY-MIB', 'ccCopyDestFileType', 8
+                                         ).addAsn1MibSource('file:///usr/share/snmp',
+                                                            'http://mibs.snmplabs.com/asn1/@mib@'), 3),
+               ObjectType(ObjectIdentity('CISCO-CONFIG-COPY-MIB', 'ccCopyEntryRowStatus', 8
+                                         ).addAsn1MibSource('file:///usr/share/snmp',
+                                                            'http://mibs.snmplabs.com/asn1/@mib@'), 4))
+    )
+    if errorIndication:  # check for errors
+        print(errorIndication)
+    elif errorStatus:  # error status (confirm this)
+        print('%s at %s' % (errorStatus.prettyPrint(),
+                            errorIndex and varBinds[int(errorIndex) - 1][0] or '?'))
+    else:  # hostname was updated successfully
+        errorIndication, errorStatus, errorIndex, varBinds = next(
+            getCmd(SnmpEngine(),
+                   CommunityData(config.ro),
+                   UdpTransportTarget((ipaddr, 161)),
+                   ContextData(),
+                   ObjectType(ObjectIdentity('CISCO-CONFIG-COPY-MIB', 'ccCopyState', 8
+                                         ).addAsn1MibSource('file:///usr/share/snmp',
+                                                            'http://mibs.snmplabs.com/asn1/@mib@')))
+        )
+        if errorIndication:  # check for errors
+            print(errorIndication)
+        elif errorStatus:  # error status (confirm this)
+            print('%s at %s' % (errorStatus.prettyPrint(),
+                                errorIndex and varBinds[int(errorIndex) - 1][0] or '?'))
+        else:  # hostname was updated successfully
+            for varBind in varBinds:
+                print(' = '.join([x.prettyPrint() for x in varBind]))
+
+
+
+
+def snmp_test(ipaddr,config,oid):
+
+    ### get hostname from switch
+    errorIndication, errorStatus, errorIndex, varBinds = next(
+        getCmd(SnmpEngine(),
+               CommunityData(config.ro),
+               UdpTransportTarget((ipaddr, 161)),
+               ContextData(),
+               ObjectType(ObjectIdentity(oid)))
+    )
+
+    if errorIndication:
+        print(errorIndication)
+    elif errorStatus:
+        print('%s at %s' % (errorStatus.prettyPrint(),
+                            errorIndex and varBinds[int(errorIndex) - 1][0] or '?'))
+    else:  # if getting the hostname from snmp was successful
+        dns_oid, dns_value = varBinds[0]  # grab dns value & oid
+        print (dns_value)
+
+
+
+
+
+
+
+
 def snmpproc(ipaddr,dns_hostname,dns_domain,snmp_ro, snmp_rw, check_flag):
     reg_FQDN = re.compile("([^.]*)\.(.*)")  # Group 0: hostname, Group 1: domain name
 

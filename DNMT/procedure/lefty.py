@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 #Howdy Neighbour!
 
-from netmiko import ConnectHandler
+#from netmiko import ConnectHandler
+import netmiko
 import re
 import sys
 
@@ -12,11 +13,17 @@ class Lefty:
         self.args = args
         self.config = config
 
+  # def switch_check(self):
+    #grab info from 1.3.6.1.2.1.1.1.0
+    #example: ProCurve J9022A Switch 2810-48G, revision N.11.15, ROM N.10.01 (/sw/code/build/bass(bh2))"
+    #example:Cisco IOS Software, C3560 Software (C3560-IPBASEK9-M), Version 12.2(40)SE, RELEASE SOFTWARE (fc3) Copyright (c) 1986-2007 by Cisco Systems, Inc.
+    #return a variable that will be assigned: cisco,hp,unknown to be used when creating connections or snmp walking
+
 
 
     def create_connection(self):
         if 'verbose' in self.args and self.args.verbose:
-            print('------- CONNECTING to switch {}-------'.format(args.ipaddr))
+            print('------- CONNECTING to switch {}-------'.format(self.args.ipaddr))
 
         # Switch Parameters
         cisco_sw = {
@@ -28,8 +35,10 @@ class Lefty:
             'verbose': False,
         }
         # SSH Connection
-        net_connect = ConnectHandler(**cisco_sw)
+        net_connect = netmiko.ConnectHandler(**cisco_sw)
         return net_connect
+
+
 
     def normalize_mac(self, address):
         tmp3 = address.rstrip().lower().translate({ord(":"): "", ord("-"): "", ord(" "): "", ord("."): ""})
@@ -66,77 +75,102 @@ class Lefty:
         reg_IP_addr = re.compile(r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}')  # Group 0: Check for IP
 
         #create a session
-        net_connect = self.create_connection()
+        try:
+            net_connect = self.create_connection()
+            if net_connect:
+                for MAC in maclist:
 
-        # SSH Connection
-        if net_connect:
-            for MAC in maclist:
+                    # Show Interface Status
+                    output = net_connect.send_command('show mac address-table | i ' + MAC)
+                    macHolder = reg_mac_addr.search(output)
 
-                # Show Interface Status
-                output = net_connect.send_command('show mac address-table | i ' + MAC)
-                macHolder = reg_mac_addr.search(output)
+                    if macHolder is not None:
 
-                if macHolder is not None:
-
-                    # if a port channel then-->
-                    if "Po" in output:
-                        reg_find = reg_PC.search(output)
-                        output = net_connect.send_command('show etherchannel summary | include ' + reg_find.group(0))
-                    port_reg_find = reg_PC_port.search(output)
-                    # currently the following command gets multiple matches on things like 1/0/1 (11,12,13, etc)
-                    port_info = net_connect.send_command("show int status | i {} ".format(port_reg_find.group(0)))
-                    output = net_connect.send_command("show cdp neigh {} detail".format(port_reg_find.group(0)))
-                    # check if the cdp neigh information is a phone
-                    reg_find = reg_CDP_Phone.search(output)
-                    # if it is a phone....
-                    if reg_find is not None:
-                        self.log_array.append({'location': "MAC:{}, Switch:{}, "
-                                                      "Port:{}".format(MAC, self.args.ipaddr, port_reg_find.group(0)),
-                                          'info': port_info, 'csv': "{},"
-                                                                    "{},{},{}".format(MAC, self.args.ipaddr,
-                                                                                      port_reg_find.group(0), port_info)})
-                        if 'verbose' in self.args and self.args.verbose:
-                            print("for MAC {}, the furthest downstream location is:"
-                                  " {} on switch IP:{}".format(MAC,port_reg_find.group(0),
-                                                               self.args.ipaddr))
-                            print("port info: {}".format(port_info))
-                        else:
-                            print ("MAC {} was found".format(MAC))
-                    else:
-                        # look for an IP address in CDP neighbour
-                        reg_find = reg_IP_addr.search(output)
-                        # if an IP is found, it is a switch (assuming it isn't an AP)
-                        if reg_find :
-                            if 'verbose' in self.args and self.args.verbose:
-                                print("Mac {} found on port {}".format(macHolder.group(0), port_reg_find.group(0)))
-                            if reg_find.group(0) not in sw_dict.keys():
-                                sw_dict.update({reg_find.group(0): []})
-                            if MAC not in sw_dict.values():
-                                sw_dict[reg_find.group(0)].append(MAC)
-                        # no CDP info is there, it should be a client port
-                        else:
-                            # port_info = net_connect.send_command("show int status | i {} ".format(port_reg_find.group(0)))
-                            #log_array.append("for MAC {}, the furthest downstream location is: {} on switch IP:{}".format(MAC,port_reg_find.group(0),args.ipaddr))
+                        # if a port channel then-->
+                        if "Po" in output:
+                            reg_find = reg_PC.search(output)
+                            output = net_connect.send_command(
+                                'show etherchannel summary | include ' + reg_find.group(0))
+                        port_reg_find = reg_PC_port.search(output)
+                        # currently the following command gets multiple matches on things like 1/0/1 (11,12,13, etc)
+                        port_info = net_connect.send_command("show int status | i {} ".format(port_reg_find.group(0)))
+                        output = net_connect.send_command("show cdp neigh {} detail".format(port_reg_find.group(0)))
+                        # check if the cdp neigh information is a phone
+                        reg_find = reg_CDP_Phone.search(output)
+                        # if it is a phone....
+                        if reg_find is not None:
                             self.log_array.append({'location': "MAC:{}, Switch:{}, "
-                                                      "Port:{}".format(MAC, self.args.ipaddr, port_reg_find.group(0)),
-                                              'info': port_info, 'csv': "{},"
-                                                                        "{},{},{}".format(MAC, self.args.ipaddr,
-                                                                                      port_reg_find.group(0),port_info)})
+                                                               "Port:{}".format(MAC, self.args.ipaddr,
+                                                                                port_reg_find.group(0)),
+                                                   'info': port_info, 'csv': "{},"
+                                                                             "{},{},{}".format(MAC, self.args.ipaddr,
+                                                                                               port_reg_find.group(0),
+                                                                                               port_info)})
                             if 'verbose' in self.args and self.args.verbose:
                                 print("for MAC {}, the furthest downstream location is:"
-                                  " {} on switch IP:{}".format(MAC,port_reg_find.group(0),self.args.ipaddr))
+                                      " {} on switch IP:{}".format(MAC, port_reg_find.group(0),
+                                                                   self.args.ipaddr))
                                 print("port info: {}".format(port_info))
                             else:
                                 print("MAC {} was found".format(MAC))
-                else:
-                    print("Mac address {} not found.".format(MAC))
-            # Close Connection
-            net_connect.disconnect()
-            for addr_key in sw_dict.keys():
-                #print(sw_dict)
-                self.args.ipaddr = addr_key
-                self.unified_search(sw_dict[addr_key])
-        #print("-------- COMPLETE --------")
+                        else:
+                            # look for an IP address in CDP neighbour
+                            reg_find = reg_IP_addr.search(output)
+                            # if an IP is found, it is a switch (assuming it isn't an AP)
+                            if reg_find:
+                                if 'verbose' in self.args and self.args.verbose:
+                                    print("Mac {} found on port {}".format(macHolder.group(0), port_reg_find.group(0)))
+                                if reg_find.group(0) not in sw_dict.keys():
+                                    sw_dict.update({reg_find.group(0): []})
+                                if MAC not in sw_dict.values():
+                                    sw_dict[reg_find.group(0)].append(MAC)
+                            # no CDP info is there, it should be a client port
+                            else:
+                                # port_info = net_connect.send_command("show int status | i {} ".format(port_reg_find.group(0)))
+                                # log_array.append("for MAC {}, the furthest downstream location is: {} on switch IP:{}".format(MAC,port_reg_find.group(0),args.ipaddr))
+                                self.log_array.append({'location': "MAC:{}, Switch:{}, "
+                                                                   "Port:{}".format(MAC, self.args.ipaddr,
+                                                                                    port_reg_find.group(0)),
+                                                       'info': port_info, 'csv': "{},"
+                                                                                 "{},{},{}".format(MAC,
+                                                                                                   self.args.ipaddr,
+                                                                                                   port_reg_find.group(
+                                                                                                       0), port_info)})
+                                if 'verbose' in self.args and self.args.verbose:
+                                    print("for MAC {}, the furthest downstream location is:"
+                                          " {} on switch IP:{}".format(MAC, port_reg_find.group(0), self.args.ipaddr))
+                                    print("port info: {}".format(port_info))
+                                else:
+                                    print("MAC {} was found".format(MAC))
+                    else:
+                        print("Mac address {} not found.".format(MAC))
+                # Close Connection
+                net_connect.disconnect()
+                for addr_key in sw_dict.keys():
+                    # print(sw_dict)
+                    self.args.ipaddr = addr_key
+                    self.unified_search(sw_dict[addr_key])
+            return True
+            # netmiko connection error handling
+        except netmiko.ssh_exception.NetMikoAuthenticationException as err:
+            if 'verbose' in self.args and self.args.verbose:
+                print(err.args[0])
+            else:
+                print("Netmiko Authentication Failure")
+        except netmiko.ssh_exception.NetMikoTimeoutException as err:
+            if 'verbose' in self.args and self.args.verbose:
+                print(err.args[0])
+            else:
+                print("Netmiko Timeout Failure")
+        except ValueError as err:
+            #if 'verbose' in self.args and self.args.verbose:
+            print(err.args[0])
+
+
+
+
+        # SSH Connection
+
 
     def print_complete(self):
         print("Job Complete")
@@ -162,6 +196,6 @@ if __name__ == "__main__":
     parser.add_argument('-c', '--csv', help="save to a specified csv file")
     args = parser.parse_args()
     macsearcher = Lefty(args,config)
-    macsearcher.begin_search()
-    macsearcher.print_complete()
+    if macsearcher.begin_search():
+        macsearcher.print_complete()
 

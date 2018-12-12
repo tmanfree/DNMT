@@ -13,6 +13,8 @@ from procedure import hostnamer
 import argcomplete
 
 
+
+
 def dnmt():
 
 
@@ -45,6 +47,19 @@ def dnmt():
     hostnameupdate_parser.add_argument('iplist', metavar='FILENAME',
                         help='The list that contains the ip addresses to check')
     hostnameupdate_parser.add_argument('-c', '--check', help="Compare hostname, do not change", action="store_true")
+
+    #parser commands for snmp test (temporary)
+    snmptest_parser = direct_parser.add_parser("SNMPTest", help= "grab snmp variables")
+    snmptest_parser.add_argument('ipaddr', metavar='IP',
+                        help='The IP of the switch')
+    snmptest_parser.add_argument('oid', metavar='OID',
+                                 help='The OID to check')
+    #parser commands for write snmp test (temporary)
+    writetest_parser = direct_parser.add_parser("WriteTest", help= "grab snmp variables")
+    writetest_parser.add_argument('ipaddr', metavar='IP',
+                        help='The IP of the switch')
+
+
 
 
     argcomplete.autocomplete(parser)
@@ -85,12 +100,14 @@ def dnmt():
                 sys.exit()
     elif 'direct' in args:
         if args.direct == "MACSearch":
-            macsearcher.begin_search()
-            macsearcher.print_complete()
-
-
+            if macsearcher.begin_search():
+                macsearcher.print_complete()
         elif args.direct == "HostnameUpdate":
             hostnamer.hostname_update(args.iplist, config, args.check)
+        elif args.direct == "SNMPTest":
+            hostnamer.snmp_test(args.ipaddr, config, args.oid)
+        elif args.direct == "WriteTest":
+            hostnamer.snmp_test(args.ipaddr, config)
 
 if __name__ == "__main__":
     dnmt()
