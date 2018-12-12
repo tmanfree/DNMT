@@ -34,7 +34,7 @@ setuptools.setup(
     ],
     entry_points={
         'console_scripts': [
-        'dnmt = dnmt:dnmt',
+        'dnmt = DNMT.dnmt:dnmt',
         ],
     }
 )
