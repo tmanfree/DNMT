@@ -5,9 +5,9 @@ import sys
 import datetime # for logging timestamping
 
 #local procedure imports
-from procedure.lefty import Lefty
-from procedure import config
-from procedure import hostnamer
+from DNMT.procedure.lefty import Lefty
+from DNMT.procedure import config
+from DNMT.procedure import hostnamer
 
 #3rd party imports
 import argcomplete
