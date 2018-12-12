@@ -62,6 +62,7 @@ class Lefty:
         elif 'mac' in self.args and self.args.mac:
             maclist = [self.normalize_mac(self.args.mac)]
         self.unified_search(maclist)
+        self.print_complete()
 
     def unified_search(self, maclist):
 
@@ -69,7 +70,8 @@ class Lefty:
 
         # Regexs
         reg_PC = re.compile(r'( Po\d)')  # Group 0: search for Port Channel
-        reg_PC_port = re.compile(r'..(\d/)*\d/\d{1,2}')  # Group 0: Port in port channel (or mac address table)
+        #reg_PC_port = re.compile(r'..(\d/)*\d/\d{1,2}')  # Group 0: Port in port channel (or mac address table)
+        reg_PC_port = re.compile(r'(..(\d{1,2}/)*\d{1,2}/\d+)\(*')  # Group 0: Port in port channel (or mac address table)
         reg_mac_addr = re.compile(r'....\.....\.....')  # Group 0: Port in port channel (or mac address table)
         reg_CDP_Phone = re.compile(r'Phone')  # Group 0: Check CDP neigh for Phone
         reg_IP_addr = re.compile(r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}')  # Group 0: Check for IP
@@ -93,22 +95,22 @@ class Lefty:
                                 'show etherchannel summary | include ' + reg_find.group(0))
                         port_reg_find = reg_PC_port.search(output)
                         # currently the following command gets multiple matches on things like 1/0/1 (11,12,13, etc)
-                        port_info = net_connect.send_command("show int status | i ({}) ".format(port_reg_find.group(0)))
-                        output = net_connect.send_command("show cdp neigh {} detail".format(port_reg_find.group(0)))
+                        port_info = net_connect.send_command("show int status | i ({}) ".format(port_reg_find.group(1)))
+                        output = net_connect.send_command("show cdp neigh {} detail".format(port_reg_find.group(1)))
                         # check if the cdp neigh information is a phone
                         reg_find = reg_CDP_Phone.search(output)
                         # if it is a phone....
                         if reg_find is not None:
                             self.log_array.append({'location': "MAC:{}, Switch:{}, "
                                                                "Port:{}".format(MAC, self.args.ipaddr,
-                                                                                port_reg_find.group(0)),
+                                                                                port_reg_find.group(1)),
                                                    'info': port_info, 'csv': "{},"
                                                                              "{},{},{}".format(MAC, self.args.ipaddr,
-                                                                                               port_reg_find.group(0),
+                                                                                               port_reg_find.group(1),
                                                                                                port_info)})
                             if 'verbose' in self.args and self.args.verbose:
                                 print("for MAC {}, the furthest downstream location is:"
-                                      " {} on switch IP:{}".format(MAC, port_reg_find.group(0),
+                                      " {} on switch IP:{}".format(MAC, port_reg_find.group(1),
                                                                    self.args.ipaddr))
                                 print("port info: {}".format(port_info))
                             else:
@@ -119,7 +121,7 @@ class Lefty:
                             # if an IP is found, it is a switch (assuming it isn't an AP)
                             if reg_find:
                                 if 'verbose' in self.args and self.args.verbose:
-                                    print("Mac {} found on port {}".format(macHolder.group(0), port_reg_find.group(0)))
+                                    print("Mac {} found on port {}".format(macHolder.group(0), port_reg_find.group(1)))
                                 if reg_find.group(0) not in sw_dict.keys():
                                     sw_dict.update({reg_find.group(0): []})
                                 if MAC not in sw_dict.values():
@@ -130,15 +132,15 @@ class Lefty:
                                 # log_array.append("for MAC {}, the furthest downstream location is: {} on switch IP:{}".format(MAC,port_reg_find.group(0),args.ipaddr))
                                 self.log_array.append({'location': "MAC:{}, Switch:{}, "
                                                                    "Port:{}".format(MAC, self.args.ipaddr,
-                                                                                    port_reg_find.group(0)),
+                                                                                    port_reg_find.group(1)),
                                                        'info': port_info, 'csv': "{},"
                                                                                  "{},{},{}".format(MAC,
                                                                                                    self.args.ipaddr,
                                                                                                    port_reg_find.group(
-                                                                                                       0), port_info)})
+                                                                                                       1), port_info)})
                                 if 'verbose' in self.args and self.args.verbose:
                                     print("for MAC {}, the furthest downstream location is:"
-                                          " {} on switch IP:{}".format(MAC, port_reg_find.group(0), self.args.ipaddr))
+                                          " {} on switch IP:{}".format(MAC, port_reg_find.group(1), self.args.ipaddr))
                                     print("port info: {}".format(port_info))
                                 else:
                                     print("MAC {} was found".format(MAC))
@@ -170,14 +172,16 @@ class Lefty:
 
 
         # SSH Connection
-
+    def verbose_printer(self,printvar):
+        if 'verbose' in self.args and self.args.verbose:
+            print(printvar)
 
     def print_complete(self):
-        print("Job Complete")
+        self.verbose_printer("Job Complete")
         [print("%s\nPort info:%s" % (entry['location'], entry['info'])) for entry in self.log_array]
         if 'csv' in self.args:
-            print("Printing to CSV")
-            with open(args.csv, 'w', encoding='utf-8') as f:
+            self.verbose_printer("Printing to CSV")
+            with open(self.args.csv, 'w', encoding='utf-8') as f:
                 print("MAC,Switch_IP,Port,Info", file=f)
                 [print("%s" % (entry['csv']), file=f) for entry in self.log_array]
 
@@ -197,6 +201,6 @@ if __name__ == "__main__":
     parser.add_argument('-c', '--csv', help="save to a specified csv file")
     args = parser.parse_args()
     macsearcher = Lefty(args,config)
-    if macsearcher.begin_search():
-        macsearcher.print_complete()
+    macsearcher.begin_search()
+
 

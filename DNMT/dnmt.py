@@ -100,8 +100,7 @@ def dnmt():
                 sys.exit()
     elif 'direct' in args:
         if args.direct == "MACSearch":
-            if macsearcher.begin_search():
-                macsearcher.print_complete()
+            macsearcher.begin_search()
         elif args.direct == "HostnameUpdate":
             hostnamer.hostname_update(args.iplist, config, args.check)
         elif args.direct == "SNMPTest":
