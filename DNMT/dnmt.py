@@ -4,7 +4,13 @@ import argparse
 import sys
 import datetime # for logging timestamping
 
-#local procedure imports
+# #local procedure imports relative (for testing)
+# from procedure.lefty import Lefty
+# from procedure import config
+# from procedure import hostnamer
+
+
+#local procedure imports absolute
 from DNMT.procedure.lefty import Lefty
 from DNMT.procedure import config
 from DNMT.procedure import hostnamer
@@ -58,6 +64,13 @@ def dnmt():
     writetest_parser = direct_parser.add_parser("WriteTest", help= "grab snmp variables")
     writetest_parser.add_argument('ipaddr', metavar='IP',
                         help='The IP of the switch')
+    #parser commands for bulk vlan change (temporary)
+    vlanchange_parser = direct_parser.add_parser("BulkVlanChange", help= "change all vlans on a switch")
+    vlanchange_parser.add_argument('ipaddr', metavar='IP',
+                        help='The IP of the switch')
+    vlanchange_parser.add_argument('oldvlan', help="Old Vlan ID to change")
+    vlanchange_parser.add_argument('newvlan', help="New Vlan ID to change to")
+
 
 
 
@@ -107,6 +120,8 @@ def dnmt():
             hostnamer.snmp_test(args.ipaddr, config, args.oid)
         elif args.direct == "WriteTest":
             hostnamer.write_test(args.ipaddr, config)
+        elif args.direct == "BulkVlanChange":
+            hostnamer.bulk_vlan_change(args.ipaddr,config,args.oldvlan,int(args.newvlan))
 
 if __name__ == "__main__":
     dnmt()
