@@ -6,51 +6,33 @@ import re
 import socket
 import time
 from pysnmp.hlapi import *
+from procedure import subroutines
 import sys
 
 
 def write_test(ipaddr,config):
     randnum = random.randint(1,100)
-    errorIndication, errorStatus, errorIndex, varBinds = next(
-        setCmd(SnmpEngine(),
-               CommunityData(config.rw),
-               UdpTransportTarget((ipaddr, 161)),
-               ContextData(),
-               ObjectType(ObjectIdentity('CISCO-CONFIG-COPY-MIB', 'ccCopySourceFileType', randnum
-                                         ).addAsn1MibSource('file:///usr/share/snmp',
-                                                            'http://mibs.snmplabs.com/asn1/@mib@'), 4),
-               ObjectType(ObjectIdentity('CISCO-CONFIG-COPY-MIB', 'ccCopyDestFileType', randnum
-                                         ).addAsn1MibSource('file:///usr/share/snmp',
-                                                            'http://mibs.snmplabs.com/asn1/@mib@'), 3),
-               ObjectType(ObjectIdentity('CISCO-CONFIG-COPY-MIB', 'ccCopyEntryRowStatus', randnum
-                                         ).addAsn1MibSource('file:///usr/share/snmp',
-                                                            'http://mibs.snmplabs.com/asn1/@mib@'), 4))
-    )
-    if errorIndication:  # check for errors
-        print(errorIndication)
-    elif errorStatus:  # error status (confirm this)
-        print('%s at %s' % (errorStatus.prettyPrint(),
-                            errorIndex and varBinds[int(errorIndex) - 1][0] or '?'))
-    else:  # hostname was updated successfully
+    if (subroutines.snmp_set(config,ipaddr,
+                             ObjectType(ObjectIdentity('CISCO-CONFIG-COPY-MIB', 'ccCopySourceFileType', randnum
+                                                       ).addAsn1MibSource('file:///usr/share/snmp',
+                                                                          'http://mibs.snmplabs.com/asn1/@mib@'), 4),
+                             ObjectType(ObjectIdentity('CISCO-CONFIG-COPY-MIB', 'ccCopyDestFileType', randnum
+                                                       ).addAsn1MibSource('file:///usr/share/snmp',
+                                                                          'http://mibs.snmplabs.com/asn1/@mib@'), 3),
+                             ObjectType(ObjectIdentity('CISCO-CONFIG-COPY-MIB', 'ccCopyEntryRowStatus', randnum
+                                                       ).addAsn1MibSource('file:///usr/share/snmp',
+                                                                          'http://mibs.snmplabs.com/asn1/@mib@'), 4)
+                             )):
+
         complete = False
         secs = 0
 
         while not complete and secs < 30:
-            errorIndication, errorStatus, errorIndex, varBinds = next(
-                getCmd(SnmpEngine(),
-                       CommunityData(config.ro),
-                       UdpTransportTarget((ipaddr, 161)),
-                       ContextData(),
-                       ObjectType(ObjectIdentity('CISCO-CONFIG-COPY-MIB', 'ccCopyState', randnum
-                                             ).addAsn1MibSource('file:///usr/share/snmp',
-                                                                'http://mibs.snmplabs.com/asn1/@mib@')))
-            )
-            if errorIndication:  # check for errors
-                print(errorIndication)
-            elif errorStatus:  # error status (confirm this)
-                print('%s at %s' % (errorStatus.prettyPrint(),
-                                    errorIndex and varBinds[int(errorIndex) - 1][0] or '?'))
-            else:
+            varBinds = subroutines.snmp_get(config, ipaddr, ObjectType(ObjectIdentity(
+                'CISCO-CONFIG-COPY-MIB', 'ccCopyState', randnum).addAsn1MibSource(
+                'file:///usr/share/snmp',
+                'http://mibs.snmplabs.com/asn1/@mib@')))
+            if (varBinds):
                 return_oid, return_value = varBinds[0]
                 return_value = str(return_value)  # change value to string rather than DisplayString
                 ### temp printing
@@ -64,22 +46,12 @@ def write_test(ipaddr,config):
                     secs += 1
         if complete:
             #clear the copy table
-            errorIndication, errorStatus, errorIndex, varBinds = next(
-                setCmd(SnmpEngine(),
-                       CommunityData(config.rw),
-                       UdpTransportTarget((ipaddr, 161)),
-                       ContextData(),
-                       ObjectType(ObjectIdentity('CISCO-CONFIG-COPY-MIB', 'ccCopyEntryRowStatus', randnum
-                                                 ).addAsn1MibSource('file:///usr/share/snmp',
-                                                                    'http://mibs.snmplabs.com/asn1/@mib@'), 6))
-            )
-            if errorIndication:  # check for errors
-                print(errorIndication)
-            elif errorStatus:  # error status (confirm this)
-                print('%s at %s' % (errorStatus.prettyPrint(),
-                                    errorIndex and varBinds[int(errorIndex) - 1][0] or '?'))
-            else:
-                print ("job complete")
+            if (subroutines.snmp_set(config, ipaddr,ObjectType(ObjectIdentity(
+                    'CISCO-CONFIG-COPY-MIB', 'ccCopyEntryRowStatus', randnum).addAsn1MibSource(
+                    'file:///usr/share/snmp',
+                    'http://mibs.snmplabs.com/asn1/@mib@'),6))):
+                print("Job complete")
+
 
 
 
@@ -105,75 +77,39 @@ def bulk_vlan_change(ipaddr,config,old_vlan,new_vlan):
             grabbed_oid, grabbed_value = varBinds[0]  # grab dns value & oid
             oidvar = grabbed_oid._ObjectIdentity__args[0]._value[grabbed_oid._ObjectIdentity__args[0]._value.__len__()-1]
             if str(grabbed_value) == old_vlan:
-                #print ("oid:{}\nvalue:{}".format(str(dns_oid),str(dns_value)))
-                errorIndication, errorStatus, errorIndex, varBinds = next(
-                    setCmd(SnmpEngine(),
-                           CommunityData(config.rw),
-                           UdpTransportTarget((ipaddr, 161)),
-                           ContextData(),
-                           ObjectType(ObjectIdentity('CISCO-VLAN-MEMBERSHIP-MIB', 'vmVlan',oidvar
-                                                     ).addAsn1MibSource(
-                               'file:///usr/share/snmp','http://mibs.snmplabs.com/asn1/@mib@'),new_vlan))
-                )
-                if errorIndication:  # check for errors
-                    print(errorIndication)
-                elif errorStatus:  # error status (confirm this)
-                    print('%s at %s' % (errorStatus.prettyPrint(),
-                                        errorIndex and varBinds[int(errorIndex) - 1][0] or '?'))
-                else:
-                    print("placeholder vlan updated")
+                if (subroutines.snmp_set(config, ipaddr, ObjectType(ObjectIdentity(
+                        'CISCO-VLAN-MEMBERSHIP-MIB', 'vmVlan', oidvar).addAsn1MibSource(
+                    'file:///usr/share/snmp',
+                    'http://mibs.snmplabs.com/asn1/@mib@'), new_vlan))):
+                    print("placeholder vlan ID updated")
+
+    write_test(ipaddr, config)
 
 
 
-def snmp_test(ipaddr,config,oid):
-
-
-    for (errorIndication,
-         errorStatus,
-         errorIndex,
-         varBinds) in nextCmd(SnmpEngine(),
-                              CommunityData(config.ro),
-                              UdpTransportTarget((ipaddr, 161)),
-                              ContextData(),
-                              ObjectType(ObjectIdentity('CISCO-VLAN-MEMBERSHIP-MIB', 'vmVlan').addAsn1MibSource('file:///usr/share/snmp',
-                                                                                           'http://mibs.snmplabs.com/asn1/@mib@')),
-                              lexicographicMode=False):
-        if errorIndication:
-            print(errorIndication)
-        elif errorStatus:
-            print('%s at %s' % (errorStatus.prettyPrint(),
-                                errorIndex and varBinds[int(errorIndex) - 1][0] or '?'))
-        else:  # if getting the hostname from snmp was successful
-            dns_oid, dns_value = varBinds[0]  # grab dns value & oid
-            print ("oid:{}\nvalue:{}".format(str(dns_oid),str(dns_value)))
-
-    # g = nextCmd(SnmpEngine(),
-    #             CommunityData(config.ro),
-    #             UdpTransportTarget((ipaddr, 161)),
-    #             ContextData(),
-    #             ObjectType(
-    #                 ObjectIdentity('CISCO-VLAN-MEMBERSHIP-MIB', 'vmVlan').addAsn1MibSource('file:///usr/share/snmp',
-    #                                                                                        'http://mibs.snmplabs.com/asn1/@mib@')),lexicographicMode=False)
-    # while (g):
-    #     errorIndication, errorStatus, errorIndex, varBinds = next(g)
-    #     g.EndofMib
-    #     if errorIndication:
-    #         print(errorIndication)
-    #     elif errorStatus:
-    #         print('%s at %s' % (errorStatus.prettyPrint(),
-    #                             errorIndex and varBinds[int(errorIndex) - 1][0] or '?'))
-    #     else:  # if getting the hostname from snmp was successful
-    #         dns_oid, dns_value = varBinds[0]  # grab dns value & oid
-    #         print (str(dns_value))
-
-
-
-
-
-
-
-
-
+# def snmp_test(ipaddr,config,oid):
+#
+#
+#     for (errorIndication,
+#          errorStatus,
+#          errorIndex,
+#          varBinds) in nextCmd(SnmpEngine(),
+#                               CommunityData(config.ro),
+#                               UdpTransportTarget((ipaddr, 161)),
+#                               ContextData(),
+#                               ObjectType(ObjectIdentity('CISCO-VLAN-MEMBERSHIP-MIB', 'vmVlan').addAsn1MibSource('file:///usr/share/snmp',
+#                                                                                            'http://mibs.snmplabs.com/asn1/@mib@')),
+#                               lexicographicMode=False):
+#         if errorIndication:
+#             print(errorIndication)
+#         elif errorStatus:
+#             print('%s at %s' % (errorStatus.prettyPrint(),
+#                                 errorIndex and varBinds[int(errorIndex) - 1][0] or '?'))
+#         else:  # if getting the hostname from snmp was successful
+#             dns_oid, dns_value = varBinds[0]  # grab dns value & oid
+#             print ("oid:{}\nvalue:{}".format(str(dns_oid),str(dns_value)))
+#
+#
 def snmpproc(ipaddr,dns_hostname,dns_domain,snmp_ro, snmp_rw, check_flag):
     reg_FQDN = re.compile("([^.]*)\.(.*)")  # Group 0: hostname, Group 1: domain name
 
@@ -332,9 +268,9 @@ if __name__ == "__main__":
     parser.add_argument('iplist', metavar='FILENAME',
                         help='The list that contains the ip addresses to check')
     parser.add_argument('-c', '--check', help="Compare hostname, do not change", action="store_true")
-    args = parser.parse_args()
+    cmdargs = parser.parse_args()
     #hostname_update(args.iplist, config.username, config.password,config.ro,config.rw,args.check)
-    hostname_update(args.iplist, config, args.check)
+    hostname_update(cmdargs.iplist, config, cmdargs.check)
 
 
 

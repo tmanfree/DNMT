@@ -54,12 +54,12 @@ def dnmt():
                         help='The list that contains the ip addresses to check')
     hostnameupdate_parser.add_argument('-c', '--check', help="Compare hostname, do not change", action="store_true")
 
-    #parser commands for snmp test (temporary)
-    snmptest_parser = direct_parser.add_parser("SNMPTest", help= "grab snmp variables")
-    snmptest_parser.add_argument('ipaddr', metavar='IP',
-                        help='The IP of the switch')
-    snmptest_parser.add_argument('oid', metavar='OID',
-                                 help='The OID to check')
+    # #parser commands for snmp test (temporary)
+    # snmptest_parser = direct_parser.add_parser("SNMPTest", help= "grab snmp variables")
+    # snmptest_parser.add_argument('ipaddr', metavar='IP',
+    #                     help='The IP of the switch')
+    # snmptest_parser.add_argument('oid', metavar='OID',
+    #                              help='The OID to check')
     #parser commands for write snmp test (temporary)
     writetest_parser = direct_parser.add_parser("WriteTest", help= "grab snmp variables")
     writetest_parser.add_argument('ipaddr', metavar='IP',
@@ -76,15 +76,15 @@ def dnmt():
 
 
     argcomplete.autocomplete(parser)
-    args = parser.parse_args()
+    cmdargs = parser.parse_args()
 
-    macsearcher = Lefty(args,config)
+    macsearcher = Lefty(cmdargs,config)
 
     ### complete CLI Parsing
 
 
     #create the loop for interactive prompt
-    if "interactive" in args :
+    if "interactive" in cmdargs :
 
         logbool = False #boolean to check current logging state
         completebool = False #boolean to allow exiting out of the loop
@@ -99,7 +99,7 @@ def dnmt():
         # if Mac Searcher selected, use the 'lefty' function
             if OpCode == '1':
                 #add error handling
-                macsearcher.args.ipaddr = input("Enter the switch to start searching on:")
+                macsearcher.cmdargs.ipaddr = input("Enter the switch to start searching on:")
                 macaddr = input("Enter the mac address to search for (can be last 4 digits)")
                 macsearcher.unified_search([macsearcher.normalize_mac(macaddr)])
             elif OpCode == '2':
@@ -111,17 +111,17 @@ def dnmt():
                 print("Exiting")
                 completebool = True
                 sys.exit()
-    elif 'direct' in args:
-        if args.direct == "MACSearch":
+    elif 'direct' in cmdargs:
+        if cmdargs.direct == "MACSearch":
             macsearcher.begin_search()
-        elif args.direct == "HostnameUpdate":
-            hostnamer.hostname_update(args.iplist, config, args.check)
-        elif args.direct == "SNMPTest":
-            hostnamer.snmp_test(args.ipaddr, config, args.oid)
-        elif args.direct == "WriteTest":
-            hostnamer.write_test(args.ipaddr, config)
-        elif args.direct == "BulkVlanChange":
-            hostnamer.bulk_vlan_change(args.ipaddr,config,args.oldvlan,int(args.newvlan))
+        elif cmdargs.direct == "HostnameUpdate":
+            hostnamer.hostname_update(cmdargs.iplist, config, cmdargs.check)
+        # elif args.direct == "SNMPTest":
+        #     hostnamer.snmp_test(args.ipaddr, config, args.oid)
+        elif cmdargs.direct == "WriteTest":
+            hostnamer.write_test(cmdargs.ipaddr, config)
+        elif cmdargs.direct == "BulkVlanChange":
+            hostnamer.bulk_vlan_change(cmdargs.ipaddr,config,cmdargs.oldvlan,int(cmdargs.newvlan))
 
 if __name__ == "__main__":
     dnmt()
