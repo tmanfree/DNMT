@@ -6,7 +6,8 @@ import re
 import socket
 import time
 from pysnmp.hlapi import *
-from procedure import subroutines
+#from procedure import subroutines
+import subroutines
 import sys
 
 
