@@ -7,7 +7,7 @@ import socket
 import time
 from pysnmp.hlapi import *
 #from procedure import subroutines
-import subroutines
+from DNMT.procedure import subroutines
 import sys
 
 
