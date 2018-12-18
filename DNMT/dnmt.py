@@ -64,6 +64,7 @@ def dnmt():
     writetest_parser = direct_parser.add_parser("WriteTest", help= "grab snmp variables")
     writetest_parser.add_argument('ipaddr', metavar='IP',
                         help='The IP of the switch')
+    writetest_parser.add_argument('-v', '--verbose', help="run in verbose mode", default=False, action="store_true")
     #parser commands for bulk vlan change (temporary)
     vlanchange_parser = direct_parser.add_parser("BulkVlanChange", help= "change all vlans on a switch")
     vlanchange_parser.add_argument('ipaddr', metavar='IP',
@@ -119,7 +120,8 @@ def dnmt():
         # elif args.direct == "SNMPTest":
         #     hostnamer.snmp_test(args.ipaddr, config, args.oid)
         elif cmdargs.direct == "WriteTest":
-            hostnamer.write_test(cmdargs.ipaddr, config)
+            #hostnamer.write_test(cmdargs.ipaddr, config)
+            hostnamer.write_test(cmdargs, config)
         elif cmdargs.direct == "BulkVlanChange":
             hostnamer.bulk_vlan_change(cmdargs.ipaddr,config,cmdargs.oldvlan,int(cmdargs.newvlan))
 

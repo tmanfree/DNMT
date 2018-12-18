@@ -5,14 +5,17 @@ import random
 import re
 import socket
 import time
-from pysnmp.hlapi import *
 import sys
+from pysnmp.hlapi import *
 
 
 
 
 
-#def snmp_set(config,ipaddr,oidtup,newval,*args):
+####################
+###SNMP COMMANDS####
+####################
+
 def snmp_set(config, ipaddr,*args):
     errorIndication, errorStatus, errorIndex, varBinds = next(
         setCmd(SnmpEngine(),
@@ -46,3 +49,39 @@ def snmp_get(config, ipaddr, *args):
     else:
         # success
         return varBinds
+
+####################
+####SSH COMMANDS####
+####################
+def create_connection(cmdargs,config):
+    if 'verbose' in cmdargs and cmdargs.verbose:
+        print('------- CONNECTING to switch {}-------'.format(cmdargs.ipaddr))
+
+    # Switch Parameters
+    cisco_sw = {
+        'device_type': 'cisco_ios',
+        'ip': cmdargs.ipaddr,
+        'username': config.username,
+        'password': config.password,
+        'port': 22,
+        'verbose': False,
+    }
+    # SSH Connection
+    net_connect = netmiko.ConnectHandler(**cisco_sw)
+    return net_connect
+####################
+##GENERAL COMMANDS##
+####################
+
+# verbose printer currently is passed a command line argument variable (cmdargs) and 1-2 strings to print
+# the 1st string is what to print if verbose, the second is what to print if not.
+# printvar accepts a variable number of values in case nothing will be printed for not verbose
+# verbose printer will return True if verbose, and false if not (redundant?)
+def verbose_printer(cmdargs,*printvar):
+    if 'verbose' in cmdargs and cmdargs.verbose:
+        print(printvar[0])
+        return True
+    else:
+        if len(printvar) > 1:
+            print(printvar[1])
+        return False

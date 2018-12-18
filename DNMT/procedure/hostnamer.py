@@ -7,13 +7,16 @@ import socket
 import time
 from pysnmp.hlapi import *
 #from procedure import subroutines
+### absolute pathing
 from DNMT.procedure import subroutines
 import sys
 
 
-def write_test(ipaddr,config):
+def write_test(cmdargs, config):
+
+    subroutines.verbose_printer(cmdargs,"This is verbose", "This is not verbose")
     randnum = random.randint(1,100)
-    if (subroutines.snmp_set(config,ipaddr,
+    if (subroutines.snmp_set(config,cmdargs.ipaddr,
                              ObjectType(ObjectIdentity('CISCO-CONFIG-COPY-MIB', 'ccCopySourceFileType', randnum
                                                        ).addAsn1MibSource('file:///usr/share/snmp',
                                                                           'http://mibs.snmplabs.com/asn1/@mib@'), 4),
@@ -29,7 +32,7 @@ def write_test(ipaddr,config):
         secs = 0
 
         while not complete and secs < 30:
-            varBinds = subroutines.snmp_get(config, ipaddr, ObjectType(ObjectIdentity(
+            varBinds = subroutines.snmp_get(config, cmdargs.ipaddr, ObjectType(ObjectIdentity(
                 'CISCO-CONFIG-COPY-MIB', 'ccCopyState', randnum).addAsn1MibSource(
                 'file:///usr/share/snmp',
                 'http://mibs.snmplabs.com/asn1/@mib@')))
@@ -47,7 +50,7 @@ def write_test(ipaddr,config):
                     secs += 1
         if complete:
             #clear the copy table
-            if (subroutines.snmp_set(config, ipaddr,ObjectType(ObjectIdentity(
+            if (subroutines.snmp_set(config, cmdargs.ipaddr,ObjectType(ObjectIdentity(
                     'CISCO-CONFIG-COPY-MIB', 'ccCopyEntryRowStatus', randnum).addAsn1MibSource(
                     'file:///usr/share/snmp',
                     'http://mibs.snmplabs.com/asn1/@mib@'),6))):
@@ -80,8 +83,8 @@ def bulk_vlan_change(ipaddr,config,old_vlan,new_vlan):
             if str(grabbed_value) == old_vlan:
                 if (subroutines.snmp_set(config, ipaddr, ObjectType(ObjectIdentity(
                         'CISCO-VLAN-MEMBERSHIP-MIB', 'vmVlan', oidvar).addAsn1MibSource(
-                    'file:///usr/share/snmp',
-                    'http://mibs.snmplabs.com/asn1/@mib@'), new_vlan))):
+                        'file:///usr/share/snmp',
+                        'http://mibs.snmplabs.com/asn1/@mib@'), new_vlan))):
                     print("placeholder vlan ID updated")
 
     write_test(ipaddr, config)
