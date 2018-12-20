@@ -13,6 +13,7 @@ import datetime # for logging timestamping
 #local procedure imports absolute
 from DNMT.procedure.lefty import Lefty
 from DNMT.procedure import config
+from DNMT.procedure.hostnamer import HostNamer
 from DNMT.procedure import hostnamer
 
 #3rd party imports
@@ -79,7 +80,9 @@ def dnmt():
     argcomplete.autocomplete(parser)
     cmdargs = parser.parse_args()
 
+#change these to only creating if required
     macsearcher = Lefty(cmdargs,config)
+    Hostnamer = HostNamer(cmdargs,config)
 
     ### complete CLI Parsing
 
@@ -105,7 +108,7 @@ def dnmt():
                 macsearcher.unified_search([macsearcher.normalize_mac(macaddr)])
             elif OpCode == '2':
                 iplist = input("Enter the name of the file containing IPs of switches to update:")
-                hostnamer.hostname_update(iplist,config.username,config.password,config.ro,config.rw)
+                Hostnamer.hostname_update()
             elif OpCode.upper() == 'L':
                 print("Under construction")
             elif OpCode.upper() == 'Q':
@@ -116,14 +119,14 @@ def dnmt():
         if cmdargs.direct == "MACSearch":
             macsearcher.begin_search()
         elif cmdargs.direct == "HostnameUpdate":
-            hostnamer.hostname_update(cmdargs.iplist, config, cmdargs.check)
+            Hostnamer.hostname_update()
         # elif args.direct == "SNMPTest":
         #     hostnamer.snmp_test(args.ipaddr, config, args.oid)
         elif cmdargs.direct == "WriteTest":
             #hostnamer.write_test(cmdargs.ipaddr, config)
-            hostnamer.write_test(cmdargs, config)
+            Hostnamer.write_test(cmdargs.ipaddr)
         elif cmdargs.direct == "BulkVlanChange":
-            hostnamer.bulk_vlan_change(cmdargs.ipaddr,config,cmdargs.oldvlan,int(cmdargs.newvlan))
+            Hostnamer.bulk_vlan_change(cmdargs.ipaddr,cmdargs.oldvlan,int(cmdargs.newvlan))
 
 if __name__ == "__main__":
     dnmt()

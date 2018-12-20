@@ -6,6 +6,9 @@ import netmiko
 import re
 import sys
 
+#local subroutine import
+from DNMT.procedure.subroutines import SubRoutines
+
 
 class Lefty:
     def __init__(self, cmdargs, config):
@@ -13,33 +16,13 @@ class Lefty:
         self.log_array = []
         self.cmdargs = cmdargs
         self.config = config
+        self.subs = SubRoutines(cmdargs, config)
 
   # def switch_check(self):
     #grab info from 1.3.6.1.2.1.1.1.0
     #example: ProCurve J9022A Switch 2810-48G, revision N.11.15, ROM N.10.01 (/sw/code/build/bass(bh2))"
     #example:Cisco IOS Software, C3560 Software (C3560-IPBASEK9-M), Version 12.2(40)SE, RELEASE SOFTWARE (fc3) Copyright (c) 1986-2007 by Cisco Systems, Inc.
     #return a variable that will be assigned: cisco,hp,unknown to be used when creating connections or snmp walking
-
-
-
-    def create_connection(self):
-        if 'verbose' in self.cmdargs and self.cmdargs.verbose:
-            print('------- CONNECTING to switch {}-------'.format(self.cmdargs.ipaddr))
-
-        # Switch Parameters
-        cisco_sw = {
-            'device_type': 'cisco_ios',
-            'ip': self.cmdargs.ipaddr,
-            'username': self.config.username,
-            'password': self.config.password,
-            'port': 22,
-            'verbose': False,
-        }
-        # SSH Connection
-        net_connect = netmiko.ConnectHandler(**cisco_sw)
-        return net_connect
-
-
 
     def normalize_mac(self, address):
         tmp3 = address.rstrip().lower().translate({ord(":"): "", ord("-"): "", ord(" "): "", ord("."): ""})
@@ -52,6 +35,7 @@ class Lefty:
             else:
                 print("Please enter a mac address in a group of 4")
                 sys.exit()
+
 
     def begin_search(self):
         if 'batchfile' in self.cmdargs and self.cmdargs.batchfile:
@@ -79,7 +63,7 @@ class Lefty:
 
         #create a session
         try:
-            net_connect = self.create_connection()
+            net_connect = self.subs.create_connection()
             if net_connect:
                 for MAC in maclist:
 
@@ -109,20 +93,17 @@ class Lefty:
                                                                              "{},{},{}".format(MAC, self.cmdargs.ipaddr,
                                                                                                port_reg_find.group(1),
                                                                                                port_info)})
-                            if 'verbose' in self.cmdargs and self.cmdargs.verbose:
-                                print("for MAC {}, the furthest downstream location is:"
-                                      " {} on switch IP:{}".format(MAC, port_reg_find.group(1),
-                                                                   self.cmdargs.ipaddr))
-                                print("port info: {}".format(port_info))
-                            else:
-                                print("MAC {} was found".format(MAC))
+                            self.subs.verbose_printer("for MAC {}, the furthest downstream location is:"
+                                      " {} on switch IP:{}\nport info:{}".format(MAC, port_reg_find.group(1),
+                                                                   self.cmdargs.ipaddr,port_info),
+                                                          print("MAC {} was found".format(MAC)))
                         else:
                             # look for an IP address in CDP neighbour
                             reg_find = reg_IP_addr.search(output)
                             # if an IP is found, it is a switch (assuming it isn't an AP)
                             if reg_find:
-                                if 'verbose' in self.cmdargs and self.cmdargs.verbose:
-                                    print("Mac {} found on port {}".format(macHolder.group(0), port_reg_find.group(1)))
+                                self.subs.verbose_printer("Mac {} found on port {}".format(macHolder.group(0),
+                                                                                           port_reg_find.group(1)))
                                 if reg_find.group(0) not in sw_dict.keys():
                                     sw_dict.update({reg_find.group(0): []})
                                 if MAC not in sw_dict.values():
@@ -139,12 +120,10 @@ class Lefty:
                                                                                                    self.cmdargs.ipaddr,
                                                                                                    port_reg_find.group(
                                                                                                        1), port_info)})
-                                if 'verbose' in self.cmdargs and self.cmdargs.verbose:
-                                    print("for MAC {}, the furthest downstream location is:"
-                                          " {} on switch IP:{}".format(MAC, port_reg_find.group(1), self.cmdargs.ipaddr))
-                                    print("port info: {}".format(port_info))
-                                else:
-                                    print("MAC {} was found".format(MAC))
+                                self.subs.verbose_printer("for MAC {}, the furthest downstream location is:"
+                                                          " {} on switch IP:{}\nport info:{}".format(MAC,
+                                                         port_reg_find.group(1),self.cmdargs.ipaddr,port_info),
+                                                          print("MAC {} was found".format(MAC)))
                     else:
                         print("Mac address {} not found.".format(MAC))
                 # Close Connection
@@ -156,15 +135,9 @@ class Lefty:
             return True
             # netmiko connection error handling
         except netmiko.ssh_exception.NetMikoAuthenticationException as err:
-            if 'verbose' in self.cmdargs and self.cmdargs.verbose:
-                print(err.args[0])
-            else:
-                print("Netmiko Authentication Failure")
+            self.subs.verbose_printer(err.args[0],"Netmiko Authentication Failure")
         except netmiko.ssh_exception.NetMikoTimeoutException as err:
-            if 'verbose' in self.cmdargs and self.cmdargs.verbose:
-                print(err.args[0])
-            else:
-                print("Netmiko Timeout Failure")
+            self.subs.verbose_printer(err.args[0], "Netmiko Timeout Failure")
         except ValueError as err:
             #if 'verbose' in self.cmdargs and self.cmdargs.verbose:
             print(err.args[0])
@@ -172,16 +145,13 @@ class Lefty:
 
 
 
-        # SSH Connection
-    def verbose_printer(self,printvar):
-        if 'verbose' in self.cmdargs and self.cmdargs.verbose:
-            print(printvar)
+
 
     def print_complete(self):
-        self.verbose_printer("Job Complete")
+        self.subs.verbose_printer("Job Complete")
         [print("%s\nPort info:%s" % (entry['location'], entry['info'])) for entry in self.log_array]
         if 'csv' in self.cmdargs:
-            self.verbose_printer("Printing to CSV")
+            self.subs.verbose_printer("Printing to CSV")
             with open(self.cmdargs.csv, 'w', encoding='utf-8') as f:
                 print("MAC,Switch_IP,Port,Info", file=f)
                 [print("%s" % (entry['csv']), file=f) for entry in self.log_array]
