@@ -150,7 +150,7 @@ class Lefty:
     def print_complete(self):
         self.subs.verbose_printer("Job Complete")
         [print("%s\nPort info:%s" % (entry['location'], entry['info'])) for entry in self.log_array]
-        if 'csv' in self.cmdargs:
+        if 'csv' in self.cmdargs and self.cmdargs.csv is not None:
             self.subs.verbose_printer("Printing to CSV")
             with open(self.cmdargs.csv, 'w', encoding='utf-8') as f:
                 print("MAC,Switch_IP,Port,Info", file=f)
