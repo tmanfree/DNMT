@@ -219,11 +219,11 @@ class HostNamer:
                 dns_hostname = dns_reg_hostname.group(1)
                 dns_domain = dns_reg_hostname.group(2)
                 #success = snmpproc(ipaddr,dns_hostname,dns_domain,snmp_ro,snmp_rw,check_flag)
-                success = self.snmpproc(ipaddr, dns_hostname, dns_domain,self.cmdargs.check)
+                success = self.snmpproc(ipaddr, dns_hostname, dns_domain)
 
                 if not success:
                     print("SNMP failed, attempting through SSH")
-                    self.loginproc(ipaddr,dns_hostname,dns_domain,self.cmdargs.check)
+                    self.loginproc(ipaddr,dns_hostname,dns_domain)
 
             except socket.herror:
                 print("Hostname not found in DNS for IP:{}".format(ipaddr))
