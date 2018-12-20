@@ -96,7 +96,7 @@ class Lefty:
                             self.subs.verbose_printer("for MAC {}, the furthest downstream location is:"
                                       " {} on switch IP:{}\nport info:{}".format(MAC, port_reg_find.group(1),
                                                                    self.cmdargs.ipaddr,port_info),
-                                                          print("MAC {} was found".format(MAC)))
+                                                          "MAC {} was found".format(MAC))
                         else:
                             # look for an IP address in CDP neighbour
                             reg_find = reg_IP_addr.search(output)
