@@ -209,7 +209,7 @@ class HostNamer:
         reg_FQDN = re.compile("([^.]*)\.(.*)")  # Group 0: hostname, Group 1: domain name
 
 
-        file = open(self.args.iplist, "r")
+        file = open(self.cmdargs.iplist, "r")
         for ipaddr in file:
             #have a check for gethostbyname or addr)
             try:
