@@ -190,7 +190,7 @@ class Check:
             pool = Pool(4) # 4 concurrent processes
             results = pool.map(self.single_search,iplist)
 
-            print ("done")
+            print ("Batch Done")
             # procs=[]
             # for index, number in enumerate(iplist):
             #     proc = Process(target=self.single_search, args=(number,))
