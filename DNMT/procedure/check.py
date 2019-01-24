@@ -30,7 +30,9 @@ class Check:
         if before_str == after_str:
             print("\n{} are the same".format(vartext))
         elif (len(after_list) / len(before_list)) >= 0.8:
-            print("\n{} are similar".format(vartext))
+            print("\n{} are similar \nOld Entries:{}\nNew Entries:{}".format(vartext,len(before_list), len(after_list)))
+            result = difflib.unified_diff(before_list, after_list) # print if in verbose?
+            print(''.join(list(result)), end="")
         else:
             print("\n{} are significantly different\nOld Entries:{}\nNew Entries:{}".format(vartext, len(before_list), len(after_list)))
             result = difflib.unified_diff(before_list, after_list)
@@ -77,9 +79,10 @@ class Check:
 
                     net_connect.enable()
                     output = net_connect.send_command('wr mem')
-                    output = net_connect.send_command('reload', expect_string='[confirm]')
+                    #output = net_connect.send_command('reload', expect_string='[confirm]')
+                    output = net_connect.send_command('reload')
                     #output = net_connect.send_command_timing('reload')
-                    output = net_connect.send_command('y')
+                    output = net_connect.send_command('y') #linux doesn't gracefully accept this
                     #output = net_connect.send_command_timing('y')
                     # Close Connection
                     net_connect.disconnect()
@@ -90,8 +93,8 @@ class Check:
                 self.subs.verbose_printer(err.args[0], "Netmiko Timeout Failure")
             except ValueError as err:
                 print(err.args[0])
-            except Exception as err:
-                print("NETMIKO ERROR:{}".format(err.args[0]))
+            except Exception as err: #currently a catch all to stop linux from having a conniption when reloading
+                print("NETMIKO ERROR {}:{}".format(ipaddr,err.args[0]))
 
 ############################
             # while response != True:
@@ -104,6 +107,7 @@ class Check:
                 print("no response from {}".format(ipaddr))
             if self.ping_check(ipaddr): # unnecessary test?
                 print("switch: {} is back online!".format(ipaddr))
+                time.sleep(60) # added a little sleep to give some time for connections to come up
                 try:
                     net_connect = self.subs.create_connection(ipaddr)
                     if net_connect:
@@ -158,6 +162,8 @@ class Check:
                 except ValueError as err:
                     # if 'verbose' in self.cmdargs and self.cmdargs.verbose:
                     print(err.args[0])
+                except Exception as err:  # currently a catch all
+                    print("NETMIKO ERROR {}:{}".format(ipaddr,err.args[0]))
                 #Print to file TODO:print to a proper file, pretty print? Add flag for output not being default
                 json.dump(after_swcheck_dict, open(ipaddr+"-After.txt",'w'))
                 json.dump(before_swcheck_dict, open(ipaddr+"-Before.txt",'w'))
