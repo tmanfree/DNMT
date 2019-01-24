@@ -56,7 +56,7 @@ class Check:
         after_swcheck_dict = {"ip": ipaddr}
         #response = os.system("ping " + ipaddr)
         if self.ping_check(ipaddr):
-            print("ping response for {} is {}, reloading".format(ipaddr, response))
+            print("ping response for {}, reloading".format(ipaddr))
             response = 1
             # TODO: add something to map out attached connections in the ip list, to prevent reloading an upstream
             # switch first
