@@ -97,7 +97,7 @@ class Check:
             #     time.sleep(10)
             #     response = self.ping_check(ipaddr)
             #     print("ping response for {} is {}".format(ipaddr,response))
-            while self.ping_check(ipaddr):
+            while not self.ping_check(ipaddr):
                 time.sleep(10)
                 #response = self.ping_check(ipaddr)
                 print("no response from {}".format(ipaddr))
