@@ -3,7 +3,7 @@
 
 import re
 import sys
-import subprocess,platform,os,time
+import subprocess,platform,os,time,datetime
 import json
 import difflib
 
@@ -23,10 +23,12 @@ class Check:
         self.cmdargs = cmdargs
         self.config = config
         self.subs = SubRoutines(cmdargs, config)
+        self.config.logpath = os.path.join(os.path.expanduser(self.config.logpath), "LOGS", "UpgradeCheck")
 
-    def var_compare(self, before_str, after_str, vartext):
+    def var_compare(self, before_str, after_str, vartext,ipaddr):
         before_list = before_str.splitlines(1)
         after_list = after_str.splitlines(1)
+        print ("################# {} {} ####################".format(ipaddr,vartext))
         if before_str == after_str:
             print("\n{} are the same".format(vartext))
         elif (len(after_list) / len(before_list)) >= 0.8:
@@ -49,8 +51,8 @@ class Check:
 #TODO: Add CDP Neighbour checking
         # ########testing (without reloading)  #######
         #
-        #                 before_swcheck_dict = json.load(open("OldTemp.txt"))
-        #                 after_swcheck_dict = json.load(open("NewTemp.txt"))
+        # before_swcheck_dict = json.load(open("OldTemp.txt"))
+        # after_swcheck_dict = json.load(open("NewTemp.txt"))
         # ########testing (without reloading)  ^^^#######
 
         print("Now operating on {}".format(ipaddr))
@@ -58,7 +60,7 @@ class Check:
         after_swcheck_dict = {"ip": ipaddr}
         #response = os.system("ping " + ipaddr)
         if self.ping_check(ipaddr):
-            print("ping response for {}, reloading".format(ipaddr))
+            print("ping response for {}, grabbing data".format(ipaddr))
             response = 1
             # TODO: add something to map out attached connections in the ip list, to prevent reloading an upstream
             # switch first
@@ -80,10 +82,11 @@ class Check:
                     net_connect.enable()
                     output = net_connect.send_command('wr mem')
                     #output = net_connect.send_command('reload', expect_string='[confirm]')
-                    output = net_connect.send_command('reload')
-                    #output = net_connect.send_command_timing('reload')
-                    output = net_connect.send_command('y') #linux doesn't gracefully accept this
-                    #output = net_connect.send_command_timing('y')
+                    print("{}, reloading".format(ipaddr))
+                    #output = net_connect.send_command('reload in 1')
+                    output = net_connect.send_command_timing('reload in 1')
+                    #output = net_connect.send_command('y') #linux doesn't gracefully accept this
+
                     # Close Connection
                     net_connect.disconnect()
                 # netmiko connection error handling
@@ -95,7 +98,7 @@ class Check:
                 print(err.args[0])
             except Exception as err: #currently a catch all to stop linux from having a conniption when reloading
                 print("NETMIKO ERROR {}:{}".format(ipaddr,err.args[0]))
-
+            time.sleep(70)
 ############################
             # while response != True:
             #     time.sleep(10)
@@ -130,25 +133,25 @@ class Check:
 
                         # compare switch version
                         if before_swcheck_dict["ver"] == after_swcheck_dict["ver"]:
-                            print("Switch not upgraded")
+                            print("Switch {} not upgraded".format(ipaddr))
                         else:
-                            print("Switch version upgraded")
-                        print("Old Software:\n{}\nNew Software:\n{}".format(before_swcheck_dict["ver"],
+                            print("Switch {} version upgraded".format(ipaddr))
+                        print("{}\nOld Software:\n{}\nNew Software:\n{}".format(ipaddr, before_swcheck_dict["ver"],
                                                                             after_swcheck_dict["ver"]))
 
                         # compare mac tables
-                        self.var_compare(before_swcheck_dict["macs"], after_swcheck_dict["macs"], "MAC tables")
+                        self.var_compare(before_swcheck_dict["macs"], after_swcheck_dict["macs"], "MAC tables", ipaddr)
 
                         # compare int status
-                        self.var_compare(before_swcheck_dict["ints"], after_swcheck_dict["ints"], "interfaces")
+                        self.var_compare(before_swcheck_dict["ints"], after_swcheck_dict["ints"], "interfaces", ipaddr)
 
                         # compare snooping tables
                         self.var_compare(before_swcheck_dict["sh_snoop"], after_swcheck_dict["sh_snoop"],
-                                         "snooping tables")
+                                         "snooping tables", ipaddr)
 
                         # compare cdp tables
                         self.var_compare(before_swcheck_dict["cdp"], after_swcheck_dict["cdp"],
-                                         "cdp neighbours")
+                                         "cdp neighbours", ipaddr)
 
 
 
@@ -165,8 +168,17 @@ class Check:
                 except Exception as err:  # currently a catch all
                     print("NETMIKO ERROR {}:{}".format(ipaddr,err.args[0]))
                 #Print to file TODO:print to a proper file, pretty print? Add flag for output not being default
-                json.dump(after_swcheck_dict, open(ipaddr+"-After.txt",'w'))
-                json.dump(before_swcheck_dict, open(ipaddr+"-Before.txt",'w'))
+
+                if not os.path.exists(self.config.logpath):
+                    os.makedirs(self.config.logpath)
+
+                outputfilename = datetime.date.today().strftime('%Y%m%d') + "-" + ipaddr
+
+                json.dump(after_swcheck_dict,
+                          open(os.path.join(self.config.logpath, outputfilename + "-After.txt"), 'w'))
+                json.dump(before_swcheck_dict,
+                          open(os.path.join(self.config.logpath, outputfilename + "-Before.txt"), 'w'))
+
         else:
             print("device {} not reachable".format(ipaddr))
 
