@@ -58,16 +58,18 @@ class SubRoutines:
     ####################
     ####SSH COMMANDS####
     ####################
-    def create_connection(self):
+    def create_connection(self,ipaddr):
         if 'verbose' in self.cmdargs and self.cmdargs.verbose:
             print('------- CONNECTING to switch {}-------'.format(self.cmdargs.ipaddr))
 
         # Switch Parameters
         cisco_sw = {
             'device_type': 'cisco_ios',
-            'ip': self.cmdargs.ipaddr,
+            #'ip': self.cmdargs.ipaddr,
+            'ip': ipaddr,
             'username': self.config.username,
             'password': self.config.password,
+            'secret': self.config.enable_pw,
             'port': 22,
             'verbose': False,
         }

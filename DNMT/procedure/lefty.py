@@ -63,7 +63,7 @@ class Lefty:
 
         #create a session
         try:
-            net_connect = self.subs.create_connection()
+            net_connect = self.subs.create_connection(self.cmdargs.ipaddr) #added this
             if net_connect:
                 for MAC in maclist:
 

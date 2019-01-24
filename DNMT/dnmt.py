@@ -2,6 +2,7 @@
 # PYTHON_ARGCOMPLETE_OK
 import argparse
 import sys
+import multiprocessing
 import datetime # for logging timestamping
 
 # #local procedure imports relative (for testing)
@@ -12,6 +13,7 @@ import datetime # for logging timestamping
 
 #local procedure imports absolute
 from DNMT.procedure.lefty import Lefty
+from DNMT.procedure.check import Check
 from DNMT.procedure import config
 from DNMT.procedure.hostnamer import HostNamer
 from DNMT.procedure import hostnamer
@@ -19,7 +21,12 @@ from DNMT.procedure import hostnamer
 #3rd party imports
 import argcomplete
 
-
+#function to allow multiprocessing
+def multi_func(functype,cmdargs,config,datavar):
+    #print ("ALOHA {}".format(numbera))
+    if functype == "UpgradeCheck":
+        UpgradeCheck = Check(cmdargs, config)
+        UpgradeCheck.single_search(datavar)
 
 
 def dnmt():
@@ -73,8 +80,13 @@ def dnmt():
     vlanchange_parser.add_argument('oldvlan', help="Old Vlan ID to change")
     vlanchange_parser.add_argument('newvlan', help="New Vlan ID to change to")
 
-
-
+    #parser for Checking on reloads
+    check_parser = direct_parser.add_parser("UpgradeCheck",
+                                     help="Commands to verify upgrade of switches").add_subparsers(dest="upgradecheck")
+    single_check_parser = check_parser.add_parser("single", help="single ip to check")
+    single_check_parser.add_argument('ipaddr', metavar='IP', help='The IP to check')
+    batch_check_parser = check_parser.add_parser("batch", help="multiple ips to check")
+    batch_check_parser.add_argument('file', metavar='file',help='The file with IPs to check')
 
 
     argcomplete.autocomplete(parser)
@@ -83,6 +95,7 @@ def dnmt():
 #change these to only creating if required
     macsearcher = Lefty(cmdargs,config)
     Hostnamer = HostNamer(cmdargs,config)
+    UpgradeCheck = Check(cmdargs, config)
 
     ### complete CLI Parsing
 
@@ -96,7 +109,7 @@ def dnmt():
         # Display the menu
             OpCode = input("Enter the operation you want to do:\n"
                                "(1) MAC Searcher - Track down MACs through CDP Neighbour\n"
-                               "(2) Hostname Updater\n"                       
+                               "(2) Hostname Updater\n"
                                "(L) Enable Logging\n"
                                "(Q) Quit\n"
                                "Choice=")
@@ -127,7 +140,27 @@ def dnmt():
             Hostnamer.write_test(cmdargs.ipaddr)
         elif cmdargs.direct == "BulkVlanChange":
             Hostnamer.bulk_vlan_change(cmdargs.ipaddr,cmdargs.oldvlan,int(cmdargs.newvlan))
+        elif cmdargs.direct == "UpgradeCheck":
+            #UpgradeCheck.main()
+
+            if cmdargs.upgradecheck == 'single' and cmdargs.ipaddr:
+                UpgradeCheck.single_search(cmdargs.ipaddr)
+            elif cmdargs.upgradecheck == 'batch' and cmdargs.file:
+                UpgradeCheck.begin()
+
+                # ####         add mapping to verify order to reload here            ###
+                #
+                # procs = []
+                # for index, number in enumerate(iplist):
+                #     #proc = Process(target=single_search, args=(number,))
+                #     proc = Process(target=multi_func, args=("UpgradeCheck",cmdargs,config,number,))
+                #     procs.append(proc)
+                #     proc.start()
+                #
+                # for proc in procs:
+                #     proc.join()
+
+
 
 if __name__ == "__main__":
     dnmt()
-#### Done CLI Parsing

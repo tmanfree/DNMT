@@ -165,7 +165,7 @@ class HostNamer:
         print('------- CONNECTING to switch {}-------'.format(ipaddr))
 
         # SSH Connection
-        net_connect = self.subs.create_connection()
+        net_connect = self.subs.create_connection(ipaddr)
         #net_connect = ConnectHandler(**cisco_sw)
         if net_connect:
             ### ADD ERROR HANDLING FOR FAILED CONNECTION

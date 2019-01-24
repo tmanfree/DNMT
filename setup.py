@@ -25,7 +25,8 @@ setuptools.setup(
     install_requires=[
         'netmiko>=2.3.0',
         'pysnmp>=4.4.6',
-        'argcomplete>=1.9.4'
+        'argcomplete>=1.9.4',
+        'pathos>=0.2.3'
             ],
     classifiers=[
         "Programming Language :: Python :: 3",
