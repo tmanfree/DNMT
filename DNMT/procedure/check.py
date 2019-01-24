@@ -77,10 +77,10 @@ class Check:
 
                     net_connect.enable()
                     output = net_connect.send_command('wr mem')
-                    #output = net_connect.send_command('reload', expect_string='[confirm]')
-                    output = net_connect.send_command_timing('reload')
-                    #output = net_connect.send_command('y')
-                    output = net_connect.send_command_timing('y')
+                    output = net_connect.send_command('reload', expect_string='[confirm]')
+                    #output = net_connect.send_command_timing('reload')
+                    output = net_connect.send_command('y')
+                    #output = net_connect.send_command_timing('y')
                     # Close Connection
                     net_connect.disconnect()
                 # netmiko connection error handling
@@ -89,8 +89,9 @@ class Check:
             except netmiko.ssh_exception.NetMikoTimeoutException as err:
                 self.subs.verbose_printer(err.args[0], "Netmiko Timeout Failure")
             except ValueError as err:
-                # if 'verbose' in self.cmdargs and self.cmdargs.verbose:
                 print(err.args[0])
+            except Exception as err:
+                print("NETMIKO ERROR:{}".format(err.args[0]))
 
 ############################
             # while response != True:
