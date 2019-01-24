@@ -3,9 +3,8 @@
 
 import re
 import sys
+import subprocess,platform,os,time
 import json
-import os
-import time
 import difflib
 
 #3rd party imports
@@ -37,6 +36,12 @@ class Check:
             result = difflib.unified_diff(before_list, after_list)
             print(''.join(list(result)), end="")
 
+    def ping_check(self,sHost):
+        try:
+            output = subprocess.check_output("ping -{} 1 {}".format('n' if platform.system().lower() == "windows" else 'c', sHost), shell=True)
+        except Exception as e:
+            return False
+        return True
 
     def single_search(self,ipaddr):
 #TODO: Add CDP Neighbour checking
@@ -49,8 +54,8 @@ class Check:
         print("Now operating on {}".format(ipaddr))
         before_swcheck_dict = {"ip":ipaddr}
         after_swcheck_dict = {"ip": ipaddr}
-        response = os.system("ping " + ipaddr)
-        if response == 0:
+        #response = os.system("ping " + ipaddr)
+        if self.ping_check(ipaddr):
             print("ping response for {} is {}, reloading".format(ipaddr, response))
             response = 1
             # TODO: add something to map out attached connections in the ip list, to prevent reloading an upstream
@@ -88,11 +93,15 @@ class Check:
                 print(err.args[0])
 
 ############################
-            while response != 0:
+            # while response != True:
+            #     time.sleep(10)
+            #     response = self.ping_check(ipaddr)
+            #     print("ping response for {} is {}".format(ipaddr,response))
+            while self.ping_check(ipaddr):
                 time.sleep(10)
-                response = os.system("ping " + ipaddr)
-                print("ping response for {} is {}".format(ipaddr,response))
-            if response == 0:
+                #response = self.ping_check(ipaddr)
+                print("no response from {}".format(ipaddr))
+            if self.ping_check(ipaddr): # unnecessary test?
                 print("switch: {} is back online!".format(ipaddr))
                 try:
                     net_connect = self.subs.create_connection(ipaddr)
@@ -151,6 +160,8 @@ class Check:
                 #Print to file TODO:print to a proper file, pretty print? Add flag for output not being default
                 json.dump(after_swcheck_dict, open(ipaddr+"-After.txt",'w'))
                 json.dump(before_swcheck_dict, open(ipaddr+"-Before.txt",'w'))
+        else:
+            print("device {} not reachable".format(ipaddr))
 
 
     def begin(self):
