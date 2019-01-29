@@ -126,7 +126,7 @@ class Check:
 
                 if self.ping_check(ipaddr): # unnecessary test?
                     print("switch: {} is back online!".format(ipaddr))
-                    time.sleep(60) # added a little sleep to give some time for connections to come up
+                    time.sleep(90) # added a little sleep to give some time for connections to come up
                     try:
                         net_connect = self.subs.create_connection(ipaddr)
                         if net_connect:
