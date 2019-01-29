@@ -26,7 +26,8 @@ class Check:
         self.cmdargs = cmdargs
         self.config = config
         self.subs = SubRoutines(cmdargs, config)
-        self.config.logpath = os.path.join(os.path.expanduser(self.config.logpath), "LOGS", "UpgradeCheck")
+        self.config.logpath = os.path.join(os.path.expanduser(self.config.logpath), "LOGS", "UpgradeCheck",
+                                           datetime.date.today().strftime('%Y%m%d'))
 
     def var_compare(self, before_str, after_str, vartext, ipaddr):
         before_list = before_str.splitlines(1)
@@ -152,26 +153,6 @@ class Check:
                                                                                     varname,
                                                                                     ipaddr)
                                 status_dict["summary"] += tempstring
-                            # # compare show ver
-                            # status_dict["summary"],status_dict["ver"] = self.var_compare(before_swcheck_dict["ver"],
-                            #                                         after_swcheck_dict["ver"], "Version", ipaddr)
-                            # # compare show switch (Should be identical)
-                            # status_dict["summary"],status_dict["sh_sw"] = self.var_compare(before_swcheck_dict["sh_sw"],
-                            #                                       after_swcheck_dict["sh_sw"], "Switch list", ipaddr)
-                            # # compare mac tables
-                            # status_dict["summary"],status_dict["mac"] = self.var_compare(before_swcheck_dict["macs"],
-                            #                                       after_swcheck_dict["macs"], "MAC tables", ipaddr)
-                            # # compare int status
-                            # status_dict["summary"],status_dict["ints"] = self.var_compare(before_swcheck_dict["ints"],
-                            #                                        after_swcheck_dict["ints"], "interfaces", ipaddr)
-                            # # compare snooping tables
-                            # status_dict["summary"],status_dict["sh_snoop"] = self.var_compare(before_swcheck_dict["sh_snoop"],
-                            #                                            after_swcheck_dict["sh_snoop"],
-                            #                                            "snooping tables", ipaddr)
-                            # # compare cdp tables
-                            # status_dict["summary"],status_dict["cdp"] = self.var_compare(before_swcheck_dict["cdp"],
-                            #                                       after_swcheck_dict["cdp"],
-                            #                                       "cdp neighbours", ipaddr)
 
                             # Close Connection
                             net_connect.disconnect()
@@ -190,20 +171,20 @@ class Check:
             if not os.path.exists(self.config.logpath):
                 os.makedirs(self.config.logpath)
 
-            outputfilename = datetime.date.today().strftime('%Y%m%d') + "-" + ipaddr
-            with open(os.path.join(self.config.logpath, outputfilename + "-Before.txt"), 'wt') as out:
+
+            with open(os.path.join(self.config.logpath, ipaddr + "-Before.txt"), 'wt') as out:
                 pprint(before_swcheck_dict, stream=out)
             #old format
             #json.dump(before_swcheck_dict,
             #          open(os.path.join(self.config.logpath, outputfilename + "-Before.txt"), 'w'))
             #right now we're creating 4 seperate log files, concatenate in the future
             if 'test' in self.cmdargs and not self.cmdargs.test:
-                with open(os.path.join(self.config.logpath, outputfilename + "-After.txt"), 'wt') as out:
+                with open(os.path.join(self.config.logpath, ipaddr + "-After.txt"), 'wt') as out:
                     pprint(before_swcheck_dict, stream=out)
                 #TODO:only print check if in verbose mode?
-                with open(os.path.join(self.config.logpath, outputfilename + "-Check.txt"), 'wt') as out:
+                with open(os.path.join(self.config.logpath, ipaddr + "-Check.txt"), 'wt') as out:
                     pprint(status_dict, stream=out)
-                with open(os.path.join(self.config.logpath, outputfilename + "-Sum.txt"), 'w') as out:
+                with open(os.path.join(self.config.logpath, ipaddr + "-Sum.txt"), 'w') as out:
                     out.write(status_dict["summary"])
 
                     # compare switch version
