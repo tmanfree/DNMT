@@ -54,7 +54,7 @@ class Lefty:
         sw_dict = {}
 
         # Regexs
-        reg_PC = re.compile(r'( Po\d)')  # Group 0: search for Port Channel
+        reg_PC = re.compile(r'( Po\d{1,2})')  # Group 0: search for Port Channel
         #reg_PC_port = re.compile(r'..(\d/)*\d/\d{1,2}')  # Group 0: Port in port channel (or mac address table)
         reg_PC_port = re.compile(r'(..(\d{1,2}/)*\d{1,2}/\d+)\(*')  # Group 0: Port in port channel (or mac address table)
         reg_mac_addr = re.compile(r'....\.....\.....')  # Group 0: Port in port channel (or mac address table)
