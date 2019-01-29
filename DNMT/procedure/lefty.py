@@ -68,7 +68,7 @@ class Lefty:
                 for MAC in maclist:
 
                     # Show Interface Status
-                    output = net_connect.send_command('show mac address-table | i ' + MAC)
+                    output = net_connect.send_command("show mac address-table | i {}".format(MAC))
                     macHolder = reg_mac_addr.search(output)
 
                     if macHolder is not None:
@@ -77,10 +77,10 @@ class Lefty:
                         if "Po" in output:
                             reg_find = reg_PC.search(output)
                             output = net_connect.send_command(
-                                'show etherchannel summary | include ' + reg_find.group(0))
+                                'show etherchannel summary | include ' + reg_find.group(0)+'_')
                         port_reg_find = reg_PC_port.search(output)
                         # currently the following command gets multiple matches on things like 1/0/1 (11,12,13, etc)
-                        port_info = net_connect.send_command("show int status | i ({}) ".format(port_reg_find.group(1)))
+                        port_info = net_connect.send_command("show int status | i ({}_) ".format(port_reg_find.group(1)))
                         output = net_connect.send_command("show cdp neigh {} detail".format(port_reg_find.group(1)))
                         # check if the cdp neigh information is a phone
                         reg_find = reg_CDP_Phone.search(output)

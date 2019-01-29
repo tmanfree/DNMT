@@ -29,6 +29,9 @@ with dns hostnames, updating the switch hostname if they are different.
     * [SNMP]
     * ro=*SNMPV2ROSTRING*
     * rw=*SNMPV2RWSTRING*
+    * [PATH]
+    * logpath=*~*
+    
 
 
 ## Detailed function breakdowns
