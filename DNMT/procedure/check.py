@@ -68,8 +68,10 @@ class Check:
         # status_dict["summary"]=""
 
         # ########testing (without reloading)  ^^^#######
-
-        print("Now operating on {}".format(ipaddr))
+        if 'test' in self.cmdargs and not self.cmdargs.test:
+            print("Now performing Full Operation on {}".format(ipaddr))
+        else:
+            print("Now performing Test Operation on {}".format(ipaddr))
         before_swcheck_dict = {"ip": ipaddr}
         after_swcheck_dict = {"ip": ipaddr}
         status_dict = {"ip": ipaddr}
@@ -212,7 +214,8 @@ class Check:
             for ip in file:
                 iplist.append(ip.rstrip())
             file.close()
-            pool = Pool(4) # 4 concurrent processes
+            #pool = Pool(4) # 4 concurrent processes
+            pool = Pool(len(iplist))  # 4 concurrent processes
             results = pool.map(self.single_search,iplist)
 
             for result in results:
