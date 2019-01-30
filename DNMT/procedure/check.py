@@ -202,12 +202,13 @@ class Check:
     def begin(self):
         if self.cmdargs.upgradecheck == 'single' and self.cmdargs.ipaddr:
             result = self.single_search(self.cmdargs.ipaddr)
-            if result["ver"] != "identical":
-                print("Switch {}  upgraded".format(result["ip"]))
-                self.subs.verbose_printer(result["summary"])
-            else:
-                print("Switch {}  not upgraded".format(result["ip"]))
-                self.subs.verbose_printer(result["summary"])
+            if 'test' in self.cmdargs and not self.cmdargs.test:
+                if result["ver"] != "identical":
+                    print("Switch {}  upgraded".format(result["ip"]))
+                    self.subs.verbose_printer(result["summary"])
+                else:
+                    print("Switch {}  not upgraded".format(result["ip"]))
+                    self.subs.verbose_printer(result["summary"])
         elif self.cmdargs.upgradecheck == 'batch' and self.cmdargs.file:
             iplist = []
             file = open(self.cmdargs.file, "r")
@@ -217,14 +218,14 @@ class Check:
             #pool = Pool(4) # 4 concurrent processes
             pool = Pool(len(iplist))  # 4 concurrent processes
             results = pool.map(self.single_search,iplist)
-
-            for result in results:
-                if result["ver"] != "identical":
-                    print("Switch {}  upgraded".format(result["ip"]))
-                    self.subs.verbose_printer(result["summary"])
-                else:
-                    print("Switch {}  not upgraded".format(result["ip"]))
-                    self.subs.verbose_printer(result["summary"])
+            if 'test' in self.cmdargs and not self.cmdargs.test:
+                for result in results:
+                    if result["ver"] != "identical":
+                        print("Switch {}  upgraded".format(result["ip"]))
+                        self.subs.verbose_printer(result["summary"])
+                    else:
+                        print("Switch {}  not upgraded".format(result["ip"]))
+                        self.subs.verbose_printer(result["summary"])
             print("Batch Done")
 
 
