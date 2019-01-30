@@ -26,7 +26,7 @@ class Check:
         self.cmdargs = cmdargs
         self.config = config
         self.subs = SubRoutines(cmdargs, config)
-        self.config.logpath = os.path.join(os.path.expanduser(self.config.logpath), "LOGS", "UpgradeCheck",
+        self.config.logpath = os.path.join(os.path.expanduser(self.config.logpath), "logs", "UpgradeCheck",
                                            datetime.date.today().strftime('%Y%m%d'))
 
     def var_compare(self, before_str, after_str, vartext, ipaddr):
