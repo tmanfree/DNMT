@@ -97,21 +97,22 @@ class Check:
                     before_swcheck_dict["ver"] = net_connect.send_command('show ver | include Software')
                     before_swcheck_dict["cdp"] = net_connect.send_command('show cdp neigh')
 
+                    #grab some before specific info
+                    net_connect.enable()  # move this out of the if/else statements
+                    output = net_connect.send_command('term shell')
+                    before_swcheck_dict["packages.conf"] = net_connect.send_command('cat packages.conf')
+                    before_swcheck_dict["flash"] = net_connect.send_command('show flash:')
+                    before_swcheck_dict["boot"] = net_connect.send_command('show boot')
+
                     #skip reload if test flag set
                     if 'test' in self.cmdargs and not self.cmdargs.test:
-                        net_connect.enable()
                         output = net_connect.send_command('wr mem')
                         #output = net_connect.send_command('reload', expect_string='[confirm]')
                         print("{}, reloading".format(ipaddr))
                         #output = net_connect.send_command('reload in 1')
                         output = net_connect.send_command_timing('reload in 1')
                         #output = net_connect.send_command('y') #linux doesn't gracefully accept this
-                    else:
-                        net_connect.enable() # move this out of the if/else statements
-                        output = net_connect.send_command('term shell')
-                        before_swcheck_dict["packages.conf"] = net_connect.send_command('cat packages.conf')
-                        before_swcheck_dict["flash"] = net_connect.send_command('show flash:')
-                        before_swcheck_dict["boot"] = net_connect.send_command('show boot')
+
 
                     # Close Connection
                     net_connect.disconnect()
