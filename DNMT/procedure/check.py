@@ -107,6 +107,7 @@ class Check:
                         output = net_connect.send_command_timing('reload in 1')
                         #output = net_connect.send_command('y') #linux doesn't gracefully accept this
                     else:
+                        net_connect.enable() # move this out of the if/else statements
                         output = net_connect.send_command('term shell')
                         before_swcheck_dict["packages.conf"] = net_connect.send_command('cat packages.conf')
                         before_swcheck_dict["flash"] = net_connect.send_command('show flash:')
