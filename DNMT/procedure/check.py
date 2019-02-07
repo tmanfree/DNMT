@@ -60,13 +60,14 @@ class Check:
         return True
 
     def single_search(self,ipaddr):
+
         # ########testing (without reloading)  #######
         #
         # before_swcheck_dict = json.load(open("OldTemp.txt"))
         # after_swcheck_dict = json.load(open("NewTemp.txt"))
         # status_dict = {"ip": ipaddr}
         # status_dict["summary"]=""
-
+        #
         # ########testing (without reloading)  ^^^#######
         if 'test' in self.cmdargs and not self.cmdargs.test:
             print("Now performing Full Operation on {}".format(ipaddr))

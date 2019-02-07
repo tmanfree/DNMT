@@ -31,7 +31,6 @@ def multi_func(functype,cmdargs,config,datavar):
 
 def dnmt():
 
-
     # load username & password from config.text
     config.load_sw_base_conf()
 
