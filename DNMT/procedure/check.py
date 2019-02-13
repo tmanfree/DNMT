@@ -146,7 +146,8 @@ class Check:
                             # Compare the show Switch first (to verify stack members)
                             loopcount = 0
                             #loop up to 36 times to give all stack members time to boot, after that, continue on.
-                            while before_swcheck_dict["sh_sw"] != after_swcheck_dict["sh_sw"] and loopcount<36:
+                            while before_swcheck_dict["sh_sw"] != after_swcheck_dict["sh_sw"] and loopcount < 15:
+                            #while before_swcheck_dict["sh_sw"] != after_swcheck_dict["sh_sw"] and loopcount<36:
                                 time.sleep(10)
                                 after_swcheck_dict["sh_sw"] = net_connect.send_command('show switch')
                                 loopcount+=1
