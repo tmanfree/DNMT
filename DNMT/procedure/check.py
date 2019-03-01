@@ -69,10 +69,10 @@ class Check:
         # status_dict["summary"]=""
         #
         # ########testing (without reloading)  ^^^#######
-        if 'test' in self.cmdargs and not self.cmdargs.test:
+        if 'check' in self.cmdargs and not self.cmdargs.check:
             print("Now performing Full Operation on {}".format(ipaddr))
         else:
-            print("Now performing Test Operation on {}".format(ipaddr))
+            print("Now performing Check Operation on {}".format(ipaddr))
         before_swcheck_dict = {"ip": ipaddr}
         after_swcheck_dict = {"ip": ipaddr}
         status_dict = {"ip": ipaddr}
@@ -105,8 +105,8 @@ class Check:
                     before_swcheck_dict["flash"] = net_connect.send_command('show flash:')
                     before_swcheck_dict["boot"] = net_connect.send_command('show boot')
 
-                    #skip reload if test flag set
-                    if 'test' in self.cmdargs and not self.cmdargs.test:
+                    #skip reload if check flag set
+                    if 'check' in self.cmdargs and not self.cmdargs.check:
                         output = net_connect.send_command('wr mem')
                         #output = net_connect.send_command('reload', expect_string='[confirm]')
                         print("{}, reloading".format(ipaddr))
@@ -127,8 +127,8 @@ class Check:
             except Exception as err: #currently a catch all to stop linux from having a conniption when reloading
                 print("NETMIKO ERROR {}:{}".format(ipaddr,err.args[0]))
 
-                # skip reload if test flag set
-            if 'test' in self.cmdargs and not self.cmdargs.test:
+                # skip reload if check flag set
+            if 'check' in self.cmdargs and not self.cmdargs.check:
 
                 time.sleep(70)
                 while not self.ping_check(ipaddr):
@@ -189,7 +189,7 @@ class Check:
             #json.dump(before_swcheck_dict,
             #          open(os.path.join(self.config.logpath, outputfilename + "-Before.txt"), 'w'))
             #right now we're creating 4 seperate log files, concatenate in the future
-            if 'test' in self.cmdargs and not self.cmdargs.test:
+            if 'check' in self.cmdargs and not self.cmdargs.check:
                 with open(os.path.join(self.config.logpath, ipaddr + "-After.txt"), 'wt') as out:
                     pprint(before_swcheck_dict, stream=out)
                 #TODO:only print check if in verbose mode?
@@ -211,7 +211,7 @@ class Check:
     def begin(self):
         if self.cmdargs.upgradecheck == 'single' and self.cmdargs.ipaddr:
             result = self.single_search(self.cmdargs.ipaddr)
-            if 'test' in self.cmdargs and not self.cmdargs.test:
+            if 'check' in self.cmdargs and not self.cmdargs.check:
                 if result["ver"] != "identical":
                     print("Switch {}  upgraded".format(result["ip"]))
                     self.subs.verbose_printer(result["summary"])
@@ -227,7 +227,7 @@ class Check:
             #pool = Pool(4) # 4 concurrent processes
             pool = Pool(len(iplist))  # 4 concurrent processes
             results = pool.map(self.single_search,iplist)
-            if 'test' in self.cmdargs and not self.cmdargs.test:
+            if 'check' in self.cmdargs and not self.cmdargs.check:
                 for result in results:
                     if result["ver"] != "identical":
                         print("Switch {}  upgraded".format(result["ip"]))

@@ -88,7 +88,7 @@ def dnmt():
     single_check_parser.add_argument('-v', '--verbose', help="run in verbose mode", default=False, action="store_true")
     batch_check_parser = check_parser.add_parser("batch", help="multiple ips to check")
     batch_check_parser.add_argument('file', metavar='file',help='The file with IPs to check')
-    batch_check_parser.add_argument('-t', '--test', help="Do not reload, only test grabbing info", action="store_true")
+    batch_check_parser.add_argument('-c', '--check', help="Do not reload, only grab info", action="store_true")
     batch_check_parser.add_argument('-v', '--verbose', help="run in verbose mode", default=False, action="store_true")
 
 
@@ -105,32 +105,33 @@ def dnmt():
 
     #create the loop for interactive prompt
     if "interactive" in cmdargs :
+        print("Functionality under construction :(")
 
-        logbool = False #boolean to check current logging state
-        completebool = False #boolean to allow exiting out of the loop
-        while not completebool:
-        # Display the menu
-            OpCode = input("Enter the operation you want to do:\n"
-                               "(1) MAC Searcher - Track down MACs through CDP Neighbour\n"
-                               "(2) Hostname Updater\n"
-                               "(L) Enable Logging\n"
-                               "(Q) Quit\n"
-                               "Choice=")
-        # if Mac Searcher selected, use the 'lefty' function
-            if OpCode == '1':
-                #add error handling
-                macsearcher.cmdargs.ipaddr = input("Enter the switch to start searching on:")
-                macaddr = input("Enter the mac address to search for (can be last 4 digits)")
-                macsearcher.unified_search([macsearcher.normalize_mac(macaddr)])
-            elif OpCode == '2':
-                iplist = input("Enter the name of the file containing IPs of switches to update:")
-                Hostnamer.hostname_update()
-            elif OpCode.upper() == 'L':
-                print("Under construction")
-            elif OpCode.upper() == 'Q':
-                print("Exiting")
-                completebool = True
-                sys.exit()
+        # logbool = False #boolean to check current logging state
+        # completebool = False #boolean to allow exiting out of the loop
+        # while not completebool:
+        # # Display the menu
+        #     OpCode = input("Enter the operation you want to do:\n"
+        #                        "(1) MAC Searcher - Track down MACs through CDP Neighbour\n"
+        #                        "(2) Hostname Updater\n"
+        #                        "(L) Enable Logging\n"
+        #                        "(Q) Quit\n"
+        #                        "Choice=")
+        # # if Mac Searcher selected, use the 'lefty' function
+        #     if OpCode == '1':
+        #         #add error handling
+        #         macsearcher.cmdargs.ipaddr = input("Enter the switch to start searching on:")
+        #         macaddr = input("Enter the mac address to search for (can be last 4 digits)")
+        #         macsearcher.unified_search([macsearcher.normalize_mac(macaddr)])
+        #     elif OpCode == '2':
+        #         iplist = input("Enter the name of the file containing IPs of switches to update:")
+        #         Hostnamer.hostname_update()
+        #     elif OpCode.upper() == 'L':
+        #         print("Under construction")
+        #     elif OpCode.upper() == 'Q':
+        #         print("Exiting")
+        #         completebool = True
+        #         sys.exit()
     elif 'direct' in cmdargs:
         if cmdargs.direct == "MACSearch":
             macsearcher.begin_search()

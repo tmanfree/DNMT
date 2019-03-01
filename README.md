@@ -81,6 +81,48 @@ Example commands:
 This command will check all of the hostnames for IP addresses listed in IPList.txt. 
 It will not update if there is a difference, due to the -c flag.
 
+### Upgrade Check
+
+**Description**: This function will take a snapshot of the state of the switch, 
+and if the test flag is not set it will reload the switch. The program will then compare the 
+after reload state with the before reload state. This can be run in single mode or batch mode.
+
+#####-Single mode-
+**Input Required:** 
+* *IP:* Supply the function with an IP of a switch to grab info from & reload
+    
+**Optional Flags:**
+* *-c,--check*: flag to only grab the state information. Will not reload  
+   
+#####-Batch mode-
+**Input Required:** 
+* *FILENAME:* Supply the function with a filename with a list of switch IPs to grab info/reload
+    
+**Optional Flags:**
+* *-c,--check*: flag to only grab the state information. Will not reload  
+   
+Example commands:
+
+**dnmt direct UpgradeCheck single *A.A.A.A***
+
+**dnmt direct UpgradeCheck batch *FILENAME***
+
+### Write Test
+
+**Description**: This function will do a write mem to a switch through snmp. Currently a test function
+
+**Input Required:** 
+* *IP:* Supply the function with an ip addresses to write mem    
+    
+**Optional Flags:**
+* *-v,--verbose*: flag to run in verbose mode  
+    
+Example commands:
+
+**dnmt direct WriteTest  *A.A.A.A***
+
+This command will copy the running config of A.A.A.A to the startup config
+
 
 
 [Github-flavored Markdown](https://guides.github.com/features/mastering-markdown/)
