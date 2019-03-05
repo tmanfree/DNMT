@@ -83,7 +83,8 @@ It will not update if there is a difference, due to the -c flag.
 
 ### Upgrade Check
 
-**Description**: This function will take a snapshot of the state of the switch, 
+**Description**: This function will take a snapshot of the state of the switch if the apply flag
+is not set. If the compare variable  
 and if the test flag is not set it will reload the switch. The program will then compare the 
 after reload state with the before reload state. This can be run in single mode or batch mode.
 
@@ -91,8 +92,10 @@ after reload state with the before reload state. This can be run in single mode 
 **Input Required:** 
 * *IP:* Supply the function with an IP of a switch to grab info from & reload
     
-**Optional Flags:**
-* *-c,--check*: flag to only grab the state information. Will not reload  
+**Optional Flags/Commands:**
+* *-c,--compare *filename**: option to grab before state from *filename* specified. **WILL NOT** reload
+* *-a,--apply*: flag to reload/upgrade switch. **WILL** reload
+* *-v,--verbose*: flag to print more info to the terminal.    
    
 #####-Batch mode-
 **Input Required:** 

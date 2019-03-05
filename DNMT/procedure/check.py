@@ -4,9 +4,8 @@
 import re
 import sys
 import subprocess,platform,os,time,datetime
-import json
 import difflib
-from pprint import pprint
+import pickle
 
 
 
@@ -61,148 +60,152 @@ class Check:
 
     def single_search(self,ipaddr):
 
-        # ########testing (without reloading)  #######
-        #
-        # before_swcheck_dict = json.load(open("OldTemp.txt"))
-        # after_swcheck_dict = json.load(open("NewTemp.txt"))
-        # status_dict = {"ip": ipaddr}
-        # status_dict["summary"]=""
-        #
-        # ########testing (without reloading)  ^^^#######
-        if 'check' in self.cmdargs and not self.cmdargs.check:
-            print("Now performing Full Operation on {}".format(ipaddr))
-        else:
-            print("Now performing Check Operation on {}".format(ipaddr))
-        before_swcheck_dict = {"ip": ipaddr}
-        after_swcheck_dict = {"ip": ipaddr}
-        status_dict = {"ip": ipaddr}
-        status_dict["summary"] = ""
-        #response = os.system("ping " + ipaddr)
         if self.ping_check(ipaddr):
-            print("ping response for {}, grabbing data".format(ipaddr))
-            response = 1
+            if 'apply' in self.cmdargs and self.cmdargs.apply:
+                print("Now performing Full Operation on {}".format(ipaddr))
+            else:
+                print("Now performing Check Operation on {}".format(ipaddr))
+
+           #if compare flag is set, populate before dict with provided file, if not grab from switch
+            if 'compare' in self.cmdargs and self.cmdargs.compare is not None:
+                with open(os.path.join(self.cmdargs.compare), "rb") as myNewFile:
+                    before_swcheck_dict = pickle.load(myNewFile)
+            else:
+                before_swcheck_dict = {"ip": ipaddr}
+                print("ping response for {}, grabbing data".format(ipaddr))
+
             # TODO: add something to map out attached connections in the ip list, to prevent reloading an upstream
-            # switch first
-            #  do stuff here to reload
-            ###########################
-            try:
-                net_connect = self.subs.create_connection(ipaddr)
-                if net_connect:
-                    # Show Interface Status
-                    #output = net_connect.send_command('show mac address-table ')
-                    net_connect.send_command('term shell 0')
-                    before_swcheck_dict["sh_sw"] = net_connect.send_command('show switch')
-                    before_swcheck_dict["sh_snoop"] = net_connect.send_command('show ip dhcp snooping binding')
-                    before_swcheck_dict["macs"] = net_connect.send_command('show mac address')
-                    before_swcheck_dict["ints"] = net_connect.send_command('show int status')
-                    before_swcheck_dict["ver"] = net_connect.send_command('show ver | include Software')
-                    before_swcheck_dict["cdp"] = net_connect.send_command('show cdp neigh')
 
-                    #grab some before specific info
-                    net_connect.enable()  # move this out of the if/else statements
-                    output = net_connect.send_command('term shell')
-                    before_swcheck_dict["packages.conf"] = net_connect.send_command('cat packages.conf')
-                    before_swcheck_dict["flash"] = net_connect.send_command('show flash:')
-                    before_swcheck_dict["boot"] = net_connect.send_command('show boot')
+                try:
+                    net_connect = self.subs.create_connection(ipaddr)
+                    if net_connect:
+                        # Show Interface Status
+                        #output = net_connect.send_command('show mac address-table ')
+                        net_connect.send_command('term shell 0')
+                        before_swcheck_dict["sh_sw"] = net_connect.send_command('show switch')
+                        before_swcheck_dict["sh_snoop"] = net_connect.send_command('show ip dhcp snooping binding')
+                        before_swcheck_dict["macs"] = net_connect.send_command('show mac address | exclude CPU')
+                        before_swcheck_dict["ints"] = net_connect.send_command('show int status')
+                        before_swcheck_dict["ver"] = net_connect.send_command('show ver | include Software')
+                        before_swcheck_dict["cdp"] = net_connect.send_command('show cdp neigh')
 
-                    #skip reload if check flag set
-                    if 'check' in self.cmdargs and not self.cmdargs.check:
-                        output = net_connect.send_command('wr mem')
-                        #output = net_connect.send_command('reload', expect_string='[confirm]')
-                        print("{}, reloading".format(ipaddr))
-                        #output = net_connect.send_command('reload in 1')
-                        output = net_connect.send_command_timing('reload in 1')
-                        #output = net_connect.send_command('y') #linux doesn't gracefully accept this
+                        #grab some before specific info to check before reload
+                        net_connect.enable()  # move this out of the if/else statements
+                        output = net_connect.send_command('term shell')
+                        before_swcheck_dict["packages.conf"] = net_connect.send_command('cat packages.conf')
+                        before_swcheck_dict["flash"] = net_connect.send_command('show flash:')
+                        before_swcheck_dict["boot"] = net_connect.send_command('show boot')
 
+                        #skip reload if check flag set
+                        if 'apply' in self.cmdargs and self.cmdargs.apply:
+                            output = net_connect.send_command('wr mem')
+                            #output = net_connect.send_command('reload', expect_string='[confirm]')
+                            print("{}, reloading".format(ipaddr))
+                            #output = net_connect.send_command('reload in 1')
+                            output = net_connect.send_command_timing('reload in 1')
+                            #output = net_connect.send_command('y') #linux doesn't gracefully accept this
+                        # Close Connection
+                        net_connect.disconnect()
+                    # netmiko connection error handling
+                except netmiko.ssh_exception.NetMikoAuthenticationException as err:
+                    self.subs.verbose_printer(err.args[0], "Netmiko Authentication Failure")
+                except netmiko.ssh_exception.NetMikoTimeoutException as err:
+                    self.subs.verbose_printer(err.args[0], "Netmiko Timeout Failure")
+                except ValueError as err:
+                    print(err.args[0])
+                except Exception as err: #currently a catch all to stop linux from having a conniption when reloading
+                    print("NETMIKO ERROR {}:{}".format(ipaddr,err.args[0]))
 
-                    # Close Connection
-                    net_connect.disconnect()
-                # netmiko connection error handling
-            except netmiko.ssh_exception.NetMikoAuthenticationException as err:
-                self.subs.verbose_printer(err.args[0], "Netmiko Authentication Failure")
-            except netmiko.ssh_exception.NetMikoTimeoutException as err:
-                self.subs.verbose_printer(err.args[0], "Netmiko Timeout Failure")
-            except ValueError as err:
-                print(err.args[0])
-            except Exception as err: #currently a catch all to stop linux from having a conniption when reloading
-                print("NETMIKO ERROR {}:{}".format(ipaddr,err.args[0]))
+                # grab 'after' data to compare with before (if performing reload or comparing with file)
+            if ('apply' in self.cmdargs and self.cmdargs.apply) or ('compare' in self.cmdargs and self.cmdargs.compare is not None):
+                after_swcheck_dict = {"ip": ipaddr}
+                #perform reload if apply flag is set
+                if 'apply' in self.cmdargs and self.cmdargs.apply:
+                    mins_waited = 80
+                    time.sleep(70)
+                    while not self.ping_check(ipaddr):
+                        time.sleep(10)
+                        print("no response from {}, waited {} seconds (equal to {} minutes) ".format(ipaddr,mins_waited,mins_waited/60))
+                        mins_waited += 10
+                        # if waiting longer than one hour, exit out?
+                        if mins_waited > 3600 :
+                            print("No reply from switch IP:{}: for {} minutes\n Please investigate!".format(ipaddr,mins_waited/60))
+                            sys.exit(1)
 
-                # skip reload if check flag set
-            if 'check' in self.cmdargs and not self.cmdargs.check:
-
-                time.sleep(70)
-                while not self.ping_check(ipaddr):
-                    time.sleep(10)
-                    print("no response from {}".format(ipaddr))
-
-                if self.ping_check(ipaddr): # unnecessary test?
-                    print("switch: {} is back online!".format(ipaddr))
-                    time.sleep(90) # added a little sleep to give some time for connections to come up
-                    try:
-                        net_connect = self.subs.create_connection(ipaddr)
-                        if net_connect:
-                            net_connect.send_command('term shell 0')
+                    if self.ping_check(ipaddr): # unnecessary test?
+                        print("switch: {} is back online!".format(ipaddr))
+                        time.sleep(90) # added a little sleep to give some time for connections to come up
+                try:
+                    net_connect = self.subs.create_connection(ipaddr)
+                    if net_connect:
+                        net_connect.send_command('term shell 0')
+                        after_swcheck_dict["sh_sw"] = net_connect.send_command('show switch')
+                        # Compare the show Switch first (to verify stack members)
+                        loopcount = 0
+                        #loop up to 36 times to give all stack members time to boot, after that, continue on.
+                        while before_swcheck_dict["sh_sw"] != after_swcheck_dict["sh_sw"] and loopcount < 15:
+                        #while before_swcheck_dict["sh_sw"] != after_swcheck_dict["sh_sw"] and loopcount<36:
+                            time.sleep(10)
                             after_swcheck_dict["sh_sw"] = net_connect.send_command('show switch')
-                            # Compare the show Switch first (to verify stack members)
-                            loopcount = 0
-                            #loop up to 36 times to give all stack members time to boot, after that, continue on.
-                            while before_swcheck_dict["sh_sw"] != after_swcheck_dict["sh_sw"] and loopcount < 15:
-                            #while before_swcheck_dict["sh_sw"] != after_swcheck_dict["sh_sw"] and loopcount<36:
-                                time.sleep(10)
-                                after_swcheck_dict["sh_sw"] = net_connect.send_command('show switch')
-                                loopcount+=1
-                            #grab additional information from the switch
-                            after_swcheck_dict["sh_snoop"] = net_connect.send_command('show ip dhcp snooping binding')
-                            after_swcheck_dict["macs"] = net_connect.send_command('show mac address')
-                            after_swcheck_dict["ints"] = net_connect.send_command('show int status')
-                            after_swcheck_dict["ver"] = net_connect.send_command('show ver | include Software')
-                            after_swcheck_dict["cdp"] = net_connect.send_command('show cdp neigh')
+                            loopcount+=1
+                        #grab additional information from the switch
+                        after_swcheck_dict["sh_snoop"] = net_connect.send_command('show ip dhcp snooping binding')
+                        after_swcheck_dict["macs"] = net_connect.send_command('show mac address | exclude CPU')
+                        after_swcheck_dict["ints"] = net_connect.send_command('show int status')
+                        after_swcheck_dict["ver"] = net_connect.send_command('show ver | include Software')
+                        after_swcheck_dict["cdp"] = net_connect.send_command('show cdp neigh')
 
-                            for varname in "ver","sh_sw","macs","ints","sh_snoop","cdp":
-                                tempstring, status_dict[varname] = self.var_compare(before_swcheck_dict[varname],
-                                                                                    after_swcheck_dict[varname],
-                                                                                    varname,
-                                                                                    ipaddr)
-                                status_dict["summary"] += tempstring
+                        # Close Connection
+                        net_connect.disconnect()
+                    # netmiko connection error handling
+                except netmiko.ssh_exception.NetMikoAuthenticationException as err:
+                    self.subs.verbose_printer(err.args[0], "Netmiko Authentication Failure")
+                except netmiko.ssh_exception.NetMikoTimeoutException as err:
+                    self.subs.verbose_printer(err.args[0], "Netmiko Timeout Failure")
+                except ValueError as err:
+                    # if 'verbose' in self.cmdargs and self.cmdargs.verbose:
+                    print(err.args[0])
+                except Exception as err:  # currently a catch all
+                    print("NETMIKO ERROR {}:{}".format(ipaddr,err.args[0]))
 
-                            # Close Connection
-                            net_connect.disconnect()
-                        # netmiko connection error handling
-                    except netmiko.ssh_exception.NetMikoAuthenticationException as err:
-                        self.subs.verbose_printer(err.args[0], "Netmiko Authentication Failure")
-                    except netmiko.ssh_exception.NetMikoTimeoutException as err:
-                        self.subs.verbose_printer(err.args[0], "Netmiko Timeout Failure")
-                    except ValueError as err:
-                        # if 'verbose' in self.cmdargs and self.cmdargs.verbose:
-                        print(err.args[0])
-                    except Exception as err:  # currently a catch all
-                        print("NETMIKO ERROR {}:{}".format(ipaddr,err.args[0]))
-            #Print to file TODO:print to a proper file, pretty print? Add flag for output not being default
+            #perform the compare on the two files to create a comparison dict (status_dict)
+            if ('apply' in self.cmdargs and self.cmdargs.apply) or ('compare' in self.cmdargs and self.cmdargs.compare is not None):
+                status_dict = {"ip": ipaddr}
+                status_dict["summary"] = ""
+                for varname in "ver", "sh_sw", "macs", "ints", "sh_snoop", "cdp":
+                    tempstring, status_dict[varname] = self.var_compare(before_swcheck_dict[varname],
+                                                                        after_swcheck_dict[varname],
+                                                                        varname,
+                                                                        ipaddr)
+                    status_dict["summary"] += tempstring
 
+            #create the logpath directory if it doesn't exist
             if not os.path.exists(self.config.logpath):
                 os.makedirs(self.config.logpath)
 
+            #only create the before file if not loading from a file
+            if 'compare' in self.cmdargs and self.cmdargs.compare is None:
+                with open(os.path.join(self.config.logpath, ipaddr + "-Before.txt"), "wb") as myFile:
+                    pickle.dump(before_swcheck_dict, myFile)
 
-            with open(os.path.join(self.config.logpath, ipaddr + "-Before.txt"), 'wt') as out:
-                pprint(before_swcheck_dict, stream=out)
-            #old format
-            #json.dump(before_swcheck_dict,
-            #          open(os.path.join(self.config.logpath, outputfilename + "-Before.txt"), 'w'))
             #right now we're creating 4 seperate log files, concatenate in the future
-            if 'check' in self.cmdargs and not self.cmdargs.check:
-                with open(os.path.join(self.config.logpath, ipaddr + "-After.txt"), 'wt') as out:
-                    pprint(before_swcheck_dict, stream=out)
+
+            #create a func_name variable to differentiate log file names
+            if 'apply' in self.cmdargs and self.cmdargs.apply:
+                func_name = "-Reload"
+            elif ('compare' in self.cmdargs and self.cmdargs.compare is not None):
+                func_name = "-Check"
+
+            if ('apply' in self.cmdargs and self.cmdargs.apply) or (
+                    'compare' in self.cmdargs and self.cmdargs.compare is not None):
+                with open(os.path.join(self.config.logpath, ipaddr + func_name + "-After.txt"), 'wb') as out:
+                    pickle.dump(after_swcheck_dict, out)
                 #TODO:only print check if in verbose mode?
-                with open(os.path.join(self.config.logpath, ipaddr + "-Check.txt"), 'wt') as out:
-                    pprint(status_dict, stream=out)
-                with open(os.path.join(self.config.logpath, ipaddr + "-Sum.txt"), 'w') as out:
+                with open(os.path.join(self.config.logpath, ipaddr + func_name + "-Diff.txt"), 'wb') as out:
+                    pickle.dump(status_dict, out)
+                with open(os.path.join(self.config.logpath, ipaddr + func_name + "-Reload-Sum.txt"), 'w') as out:
                     out.write(status_dict["summary"])
-
-                    # compare switch version
-
-
                 return status_dict
-
 
         else:
             print("device {} not reachable".format(ipaddr))
@@ -211,13 +214,13 @@ class Check:
     def begin(self):
         if self.cmdargs.upgradecheck == 'single' and self.cmdargs.ipaddr:
             result = self.single_search(self.cmdargs.ipaddr)
-            if 'check' in self.cmdargs and not self.cmdargs.check:
+            if ('apply' in self.cmdargs and self.cmdargs.apply) or (
+                    'compare' in self.cmdargs and self.cmdargs.compare is not None):
                 if result["ver"] != "identical":
                     print("Switch {}  upgraded".format(result["ip"]))
-                    self.subs.verbose_printer(result["summary"])
                 else:
                     print("Switch {}  not upgraded".format(result["ip"]))
-                    self.subs.verbose_printer(result["summary"])
+                self.subs.verbose_printer(result["summary"])
         elif self.cmdargs.upgradecheck == 'batch' and self.cmdargs.file:
             iplist = []
             file = open(self.cmdargs.file, "r")
@@ -227,14 +230,15 @@ class Check:
             #pool = Pool(4) # 4 concurrent processes
             pool = Pool(len(iplist))  # 4 concurrent processes
             results = pool.map(self.single_search,iplist)
-            if 'check' in self.cmdargs and not self.cmdargs.check:
+            #TODO add printout for comparing as well as reload
+            if ('apply' in self.cmdargs and self.cmdargs.apply) or (
+                    'compare' in self.cmdargs and self.cmdargs.compare is not None):
                 for result in results:
                     if result["ver"] != "identical":
                         print("Switch {}  upgraded".format(result["ip"]))
-                        self.subs.verbose_printer(result["summary"])
                     else:
                         print("Switch {}  not upgraded".format(result["ip"]))
-                        self.subs.verbose_printer(result["summary"])
+                    self.subs.verbose_printer(result["summary"])
             print("Batch Done")
 
 
