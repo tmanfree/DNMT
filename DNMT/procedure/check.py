@@ -142,14 +142,15 @@ class Check:
                     if net_connect:
                         net_connect.send_command('term shell 0')
                         after_swcheck_dict["sh_sw"] = net_connect.send_command('show switch')
-                        # Compare the show Switch first (to verify stack members)
-                        loopcount = 0
-                        #loop up to 36 times to give all stack members time to boot, after that, continue on.
-                        while before_swcheck_dict["sh_sw"] != after_swcheck_dict["sh_sw"] and loopcount < 15:
-                        #while before_swcheck_dict["sh_sw"] != after_swcheck_dict["sh_sw"] and loopcount<36:
-                            time.sleep(10)
-                            after_swcheck_dict["sh_sw"] = net_connect.send_command('show switch')
-                            loopcount+=1
+                        if 'apply' in self.cmdargs and self.cmdargs.apply:
+                            # Compare the show Switch first (to verify stack members)
+                            loopcount = 0
+                            #loop up to 36 times to give all stack members time to boot, after that, continue on.
+                            while before_swcheck_dict["sh_sw"] != after_swcheck_dict["sh_sw"] and loopcount < 15:
+                            #while before_swcheck_dict["sh_sw"] != after_swcheck_dict["sh_sw"] and loopcount<36:
+                                time.sleep(10)
+                                after_swcheck_dict["sh_sw"] = net_connect.send_command('show switch')
+                                loopcount+=1
                         #grab additional information from the switch
                         after_swcheck_dict["sh_snoop"] = net_connect.send_command('show ip dhcp snooping binding')
                         after_swcheck_dict["macs"] = net_connect.send_command('show mac address | exclude CPU')
@@ -216,6 +217,7 @@ class Check:
     def begin(self):
         if self.cmdargs.upgradecheck == 'single' and self.cmdargs.ipaddr:
             result = self.single_search(self.cmdargs.ipaddr)
+            #not printing right now!
             if ('apply' in self.cmdargs and self.cmdargs.apply) or (
                     'compare' in self.cmdargs and self.cmdargs.compare is not None):
                 if result["ver"] != "identical":
