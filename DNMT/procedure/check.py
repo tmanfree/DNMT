@@ -405,9 +405,9 @@ class Check:
             if ('apply' in self.cmdargs and self.cmdargs.apply) or(
                     'compare' in self.cmdargs and self.cmdargs.compare is not None):
                 if "identical" in result["ver"]:
-                    print("******Switch {}  upgraded******".format(result["ip"]))
-                else:
                     print("******Switch {}  not upgraded******".format(result["ip"]))
+                else:
+                    print("******Switch {}  upgraded******".format(result["ip"]))
                 self.subs.verbose_printer(result["summary"])
         elif self.cmdargs.upgradecheck == 'batch' and self.cmdargs.file:
             iplist = []
@@ -423,9 +423,10 @@ class Check:
                     'compare' in self.cmdargs and self.cmdargs.compare is not None):
                 for result in results:
                     if "identical" in result["ver"] :
-                        print("******Switch {}  upgraded******".format(result["ip"]))
-                    else:
                         print("******Switch {}  not upgraded******".format(result["ip"]))
+
+                    else:
+                        print("******Switch {}  upgraded******".format(result["ip"]))
                     self.subs.verbose_printer(result["summary"])
             print("***Batch Done***")
 
