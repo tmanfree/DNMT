@@ -85,11 +85,15 @@ def dnmt():
     single_check_parser = check_parser.add_parser("single", help="single ip to check")
     single_check_parser.add_argument('ipaddr', metavar='IP', help='The IP to check')
     single_check_parser.add_argument('-a', '--apply', help="Perform full reload/upgrade", default=False, action="store_true")
+    single_check_parser.add_argument('-s', '--skip', help="skip verification", default=False,
+                                    action="store_true")
     single_check_parser.add_argument('-v', '--verbose', help="run in verbose mode", default=False, action="store_true")
     single_check_parser.add_argument('-c', '--compare', help="specify config file to match current config")
     batch_check_parser = check_parser.add_parser("batch", help="multiple ips to check")
     batch_check_parser.add_argument('file', metavar='file',help='The file with IPs to check')
     batch_check_parser.add_argument('-a', '--apply', help="Perform full reload/upgrade", default=False, action="store_true")
+    batch_check_parser.add_argument('-s', '--skip', help="skip verification", default=False,
+                                    action="store_true")
     batch_check_parser.add_argument('-v', '--verbose', help="run in verbose mode", default=False, action="store_true")
     batch_check_parser.add_argument('-c', '--compare', help="specify config file to match current config")
 

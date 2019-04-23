@@ -60,7 +60,7 @@ class SubRoutines:
     ####################
     def create_connection(self,ipaddr):
         if 'verbose' in self.cmdargs and self.cmdargs.verbose:
-            print('------- CONNECTING to switch {}-------'.format(self.cmdargs.ipaddr))
+            print('------- CONNECTING to switch {}-------'.format(ipaddr))
 
         # Switch Parameters
         cisco_sw = {
