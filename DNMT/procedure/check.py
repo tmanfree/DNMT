@@ -35,41 +35,62 @@ class Check:
         #instead of verification should it just check for files in flash:?
         veribool = True
 
-        # TODO automatically grab these from packages.conf
-        reg_rp_base = re.compile(r'(?:rp_base\s+)(cat\S+)')
-        reg_rp_core = re.compile(r'(?:rp_core\s+)(cat\S+)')
-        reg_rp_daemons = re.compile(r'(?:rp_daemons\s+)(cat\S+)')
-        reg_rp_iosd = re.compile(r'(?:rp_iosd\s+)(cat\S+)')
-        reg_rp_wcm = re.compile(r'(?:rp_wcm\s+)(cat\S+)')
-        reg_rp_webui = re.compile(r'(?:rp_webui\s+)(cat\S+)')
-        reg_srdriver = re.compile(r'(?:srdriver\s+)(cat\S+)')
-        reg_rp_security = re.compile(r'(?:rp_security\s+)(cat\S+)')
-        reg_guestshell = re.compile(r'(?:guestshell\s+)(cat\S+)')
-        reg_fp = re.compile(r'(?:fp\s+)(cat\S+)')
-        #reg_test = re.compile(r'(?:guedtshell\s+)(cat\S+)')
+        packages_list = re.findall(r'''(?:^\w+\s+\w{2}\s+\w\s+\w\s+)(\w+) #packagename [x][0]
+                                                     (?:\s+)(\S+) #file to check [x][1]
+                                                     ''', packages, re.VERBOSE | re.MULTILINE)
 
-        packages_check = {"rp_base": reg_rp_base.findall(packages),
-                          "rp_core": reg_rp_core.findall(packages),
-                          "rp_daemons": reg_rp_daemons.findall(packages),
-                          "rp_iosd": reg_rp_iosd.findall(packages),
-                          "rp_wcm": reg_rp_wcm.findall(packages),
-                          "rp_webui": reg_rp_webui.findall(packages),
-                          "srdriver": reg_srdriver.findall(packages),
-                          "rp_security": reg_rp_security.findall(packages),
-                          "guestshell": reg_guestshell.findall(packages),
-                          "fp": reg_fp.findall(packages)}
+        # # TODO automatically grab these from packages.conf
+        # reg_rp_base = re.compile(r'(?:rp_base\s+)(cat\S+)')
+        # reg_rp_core = re.compile(r'(?:rp_core\s+)(cat\S+)')
+        # reg_rp_daemons = re.compile(r'(?:rp_daemons\s+)(cat\S+)')
+        # reg_rp_iosd = re.compile(r'(?:rp_iosd\s+)(cat\S+)')
+        # reg_rp_wcm = re.compile(r'(?:rp_wcm\s+)(cat\S+)')
+        # reg_rp_webui = re.compile(r'(?:rp_webui\s+)(cat\S+)')
+        # reg_srdriver = re.compile(r'(?:srdriver\s+)(cat\S+)')
+        # reg_rp_security = re.compile(r'(?:rp_security\s+)(cat\S+)')
+        # reg_guestshell = re.compile(r'(?:guestshell\s+)(cat\S+)')
+        # reg_fp = re.compile(r'(?:fp\s+)(cat\S+)')
+        # #reg_test = re.compile(r'(?:guedtshell\s+)(cat\S+)')
+        #
+        # packages_check = {"rp_base": reg_rp_base.findall(packages),
+        #                   "rp_core": reg_rp_core.findall(packages),
+        #                   "rp_daemons": reg_rp_daemons.findall(packages),
+        #                   "rp_iosd": reg_rp_iosd.findall(packages),
+        #                   "rp_wcm": reg_rp_wcm.findall(packages),
+        #                   "rp_webui": reg_rp_webui.findall(packages),
+        #                   "srdriver": reg_srdriver.findall(packages),
+        #                   "rp_security": reg_rp_security.findall(packages),
+        #                   "guestshell": reg_guestshell.findall(packages),
+        #                   "fp": reg_fp.findall(packages)}
 
 
-        for f in packages_check:
-            #print(f)
-            if packages_check[f]:
-                verification = net_connect.send_command('Verify {}{} '.format(flashnum,packages_check[f][0]))
-                if "ERROR" in verification:
-                    veribool=False
-                self.subs.verbose_printer("{} {}-{}\n{}".format(before_swcheck_dict["ip"], flashnum,f,verification))
-            else:
+        #create a list to iterate through, getting rid of repeats. This will save time from duplicate verifications
+        package_test_list = []
+        for item in packages_list:
+            if not item[1] in package_test_list:
+                package_test_list.append(item[1])
+#        package_test_list.append("TEST")
+
+        for f in package_test_list:
+            verification = net_connect.send_command('Verify /md5 {}{} '.format(flashnum, f))
+            if "ERROR".lower() in verification.lower():
                 veribool = False
-                self.subs.verbose_printer("{} {}{} does not exist".format(before_swcheck_dict["ip"],flashnum,f))
+            self.subs.verbose_printer("{} {}{}\n{}".format(before_swcheck_dict["ip"], flashnum, f, verification))
+
+
+
+
+        # for f in packages_check:
+        #     #print(f)
+        #     if packages_check[f]:
+        #         #verification = net_connect.send_command('Verify {}{} '.format(flashnum,packages_check[f][0]))
+        #         verification = net_connect.send_command('Verify /md5 {}{} '.format(flashnum, packages_check[f][0]))
+        #         if "ERROR" in verification:
+        #             veribool=False
+        #         self.subs.verbose_printer("{} {}-{}\n{}".format(before_swcheck_dict["ip"], flashnum,f,verification))
+        #     else:
+        #         veribool = False
+        #         self.subs.verbose_printer("{} {}{} does not exist".format(before_swcheck_dict["ip"],flashnum,f))
         self.subs.verbose_printer("{} {} verification complete".format(before_swcheck_dict["ip"], flashnum))
         return veribool
 
@@ -161,30 +182,31 @@ class Check:
                         # tester = reg_test.findall(sh_ver)
                         #before_swcheck_dict["master"] = re.findall(r'\*(?:\s+)(\d)(?:\s+\d{1,2}\s+W|CS|9\-.*)', sh_ver)[0] # not currently used
                         before_swcheck_dict["master"] = re.findall(r'\*\s+(\d)', sh_ver)[0]
-                        # show_version = re.findall(r'''(?:\s+)(\d) #Switch Number [x][0]
-                        #                                                  (?:\s+)(\d{1,2}) #Ports [x][1]
-                        #                                                  (?:\s+)(WS\-.*\w) #Model [x][2]
-                        #                                                  (?:\s+)(\d{1,2}\.\S+) #SW Version [x][3]
-                        #                                                  (?:\s+)(CAT\S+\s|cat\S+\s) #SW VImage [x][4]
-                        #                                                  (INSTALL|BUNDLE) #Mode[x][5]
-                        #                                                  ''', sh_ver, re.VERBOSE)
-                        #TODO Move universal things out of this loop
-                        show_version = re.findall(r'''(?:\s+)(\d) #Switch Number [x][0]
+
+                        if any(n in sh_ver for n in ["3650","9300"]):
+                            show_version = re.findall(r'''(?:\s+)(\d) #Switch Number [x][0]
                                                                          (?:\s+)(\d{1,2}) #Ports [x][1]
                                                                          (?:\s+)(\S+) #Model [x][2]
                                                                          (?:\s+)(\S+) #SW Version [x][3]
                                                                          (?:\s+)(\S+) #SW VImage [x][4]
                                                                          (?:\s+)(INSTALL|BUNDLE) #Mode[x][5]
                                                                          ''', sh_ver, re.VERBOSE)
+                        else:
+                            show_version = re.findall(r'''(?:\s+)(\d) #Switch Number [x][0]
+                                                                         (?:\s+)(\d{1,2}) #Ports [x][1]
+                                                                         (?:\s+)(\S+) #Model [x][2]
+                                                                         (?:\s+)(\S+) #SW Version [x][3]
+                                                                         (?:\s+)(\S+) #SW VImage [x][4]
+                                                                         (?:\s+)
+                                                                         ''', sh_ver, re.VERBOSE)
                         before_swcheck_dict["curVer"] = ""
-                        #if "3650" or "9300" in show_version[0][2]: # run the flash check if it is a 3650 model
-                        if "3650" in show_version[0][2]:  # run the flash check if it is a 3650 model
+                        if any(n in show_version[0][2] for n in ["3650", "9300"]):
+                        #if "3650" in show_version[0][2]:  # run the flash check if it is a 3650 model
                             #check to see if there is more than 1 member in the stack
                             if flashes:
                                 # loop through each of the switches
                                 for f in flashes:
                                     x = int(f[-2])-1 #get switch number from flash-x
-                                    #test2 = int(test)+1
                                     self.subs.verbose_printer(
                                         '{} switch-{} current ver: {} {} {}'.format(before_swcheck_dict["ip"],
                                                                                     str(show_version[x][0]),
@@ -237,9 +259,9 @@ class Check:
                                     self.subs.verbose_printer(
                                         "{} flash verification failed".format(before_swcheck_dict["ip"]))
                                     ExitOut = True
-                        else: # if it is not a 3650...
-                            before_swcheck_dict["curVer"] += "\nSw#{}, Ver:{}, Mode:{}".format(
-                                str(show_version[0][0]), str(show_version[0][3]), str(show_version[0][5]))
+                        else: # if it is not a 3650, caveat is if it is a 9300.
+                            before_swcheck_dict["curVer"] += "\nSw#{}, Ver:{}".format(
+                                str(show_version[0][0]), str(show_version[0][3]))
 
                         if not ExitOut: # redundant?
                             # self.subs.verbose_printer(
