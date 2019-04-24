@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 
 #TODO Add Try/Except loops for proper error handling
-#TODO flash verification only works with 3650 right now
+#TODO flash verification skipping for 4500 & 2950T models
+#Warning - Does not work on 4500 or 2950 T models
 
 import re
 import sys
@@ -31,39 +32,13 @@ class Check:
                                            datetime.date.today().strftime('%Y%m%d'))
 
     def sw_3650_precheck(self, net_connect,flashnum,before_swcheck_dict,packages):
-        #designed for 3650s, will likely not work with others
+        #designed for 3650s, 9300s
         #instead of verification should it just check for files in flash:?
         veribool = True
 
         packages_list = re.findall(r'''(?:^\w+\s+\w{2}\s+\w\s+\w\s+)(\w+) #packagename [x][0]
                                                      (?:\s+)(\S+) #file to check [x][1]
                                                      ''', packages, re.VERBOSE | re.MULTILINE)
-
-        # # TODO automatically grab these from packages.conf
-        # reg_rp_base = re.compile(r'(?:rp_base\s+)(cat\S+)')
-        # reg_rp_core = re.compile(r'(?:rp_core\s+)(cat\S+)')
-        # reg_rp_daemons = re.compile(r'(?:rp_daemons\s+)(cat\S+)')
-        # reg_rp_iosd = re.compile(r'(?:rp_iosd\s+)(cat\S+)')
-        # reg_rp_wcm = re.compile(r'(?:rp_wcm\s+)(cat\S+)')
-        # reg_rp_webui = re.compile(r'(?:rp_webui\s+)(cat\S+)')
-        # reg_srdriver = re.compile(r'(?:srdriver\s+)(cat\S+)')
-        # reg_rp_security = re.compile(r'(?:rp_security\s+)(cat\S+)')
-        # reg_guestshell = re.compile(r'(?:guestshell\s+)(cat\S+)')
-        # reg_fp = re.compile(r'(?:fp\s+)(cat\S+)')
-        # #reg_test = re.compile(r'(?:guedtshell\s+)(cat\S+)')
-        #
-        # packages_check = {"rp_base": reg_rp_base.findall(packages),
-        #                   "rp_core": reg_rp_core.findall(packages),
-        #                   "rp_daemons": reg_rp_daemons.findall(packages),
-        #                   "rp_iosd": reg_rp_iosd.findall(packages),
-        #                   "rp_wcm": reg_rp_wcm.findall(packages),
-        #                   "rp_webui": reg_rp_webui.findall(packages),
-        #                   "srdriver": reg_srdriver.findall(packages),
-        #                   "rp_security": reg_rp_security.findall(packages),
-        #                   "guestshell": reg_guestshell.findall(packages),
-        #                   "fp": reg_fp.findall(packages)}
-
-
         #create a list to iterate through, getting rid of repeats. This will save time from duplicate verifications
         package_test_list = []
         for item in packages_list:
@@ -77,22 +52,30 @@ class Check:
                 veribool = False
             self.subs.verbose_printer("{} {}{}\n{}".format(before_swcheck_dict["ip"], flashnum, f, verification))
 
-
-
-
-        # for f in packages_check:
-        #     #print(f)
-        #     if packages_check[f]:
-        #         #verification = net_connect.send_command('Verify {}{} '.format(flashnum,packages_check[f][0]))
-        #         verification = net_connect.send_command('Verify /md5 {}{} '.format(flashnum, packages_check[f][0]))
-        #         if "ERROR" in verification:
-        #             veribool=False
-        #         self.subs.verbose_printer("{} {}-{}\n{}".format(before_swcheck_dict["ip"], flashnum,f,verification))
-        #     else:
-        #         veribool = False
-        #         self.subs.verbose_printer("{} {}{} does not exist".format(before_swcheck_dict["ip"],flashnum,f))
         self.subs.verbose_printer("{} {} verification complete".format(before_swcheck_dict["ip"], flashnum))
         return veribool
+
+    def basic_sw_precheck(self, net_connect, flashnum, before_swcheck_dict):
+        # Took a different approach than the 3650, will exit out as soon as there is a problem, ideal?
+
+        # create a list of files to test
+        package_test_list = []
+        try:
+            package_test_list.append(re.findall(r'^BOOT path-list\s+:\s+flash:(\S+)', before_swcheck_dict["boot"], re.MULTILINE)[0])
+            package_test_list.append(re.findall(r'^Config file\s+:\s+flash:(\S+)', before_swcheck_dict["boot"], re.MULTILINE)[0])
+        except Exception as e: # super broad exception temporarily
+            return False
+
+        for f in package_test_list:
+            verification = net_connect.send_command('Verify /md5 {}{} '.format(flashnum, f))
+            self.subs.verbose_printer("{} {}{}\n{}".format(before_swcheck_dict["ip"], flashnum, f, verification))
+            if "ERROR".lower() in verification.lower():
+                self.subs.verbose_printer(
+                    "***{} {} verification ERROR!\n {}**".format(before_swcheck_dict["ip"], flashnum, verification))
+                return False
+
+        self.subs.verbose_printer("***{} {} verification successfully completed***".format(before_swcheck_dict["ip"], flashnum))
+        return True
 
 
 
@@ -166,24 +149,21 @@ class Check:
                         output = net_connect.send_command('term shell')
                         before_swcheck_dict["packages.conf"] = net_connect.send_command('cat packages.conf')
                         before_swcheck_dict["flash"] = net_connect.send_command('show flash:')
-                        #TODO grab rp_base,rp_core,rp_daemons,rp_iosd,rp_wcm,rp_webui,srdriver,rp_security,guestshell,fp
-                        # then check to see if they exist in the flash of each member
+                        before_swcheck_dict["boot"] = net_connect.send_command('show boot')
+                        sh_ver = net_connect.send_command('show ver')  # local
+                        # TODO Check if gateway on same range as mangement address, use regex
+                        before_swcheck_dict["gateway"] = net_connect.send_command('show run | include default-gateway')
+                        self.subs.verbose_printer("Switch {}, Current Gateway is {}".format(before_swcheck_dict["ip"],
+                                                                                            before_swcheck_dict[
+                                                                                                "gateway"]))
 
 ################################# Check flash below  ############################
-                    if 'skip' in self.cmdargs and not self.cmdargs.skip:
-                        stack = []
-                        #x = 0
-                        sh_flash = net_connect.send_command('show flash?') #local
-                        reg_flash = re.compile(r'flash\-\d\:') #local
-                        flashes = reg_flash.findall(sh_flash) #local
-                        sh_ver = net_connect.send_command('show ver') #local
-                        #reg_test = re.compile(r'\*(?:\s+)(\d)(?:\s+\d{1,2}\s+C9\-.*)')
-                        # reg_test = re.compile(r'\*\s+(\d)')
-                        # tester = reg_test.findall(sh_ver)
-                        #before_swcheck_dict["master"] = re.findall(r'\*(?:\s+)(\d)(?:\s+\d{1,2}\s+W|CS|9\-.*)', sh_ver)[0] # not currently used
-                        #test = re.findall(r'^\*\s+(\d)', sh_ver,re.MULTILINE)
+                    #if 'skip' in self.cmdargs and not self.cmdargs.skip:
+                    if 'skip' in self.cmdargs and not self.cmdargs.skip and "4500" not in sh_ver and "2950T" not in sh_ver:
+                        #TODO 2950T & 4500s will crash here due to the format of their show ver output.
                         before_swcheck_dict["master"] = re.findall(r'^\*\s+(\d)', sh_ver,re.MULTILINE)[0]
 
+                        #create the list that holds the parsed show version file
                         if any(n in sh_ver for n in ["3650","9300"]):
                             show_version = re.findall(r'''(?:\s+)(\d) #Switch Number [x][0]
                                                                          (?:\s+)(\d{1,2}) #Ports [x][1]
@@ -191,20 +171,24 @@ class Check:
                                                                          (?:\s+)(\S+) #SW Version [x][3]
                                                                          (?:\s+)(\S+) #SW VImage [x][4]
                                                                          (?:\s+)(INSTALL|BUNDLE) #Mode[x][5]
-                                                                         ''', sh_ver, re.VERBOSE)
+                                                                         ''', sh_ver, re.VERBOSE | re.MULTILINE)
                         else:
                             show_version = re.findall(r'''(?:\s+)(\d) #Switch Number [x][0]
                                                                          (?:\s+)(\d{1,2}) #Ports [x][1]
                                                                          (?:\s+)(\S+) #Model [x][2]
                                                                          (?:\s+)(\S+) #SW Version [x][3]
-                                                                         (?:\s+)(\S+) #SW VImage [x][4]
-                                                                         (?:\s+)
-                                                                         ''', sh_ver, re.VERBOSE)
+                                                                         (?:\s+)(\S+) #SW VImage [x][4]                                                                         
+                                                                         ''', sh_ver, re.VERBOSE | re.MULTILINE)
+                        #address the flash filename differences between 3650s and older models
+                        sh_flash = net_connect.send_command('show flash?')  # local
+                        if any(n in show_version[0][2] for n in ["3650", "C9"]):
+                            reg_flash = re.compile(r'flash\-\d\:')  # local
+                        else:
+                            reg_flash = re.compile(r'flash\d\:')  # local
+                        flashes = reg_flash.findall(sh_flash)  # local
                         before_swcheck_dict["curVer"] = ""
-                        if any(n in show_version[0][2] for n in ["3650", "9300"]):
-                        #if "3650" in show_version[0][2]:  # run the flash check if it is a 3650 model
-                            #check to see if there is more than 1 member in the stack
-                            if flashes:
+                        if flashes: # if there are multiple switches in the stack
+                            if any(n in show_version[0][2] for n in ["3650", "C9"]):
                                 # loop through each of the switches
                                 for f in flashes:
                                     x = int(f[-2])-1 #get switch number from flash-x
@@ -216,7 +200,6 @@ class Check:
                                                                                     str(show_version[x][5])))
                                     before_swcheck_dict["curVer"] += "\nSw#{}, Ver:{}, Mode:{}".format(
                                         str(show_version[x][0]), str(show_version[x][3]), str(show_version[x][5]))
-
                                     #TODO grab the boot file to verify what will be booted
                                     #TODO compare this packages.conf file to the
                                     packages = net_connect.send_command('cat ' + f + 'packages.conf')
@@ -238,60 +221,140 @@ class Check:
                                             "{} {} packages.conf is different than master".format(before_swcheck_dict["ip"], f))
                                         ExitOut = True
                                     before_swcheck_dict[f] = net_connect.send_command('show ' + f)
-                            else:
+                            else: # if it is not a 3650,
+                                before_swcheck_dict["curVer"] += "\nSw#{}, Ver:{}".format(
+                                    str(show_version[0][0]), str(show_version[0][3]))
+                                # loop through each of the switches
+                                #################################################*******
+
+
+                                #Check to see if all selected boot variables and boot config names are the same
+                                boottest = re.findall(r'^BOOT path-list\s+:\s+flash:(\S+)', before_swcheck_dict["boot"],
+                                                      re.MULTILINE)
+                                if boottest.count(boottest[0]) == len(boottest):
+                                    self.subs.verbose_printer(
+                                        '{} all boot files match: {}'.format(before_swcheck_dict["ip"],boottest[0]))
+                                    boottest = re.findall(r'^Config file\s+:\s+flash:(\S+)',
+                                                          before_swcheck_dict["boot"],
+                                                          re.MULTILINE)
+                                    if boottest.count(boottest[0]) == len(boottest):
+                                        self.subs.verbose_printer(
+                                            '{} all boot config filenames match: {}'.format(before_swcheck_dict["ip"],
+                                                                                 boottest[0]))
+                                    else:
+                                        self.subs.verbose_printer(
+                                            "{} switch boot config filenames are not identical".format(
+                                                before_swcheck_dict["ip"]))
+                                        ExitOut = True
+                                else:
+                                    self.subs.verbose_printer(
+                                        "{} switch boot files are not identical".format(before_swcheck_dict["ip"]))
+                                    ExitOut = True
+
+
+                                if not ExitOut:
+                                    for f in flashes:
+
+                                        x = int(f[-2]) - 1  # get switch number from flash-x
+                                        self.subs.verbose_printer(
+                                            '{} switch-{} current ver: {} {}'.format(before_swcheck_dict["ip"],
+                                                                                        str(show_version[x][0]),
+                                                                                        str(show_version[x][3]),
+                                                                                        str(show_version[x][4])))
+                                        before_swcheck_dict["curVer"] += "\nSw#{}, Ver:{}".format(
+                                            str(show_version[x][0]), str(show_version[x][3]))
+
+                                        before_swcheck_dict["{}fschk".format(f)] = self.basic_sw_precheck(net_connect, f,
+                                                                                                          before_swcheck_dict)
+
+                                        if (before_swcheck_dict["{}fschk".format(f)]):  # check if flash verified
+                                            self.subs.verbose_printer(
+                                                "{} {} flash verification successful".format(before_swcheck_dict["ip"],
+                                                                                             f))
+                                            # TODO placeholder, add logic?, print regardless of verbose?
+                                        else:
+                                            self.subs.verbose_printer(
+                                                "{} {} flash verification failed".format(before_swcheck_dict["ip"], f))
+                                            ExitOut = True
+                                        before_swcheck_dict[f] = net_connect.send_command('show ' + f)
+
+                        else: # if only a single switch
+                            if any(n in show_version[0][2] for n in ["3650", "C9"]):
                                 self.subs.verbose_printer(
                                     '{} current ver: {} {} {}'.format(before_swcheck_dict["ip"],
-                                                                                str(show_version[0][3]),
-                                                                                str(show_version[0][4]),
-                                                                                str(show_version[0][5])))
+                                                                      str(show_version[0][3]),
+                                                                      str(show_version[0][4]),
+                                                                      str(show_version[0][5])))
                                 before_swcheck_dict["curVer"] += "\nSw#{}, Ver:{}, Mode:{}".format(
                                     str(show_version[0][0]), str(show_version[0][3]), str(show_version[0][5]))
 
-
-                                #TODO grab the boot file to verify what will be booted
-                                #TODO compare this packages.conf file to the
+                                # TODO grab the boot file to verify what will be booted
+                                # TODO compare this packages.conf file to the
                                 packages = net_connect.send_command('cat flash:packages.conf')
                                 # before_swcheck_dict["flash:fschk"] = self.sw_precheck(net_connect, "flash:",
                                 #                                                             before_swcheck_dict, packages)
-                                if self.sw_3650_precheck(net_connect, "flash:",before_swcheck_dict, packages):
+                                if self.sw_3650_precheck(net_connect, "flash:", before_swcheck_dict, packages):
                                     self.subs.verbose_printer(
                                         "{} flash verification successful".format(before_swcheck_dict["ip"]))
                                 else:
                                     self.subs.verbose_printer(
                                         "{} flash verification failed".format(before_swcheck_dict["ip"]))
                                     ExitOut = True
-                        else: # if it is not a 3650, caveat is if it is a 9300.
-                            before_swcheck_dict["curVer"] += "\nSw#{}, Ver:{}".format(
-                                str(show_version[0][0]), str(show_version[0][3]))
+                            else:
+                                self.subs.verbose_printer(
+                                    '{} switch-{} current ver: {} {}'.format(before_swcheck_dict["ip"],
+                                                                                str(show_version[0][0]),
+                                                                                str(show_version[0][3]),
+                                                                                str(show_version[0][4])))
+                                before_swcheck_dict["curVer"] += "\nSw#{}, Ver:{}".format(
+                                    str(show_version[0][0]), str(show_version[0][3]))
+
+                                before_swcheck_dict["flash:fschk"] = self.basic_sw_precheck(net_connect, "flash:",
+                                                                                                  before_swcheck_dict)
+
+                                if (before_swcheck_dict["flash:fschk"]):  # check if flash verified
+                                    self.subs.verbose_printer(
+                                        "{} flash verification successful".format(before_swcheck_dict["ip"]))
+                                    # TODO placeholder, add logic?, print regardless of verbose?
+                                else:
+                                    self.subs.verbose_printer(
+                                        "{} flash verification failed".format(before_swcheck_dict["ip"])) #redundant
+                                    ExitOut = True
 
                         if not ExitOut: # redundant?
                             # self.subs.verbose_printer(
                             #     "{} flash checking verification is successful".format(before_swcheck_dict["ip"]))
-                            print("***{} flash checking verification successful (if 3650)***".format(before_swcheck_dict["ip"]))
-                            if any(n in show_version[0][2] for n in ["3650", "9300"]):
+
+
+                            if any(n in show_version[0][2] for n in ["3650", "C9"]):
+                                print("***{} 3650/9300 flash checking verification successful***".format(
+                                    before_swcheck_dict["ip"]))
                                 before_swcheck_dict["newVer"] = \
                                 re.findall(r'(?:guestshell\s+)(cat\S+)', before_swcheck_dict["packages.conf"])[0]
+                            else:
+                                print("***{} non 3650/9300 flash checking verification successful***".format(
+                                    before_swcheck_dict["ip"]))
+                                before_swcheck_dict["newVer"] = \
+                                re.findall(r'^BOOT path-list\s+:\s+flash:(\S+)', before_swcheck_dict["boot"],
+                                           re.MULTILINE)[0]
 
-                            before_swcheck_dict["flash_check_bool"] = True
+
+                            before_swcheck_dict["flash_error_bool"] = False # redundant?
                             # print('This switch will reload into ' + str(guestshell))
                         else:
                             print("***{} flash checking verification failed***".format(before_swcheck_dict["ip"]))
-                            before_swcheck_dict["flash_check_bool"] = False
+                            before_swcheck_dict["flash_error_bool"] = True # redundant?
             ################################# Flash Checking ^^^############################
 
 
-                    # TODO verify boot variable is good
-                    before_swcheck_dict["boot"] = net_connect.send_command('show boot')
-                    #TODO Check if gateway on same range as mangement address, use regex
-                    before_swcheck_dict["gateway"] = net_connect.send_command('show run | include default-gateway')
-                    self.subs.verbose_printer("Switch {}, Current Gateway is {}".format(before_swcheck_dict["ip"],
-                                                                                        before_swcheck_dict[
-                                                                                            "gateway"]))
+
                     #reload if the apply flag is set, and flash verified successfully
                     if 'apply' in self.cmdargs and self.cmdargs.apply and not ExitOut:
                         output = net_connect.send_command('wr mem')
                         print("***{}, reloading***".format(ipaddr))
                         output = net_connect.send_command_timing('reload in 1')
+                    elif ExitOut:
+                        print("***{}, ERROR!!! pre-check errors encountered. exiting out ***".format(ipaddr))
                     else:
                         print("***{}, status grabbed, NO pre-check errors encountered. exiting out ***".format(ipaddr))
                     # Close Connection
@@ -384,7 +447,8 @@ class Check:
             ####print out summary of verification if not skipping
             if 'skip' in self.cmdargs and not self.cmdargs.skip:
                 flash_check_dict = {"verification": ipaddr} # could just use a string instead
-                if ExitOut:
+                #if ExitOut:
+                if "flash_error_bool" in before_swcheck_dict and before_swcheck_dict["flash_error_bool"]:
                     flash_check_dict["verification"] += "\n******Flash Verification Failure******\n"
                 else:
                     flash_check_dict["verification"] += "\n******Flash Verification Successful******\n"
