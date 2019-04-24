@@ -95,6 +95,7 @@ after reload state with the before reload state. This can be run in single mode 
 **Optional Flags/Commands:**
 * *-c,--compare *filename**: option to grab before state from *filename* specified. **WILL NOT** reload
 * *-a,--apply*: flag to reload/upgrade switch. **WILL** reload
+* *-s,--skip*: flag to skip flash verifications.
 * *-v,--verbose*: flag to print more info to the terminal.    
    
 #####-Batch mode-
@@ -102,7 +103,11 @@ after reload state with the before reload state. This can be run in single mode 
 * *FILENAME:* Supply the function with a filename with a list of switch IPs to grab info/reload
     
 **Optional Flags:**
-* *-c,--check*: flag to only grab the state information. Will not reload  
+* *-c,--compare *filename**: option to grab before state from *filename* specified. **WILL NOT** reload
+* *-a,--apply*: flag to reload/upgrade switch. **WILL** reload
+* *-s,--skip*: flag to skip flash verifications.
+* *-v,--verbose*: flag to print more info to the terminal.   
+
    
 Example commands:
 
