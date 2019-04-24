@@ -181,7 +181,8 @@ class Check:
                         # reg_test = re.compile(r'\*\s+(\d)')
                         # tester = reg_test.findall(sh_ver)
                         #before_swcheck_dict["master"] = re.findall(r'\*(?:\s+)(\d)(?:\s+\d{1,2}\s+W|CS|9\-.*)', sh_ver)[0] # not currently used
-                        before_swcheck_dict["master"] = re.findall(r'\*\s+(\d)', sh_ver)[0]
+                        #test = re.findall(r'^\*\s+(\d)', sh_ver,re.MULTILINE)
+                        before_swcheck_dict["master"] = re.findall(r'^\*\s+(\d)', sh_ver,re.MULTILINE)[0]
 
                         if any(n in sh_ver for n in ["3650","9300"]):
                             show_version = re.findall(r'''(?:\s+)(\d) #Switch Number [x][0]
@@ -267,7 +268,7 @@ class Check:
                             # self.subs.verbose_printer(
                             #     "{} flash checking verification is successful".format(before_swcheck_dict["ip"]))
                             print("***{} flash checking verification successful (if 3650)***".format(before_swcheck_dict["ip"]))
-                            if "3650" or "9300" in show_version[0][2]:
+                            if any(n in show_version[0][2] for n in ["3650", "9300"]):
                                 before_swcheck_dict["newVer"] = \
                                 re.findall(r'(?:guestshell\s+)(cat\S+)', before_swcheck_dict["packages.conf"])[0]
 
@@ -291,6 +292,8 @@ class Check:
                         output = net_connect.send_command('wr mem')
                         print("***{}, reloading***".format(ipaddr))
                         output = net_connect.send_command_timing('reload in 1')
+                    else:
+                        print("***{}, status grabbed, NO pre-check errors encountered. exiting out ***".format(ipaddr))
                     # Close Connection
                     net_connect.disconnect()
                     # netmiko connection error handling
