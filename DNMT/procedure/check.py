@@ -428,6 +428,8 @@ class Check:
             if ('apply' in self.cmdargs and self.cmdargs.apply and not ExitOut) or ('compare' in self.cmdargs and self.cmdargs.compare is not None):
                 status_dict = {"ip": ipaddr}
                 status_dict["summary"] = ""
+                status_dict["summary"] += "Before Version:{}\nAfter Version:{}\n".format(before_swcheck_dict["ver"],
+                                                                                       after_swcheck_dict["ver"])
                 for varname in "ver", "sh_sw", "macs", "ints", "sh_snoop", "cdp":
                     tempstring, status_dict[varname] = self.var_compare(before_swcheck_dict[varname],
                                                                         after_swcheck_dict[varname],
