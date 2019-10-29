@@ -9,7 +9,7 @@ import datetime # for logging timestamping
 # from procedure.lefty import Lefty
 # from procedure import config
 # from procedure import hostnamer
-
+#blank
 
 #local procedure imports absolute
 from DNMT.procedure.lefty import Lefty
