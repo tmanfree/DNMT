@@ -53,24 +53,31 @@ class Tools:
                                    re.MULTILINE)[0]
                     swcheck_dict["sh_int"] = net_connect.send_command(
                         'show int {} | include {} .'.format(swcheck_dict["local_int"], swcheck_dict["interface"]))
+                    swcheck_dict["sh_mac"] = net_connect.send_command(
+                        'show mac address int {}'.format(swcheck_dict["local_int"]))
+                    swcheck_dict["mac_stat"] = \
+                        re.findall(r'({}+)'.format(swcheck_dict["interface"]), swcheck_dict["sh_mac"], re.MULTILINE)
                     swcheck_dict["sh_power"] = net_connect.send_command(
                         'show power inline | include {} .'.format(swcheck_dict["interface"]))
                     swcheck_dict["power_stat"] = \
                     re.findall(r'^(?:\S+\s+\S+\s+)(\S+)', swcheck_dict["sh_power"], re.MULTILINE)[0]
                     swcheck_dict["int_stat"] = \
                         re.findall(r'(?:line protocol is )(\S+)', swcheck_dict["sh_int"], re.MULTILINE)[0]
-                    # swcheck_dict["power_stat"] = re.findall(r'^(\S+)(?:\s+)(\S+)(?:\s+)(\S+)',
-                                                            # swcheck_dict["sh_power"],re.MULTILINE)[2]
+
                     self.subs.verbose_printer(
-                        "Switch:{}\nInterface:{}\nInt Status:{}\nPower Status:{}".format(swcheck_dict["ip"],
-                                                                                        swcheck_dict["local_int"],
-                                                                                        swcheck_dict["int_stat"],
-                                                                                        swcheck_dict["power_stat"]))
-                    response = input("Confirm action of toggling port on/off ('yes'):")
-                    if not response == 'yes':
-                        self.subs.verbose_printer('Did not proceed with change.')
-                        sys.exit(1)
-                    if swcheck_dict["power_stat"] in ("off", "Ieee PD" ) and swcheck_dict["int_stat"] == "down":
+                        "Switch:{}\nInterface:{}\nInt Status:{}\nPower Status:{}\n# of MACs:{}".format(
+                            swcheck_dict["ip"], swcheck_dict["local_int"], swcheck_dict["int_stat"],
+                            swcheck_dict["power_stat"], len(swcheck_dict["mac_stat"])))
+
+                    if (swcheck_dict["power_stat"] in ("off", "Ieee PD") and swcheck_dict[
+                        "int_stat"] == "down") or (swcheck_dict["power_stat"] in ("off", "Ieee PD") and
+                            swcheck_dict["int_stat"] == "up" and len(swcheck_dict["mac_stat"]) <= 1):
+                        print("Change appears safe")
+                        response = input("Confirm action of toggling port on/off ('yes'):")
+                        if not response == 'yes':
+                            self.subs.verbose_printer('Did not proceed with change.')
+                            sys.exit(1)
+
                         net_connect.enable()
                         config_command = ["interface " + swcheck_dict["local_int"], "shutdown"]
                         shutdown_output = net_connect.send_config_set(config_command)
@@ -79,6 +86,8 @@ class Tools:
                         config_command = ["interface " + swcheck_dict["local_int"], "no shutdown"]
                         shutdown_output = net_connect.send_config_set(config_command)
                         self.subs.verbose_printer('Port Enabled.')
+                    else:
+                        print("Change may be unsafe, exiting.")
                        # net_connect.send_command('int {}'.format(swcheck_dict["local_int"]))
                        # net_connect.send_command('shutdown')
                     net_connect.disconnect()
