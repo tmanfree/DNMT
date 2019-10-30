@@ -74,12 +74,11 @@ class Tools:
                             swcheck_dict["ip"], swcheck_dict["local_int"], swcheck_dict["int_stat"],
                             swcheck_dict["power_stat"], len(swcheck_dict["mac_stat"])))
 
-                    #if (swcheck_dict["int_stat"] == "down") or (swcheck_dict["power_stat"] in ("Ieee PD", "on") and swcheck_dict["int_stat"] == "up" and len(swcheck_dict["mac_stat"]) <= 1) or (swcheck_dict["power_stat"]  == "off" and swcheck_dict["int_stat"] == "up" and len(swcheck_dict["mac_stat"]) == 0):
-                    if (swcheck_dict["int_stat"] == "down") or (
-                            swcheck_dict["power_stat"] in ("Ieee", "AIR") and swcheck_dict[
-                        "int_stat"] == "up" and len(swcheck_dict["mac_stat"]) <= 1) or (
-                            swcheck_dict["power_stat"] == "n/a" and swcheck_dict["int_stat"] == "up" and len(
-                            swcheck_dict["mac_stat"]) == 0):
+
+                    if (swcheck_dict["int_stat"] == "down") or (swcheck_dict["int_stat"] == "up" and (
+                            ("AIR" in swcheck_dict["power_stat"]) or (
+                            "Ieee" in swcheck_dict["power_stat"] and len(swcheck_dict["mac_stat"]) == 0))):
+
 
                         print("Change appears safe") # change mac addresses to be 0,
                         if not self.cmdargs.skip:
