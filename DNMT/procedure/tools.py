@@ -57,6 +57,10 @@ class Tools:
                         'show mac address int {}'.format(swcheck_dict["local_int"]))
                     swcheck_dict["mac_stat"] = \
                         re.findall(r'({}+)'.format(swcheck_dict["interface"]), swcheck_dict["sh_mac"], re.MULTILINE)
+                    swcheck_dict["sh_cdp"] = net_connect.send_command(
+                        'show cdp neigh {}'.format(swcheck_dict["local_int"]))
+                    swcheck_dict["cdp_stat"] = \
+                        re.findall(r'entries displayed : (\S+)', swcheck_dict["sh_cdp"], re.MULTILINE)
                     swcheck_dict["sh_power"] = net_connect.send_command(
                         'show power inline | include {} .'.format(swcheck_dict["interface"]))
                     swcheck_dict["power_stat"] = \
@@ -69,14 +73,19 @@ class Tools:
                             swcheck_dict["ip"], swcheck_dict["local_int"], swcheck_dict["int_stat"],
                             swcheck_dict["power_stat"], len(swcheck_dict["mac_stat"])))
 
-                    if (swcheck_dict["power_stat"] in ("off", "Ieee PD") and swcheck_dict[
-                        "int_stat"] == "down") or (swcheck_dict["power_stat"] in ("off", "Ieee PD") and
-                            swcheck_dict["int_stat"] == "up" and len(swcheck_dict["mac_stat"]) <= 1):
-                        print("Change appears safe")
-                        response = input("Confirm action of toggling port on/off ('yes'):")
-                        if not response == 'yes':
-                            self.subs.verbose_printer('Did not proceed with change.')
-                            sys.exit(1)
+                    #if (swcheck_dict["int_stat"] == "down") or (swcheck_dict["power_stat"] in ("Ieee PD", "on") and swcheck_dict["int_stat"] == "up" and len(swcheck_dict["mac_stat"]) <= 1) or (swcheck_dict["power_stat"]  == "off" and swcheck_dict["int_stat"] == "up" and len(swcheck_dict["mac_stat"]) == 0):
+                    if (swcheck_dict["int_stat"] == "down") or (
+                            swcheck_dict["power_stat"] in ("Ieee PD", "on") and swcheck_dict[
+                        "int_stat"] == "up" and len(swcheck_dict["mac_stat"]) <= 1) or (
+                            swcheck_dict["power_stat"] == "off" and swcheck_dict["int_stat"] == "up" and len(
+                            swcheck_dict["mac_stat"]) == 0):
+
+                        print("Change appears safe") # change mac addresses to be 0,
+                        if not self.cmdargs.skip:
+                            response = input("Confirm action of toggling port on/off ('yes'):")
+                            if not response == 'yes':
+                                self.subs.verbose_printer('Did not proceed with change.')
+                                sys.exit(1)
 
                         net_connect.enable()
                         config_command = ["interface " + swcheck_dict["local_int"], "shutdown"]
