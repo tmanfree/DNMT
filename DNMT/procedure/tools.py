@@ -64,7 +64,8 @@ class Tools:
                     swcheck_dict["sh_power"] = net_connect.send_command(
                         'show power inline | include {} .'.format(swcheck_dict["interface"]))
                     swcheck_dict["power_stat"] = \
-                    re.findall(r'^(?:\S+\s+\S+\s+)(\S+)', swcheck_dict["sh_power"], re.MULTILINE)[0]
+                    re.findall(r'^(?:\S+\s+\S+\s+\S+\s+\S+\s+)(\S+)', swcheck_dict["sh_power"], re.MULTILINE)[0]
+                    #re.findall(r'^(?:\S+\s+\S+\s+)(\S+)', swcheck_dict["sh_power"], re.MULTILINE)[0]
                     swcheck_dict["int_stat"] = \
                         re.findall(r'(?:line protocol is )(\S+)', swcheck_dict["sh_int"], re.MULTILINE)[0]
 
@@ -75,9 +76,9 @@ class Tools:
 
                     #if (swcheck_dict["int_stat"] == "down") or (swcheck_dict["power_stat"] in ("Ieee PD", "on") and swcheck_dict["int_stat"] == "up" and len(swcheck_dict["mac_stat"]) <= 1) or (swcheck_dict["power_stat"]  == "off" and swcheck_dict["int_stat"] == "up" and len(swcheck_dict["mac_stat"]) == 0):
                     if (swcheck_dict["int_stat"] == "down") or (
-                            swcheck_dict["power_stat"] in ("Ieee PD", "on") and swcheck_dict[
+                            swcheck_dict["power_stat"] in ("Ieee", "AIR") and swcheck_dict[
                         "int_stat"] == "up" and len(swcheck_dict["mac_stat"]) <= 1) or (
-                            swcheck_dict["power_stat"] == "off" and swcheck_dict["int_stat"] == "up" and len(
+                            swcheck_dict["power_stat"] == "n/a" and swcheck_dict["int_stat"] == "up" and len(
                             swcheck_dict["mac_stat"]) == 0):
 
                         print("Change appears safe") # change mac addresses to be 0,
