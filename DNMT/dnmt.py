@@ -9,13 +9,14 @@ import datetime # for logging timestamping
 # from procedure.lefty import Lefty
 # from procedure import config
 # from procedure import hostnamer
-#blank
+
 
 #local procedure imports absolute
 from DNMT.procedure.lefty import Lefty
 from DNMT.procedure.check import Check
 from DNMT.procedure import config
 from DNMT.procedure.hostnamer import HostNamer
+from DNMT.procedure.tools import Tools
 from DNMT.procedure import hostnamer
 
 #3rd party imports
@@ -97,6 +98,15 @@ def dnmt():
     batch_check_parser.add_argument('-v', '--verbose', help="run in verbose mode", default=False, action="store_true")
     batch_check_parser.add_argument('-c', '--compare', help="specify config file to match current config")
 
+    # create subcategory for tools
+    tools_parser = direct_parser.add_parser("tools", help="various tools").add_subparsers(dest="tools")
+
+    # parser commands for MAC Search
+    appoke_parser = tools_parser.add_parser("AP_Poke", help="Toggle APs with issues")
+    appoke_parser.add_argument('ipaddr', metavar='IP', help='Switch Address AP is on')
+    appoke_parser.add_argument('interface', metavar='interface', help='interface AP is on')
+    appoke_parser.add_argument('-v', '--verbose', help="run in verbose mode", default=False, action="store_true")
+
 
 
     argcomplete.autocomplete(parser)
@@ -104,8 +114,9 @@ def dnmt():
 
 #change these to only creating if required
     macsearcher = Lefty(cmdargs,config)
-    Hostnamer = HostNamer(cmdargs,config)
-    UpgradeCheck = Check(cmdargs, config)
+    hostnamer = HostNamer(cmdargs,config)
+    upgradeCheck = Check(cmdargs, config)
+    tools = Tools(cmdargs, config)
 
     ### complete CLI Parsing
 
@@ -143,21 +154,24 @@ def dnmt():
         if cmdargs.direct == "MACSearch":
             macsearcher.begin_search()
         elif cmdargs.direct == "HostnameUpdate":
-            Hostnamer.hostname_update()
+            hostnamer.hostname_update()
         # elif args.direct == "SNMPTest":
         #     hostnamer.snmp_test(args.ipaddr, config, args.oid)
         elif cmdargs.direct == "WriteTest":
             #hostnamer.write_test(cmdargs.ipaddr, config)
-            Hostnamer.write_test(cmdargs.ipaddr)
+            hostnamer.write_test(cmdargs.ipaddr)
         elif cmdargs.direct == "BulkVlanChange":
-            Hostnamer.bulk_vlan_change(cmdargs.ipaddr,cmdargs.oldvlan,int(cmdargs.newvlan))
+            hostnamer.bulk_vlan_change(cmdargs.ipaddr,cmdargs.oldvlan,int(cmdargs.newvlan))
         elif cmdargs.direct == "UpgradeCheck":
             #UpgradeCheck.main()
 
             if cmdargs.upgradecheck == 'single' and cmdargs.ipaddr:
-                UpgradeCheck.single_search(cmdargs.ipaddr)
+                upgradeCheck.single_search(cmdargs.ipaddr)
             elif cmdargs.upgradecheck == 'batch' and cmdargs.file:
-                UpgradeCheck.begin()
+                upgradeCheck.begin()
+        elif cmdargs.direct == "tools":
+            if cmdargs.tools == 'AP_Poke':
+                tools.Ap_Poke()
 
                 # ####         add mapping to verify order to reload here            ###
                 #

@@ -113,7 +113,7 @@ class Check:
     def single_search(self,ipaddr):
         ExitOut = False #temporary boolean to control exiting out of things while still writing
 
-        if self.ping_check(ipaddr):
+        if self.subs.ping_check(ipaddr):
             if 'apply' in self.cmdargs and self.cmdargs.apply:
                 print("Now performing Full Operation on {}".format(ipaddr))
             else:
@@ -376,7 +376,7 @@ class Check:
                 if 'apply' in self.cmdargs and self.cmdargs.apply:
                     mins_waited = 80
                     time.sleep(70)
-                    while not self.ping_check(ipaddr):
+                    while not self.subs.ping_check(ipaddr):
                         time.sleep(10)
                         print("no response from {}, waited {} seconds (equal to {} minutes) ".format(ipaddr,mins_waited,mins_waited/60))
                         mins_waited += 10
@@ -385,7 +385,7 @@ class Check:
                             print("No reply from switch IP:{}: for {} minutes\n Please investigate!".format(ipaddr,mins_waited/60))
                             sys.exit(1)
 
-                    if self.ping_check(ipaddr): # unnecessary test?
+                    if self.subs.ping_check(ipaddr): # unnecessary test?
                         print("switch: {} is back online!".format(ipaddr))
                         time.sleep(90) # added a little sleep to give some time for connections to come up
                         after_swcheck_dict["seconds_to_reload"] = mins_waited

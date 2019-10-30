@@ -1,10 +1,7 @@
 #!/usr/bin/env python3
 
-import random
-import re
-import socket
-import time
-import sys
+import random, re, socket,time,sys
+import subprocess,platform
 import netmiko
 from pysnmp.hlapi import *
 
@@ -15,6 +12,7 @@ class SubRoutines:
         self.log_array = [] #may not need this
         self.cmdargs = cmdargs
         self.config = config
+
 
 
 ####################
@@ -100,3 +98,11 @@ class SubRoutines:
             if len(printvar) > 1:
                 print(printvar[1])
             return False
+
+    def ping_check(self, sHost):
+        try:
+            output = subprocess.check_output(
+                "ping -{} 1 {}".format('n' if platform.system().lower() == "windows" else 'c', sHost), shell=True)
+        except Exception as e:
+            return False
+        return True
