@@ -7,6 +7,7 @@
 import re
 import sys
 import subprocess,platform,os,time,datetime
+import getpass
 import difflib
 import pickle
 
@@ -39,6 +40,11 @@ class Tools:
             self.subs.verbose_printer(print(
                 "{} Reachable, Now performing AP Poke Operation on {}".format(self.cmdargs.ipaddr,
                                                                               self.cmdargs.interface)))
+            if self.cmdargs.login:
+                self.config.username = input("Input user name to login to switch:")
+                self.config.password = getpass.getpass("Input password to login to switch:")
+                self.config.enable_pw = getpass.getpass("Input enable password for switch:")
+
             try:
                 net_connect = self.subs.create_connection(self.cmdargs.ipaddr)
 

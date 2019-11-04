@@ -107,6 +107,7 @@ def dnmt():
     appoke_parser.add_argument('interface', metavar='interface', help='interface AP is on')
     appoke_parser.add_argument('-v', '--verbose', help="run in verbose mode", default=False, action="store_true")
     appoke_parser.add_argument('-s', '--skip', help="skip verification", default=False,action="store_true")
+    appoke_parser.add_argument('-l', '--login', help="Ask for login credentials", default=False, action="store_true")
 
 
 
