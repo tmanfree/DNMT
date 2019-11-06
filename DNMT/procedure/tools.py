@@ -36,6 +36,11 @@ class Tools:
     def Ap_Poke(self):
         #cmdargs.interface
         #cmdargs.ipaddr
+
+
+        #format interface string:
+        self.cmdargs.interface = re.sub('[a-zA-Z]', '', self.cmdargs.interface)
+
         if self.subs.ping_check(self.cmdargs.ipaddr):
             self.subs.verbose_printer(print(
                 "{} Reachable, Now performing AP Poke Operation on {}".format(self.cmdargs.ipaddr,
@@ -54,6 +59,9 @@ class Tools:
                     swcheck_dict["sh_int_status"] = net_connect.send_command(
                         'show int status | include {} .'.format(swcheck_dict["interface"]))
                     #create a variable to grab speed (assuming just a number is passed (1/0/11 for example)
+                    # if re.search('[a-zA-Z]', self.cmdargs.interface):
+                    #     swcheck_dict["local_int"] = self.cmdargs.interface
+                    # else:
                     swcheck_dict["local_int"] = \
                         re.findall(r'^(\S+)', swcheck_dict["sh_int_status"],
                                    re.MULTILINE)[0]
