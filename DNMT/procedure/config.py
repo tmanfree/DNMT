@@ -12,8 +12,9 @@ import os
 #add this to the capt config.py with a different name
 def load_sw_base_conf():
     config = configparser.ConfigParser()
-    config.read(os.path.join(os.path.expanduser('~'), "config.text"))
+    # config.read(os.path.join(os.path.expanduser('~'), "config.text"))
     #config.read("config.text") #local file reading
+    config.read(os.path.abspath(os.path.join(os.sep, 'usr', 'lib', 'capt', 'config.text')))
 
     global username
     global password
