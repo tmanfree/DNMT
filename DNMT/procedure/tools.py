@@ -117,12 +117,16 @@ class Tools:
             # netmiko connection error handling
             except netmiko.ssh_exception.NetMikoAuthenticationException as err:
                 self.subs.verbose_printer(err.args[0], "Netmiko Authentication Failure")
+                sys.exit(1)
             except netmiko.ssh_exception.NetMikoTimeoutException as err:
                 self.subs.verbose_printer(err.args[0], "Netmiko Timeout Failure")
+                sys.exit(1)
             except ValueError as err:
                 print(err.args[0])
+                sys.exit(1)
             except Exception as err:  # currently a catch all to stop linux from having a conniption when reloading
                 print("NETMIKO ERROR {}:{}".format(self.cmdargs.ipaddr, err.args[0]))
+                sys.exit(1)
 #
 #
 
