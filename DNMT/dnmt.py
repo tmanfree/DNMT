@@ -173,7 +173,12 @@ def dnmt():
                 upgradeCheck.begin()
         elif cmdargs.direct == "tools":
             if cmdargs.tools == 'AP_Poke':
-                tools.Ap_Poke()
+                try:  #<TODO ADD THIS FUNCTIONALITY EVERYWHERE>
+                    tools.Ap_Poke()
+                except SystemExit as errcode:
+                    sys.exit(errcode)
+
+
 
                 # ####         add mapping to verify order to reload here            ###
                 #
