@@ -37,18 +37,18 @@ def dnmt():
 
      ####adding CLI Parsing
     parser = argparse.ArgumentParser(description='Navigate mac address tables to find a specified MAC.')
-    subparsers = parser.add_subparsers(help="Choose between interactive or direct functionality")
+    subparsers = parser.add_subparsers(help="Choose between interactive or direct functionality", dest ='maincommand')
 
 
-    #create subcategory for choosing the interactive parser
-    interactive_parser = subparsers.add_parser("interactive", help= "Interactive Prompt")
-    interactive_parser.add_argument('--interactive',default="True", required=False, help="placeholder variable, ignore")
-
-    #create subcategory for direct commands (non-interactive) Add parsers here
-    direct_parser = subparsers.add_parser("direct", help= "Non Interactive Commands").add_subparsers(dest="direct")
+    # #create subcategory for choosing the interactive parser
+    # interactive_parser = subparsers.add_parser("interactive", help= "Interactive Prompt")
+    # interactive_parser.add_argument('--interactive',default="True", required=False, help="placeholder variable, ignore")
+    #
+    # #create subcategory for direct commands (non-interactive) Add parsers here
+    # direct_parser = subparsers.add_parser("direct", help= "Non Interactive Commands").add_subparsers(dest="direct")
 
     #parser commands for MAC Search
-    macsearch_parser = direct_parser.add_parser("MACSearch", help= "Search for a mac address beginning on a specified switch")
+    macsearch_parser = subparsers.add_parser("MACSearch", help= "Search for a mac address beginning on a specified switch")
     macsearch_parser.add_argument('ipaddr', metavar='IP',
                         help='The IP to start looking for the mac address at')
     macsearch_parser.add_argument('-m', '--mac', metavar='macaddr', help="A single mac address to search for")
@@ -57,7 +57,7 @@ def dnmt():
     macsearch_parser.add_argument('-c', '--csv', help="save to a specified csv file" )
 
     #parser commands for hostname updater
-    hostnameupdate_parser = direct_parser.add_parser("HostnameUpdate", help= "Check switch hostnames with their DNS names & update")
+    hostnameupdate_parser = subparsers.add_parser("HostnameUpdate", help= "Check switch hostnames with their DNS names & update")
     hostnameupdate_parser.add_argument('iplist', metavar='FILENAME',
                         help='The list that contains the ip addresses to check')
     hostnameupdate_parser.add_argument('-c', '--check', help="Compare hostname, do not change", action="store_true")
@@ -69,19 +69,19 @@ def dnmt():
     # snmptest_parser.add_argument('oid', metavar='OID',
     #                              help='The OID to check')
     #parser commands for write snmp test (temporary)
-    writetest_parser = direct_parser.add_parser("WriteTest", help= "grab snmp variables")
+    writetest_parser = subparsers.add_parser("WriteTest", help= "grab snmp variables")
     writetest_parser.add_argument('ipaddr', metavar='IP',
                         help='The IP of the switch')
     writetest_parser.add_argument('-v', '--verbose', help="run in verbose mode", default=False, action="store_true")
     #parser commands for bulk vlan change (temporary)
-    vlanchange_parser = direct_parser.add_parser("BulkVlanChange", help= "change all vlans on a switch")
+    vlanchange_parser = subparsers.add_parser("BulkVlanChange", help= "change all vlans on a switch")
     vlanchange_parser.add_argument('ipaddr', metavar='IP',
                         help='The IP of the switch')
     vlanchange_parser.add_argument('oldvlan', help="Old Vlan ID to change")
     vlanchange_parser.add_argument('newvlan', help="New Vlan ID to change to")
 
     #parser for Checking on reloads
-    check_parser = direct_parser.add_parser("UpgradeCheck",
+    check_parser = subparsers.add_parser("UpgradeCheck",
                                      help="Commands to verify upgrade of switches").add_subparsers(dest="upgradecheck")
     single_check_parser = check_parser.add_parser("single", help="single ip to check")
     single_check_parser.add_argument('ipaddr', metavar='IP', help='The IP to check')
@@ -99,7 +99,7 @@ def dnmt():
     batch_check_parser.add_argument('-c', '--compare', help="specify config file to match current config")
 
     # create subcategory for tools
-    tools_parser = direct_parser.add_parser("tools", help="various tools").add_subparsers(dest="tools")
+    tools_parser = subparsers.add_parser("tools", help="various tools").add_subparsers(dest="tools")
 
     # parser commands for MAC Search
     appoke_parser = tools_parser.add_parser("AP_Poke", help="Toggle APs with issues")
@@ -124,59 +124,31 @@ def dnmt():
 
 
     #create the loop for interactive prompt
-    if "interactive" in cmdargs :
-        print("Functionality under construction :(")
 
-        # logbool = False #boolean to check current logging state
-        # completebool = False #boolean to allow exiting out of the loop
-        # while not completebool:
-        # # Display the menu
-        #     OpCode = input("Enter the operation you want to do:\n"
-        #                        "(1) MAC Searcher - Track down MACs through CDP Neighbour\n"
-        #                        "(2) Hostname Updater\n"
-        #                        "(L) Enable Logging\n"
-        #                        "(Q) Quit\n"
-        #                        "Choice=")
-        # # if Mac Searcher selected, use the 'lefty' function
-        #     if OpCode == '1':
-        #         #add error handling
-        #         macsearcher.cmdargs.ipaddr = input("Enter the switch to start searching on:")
-        #         macaddr = input("Enter the mac address to search for (can be last 4 digits)")
-        #         macsearcher.unified_search([macsearcher.normalize_mac(macaddr)])
-        #     elif OpCode == '2':
-        #         iplist = input("Enter the name of the file containing IPs of switches to update:")
-        #         Hostnamer.hostname_update()
-        #     elif OpCode.upper() == 'L':
-        #         print("Under construction")
-        #     elif OpCode.upper() == 'Q':
-        #         print("Exiting")
-        #         completebool = True
-        #         sys.exit()
-    elif 'direct' in cmdargs:
-        if cmdargs.direct == "MACSearch":
-            macsearcher.begin_search()
-        elif cmdargs.direct == "HostnameUpdate":
-            hostnamer.hostname_update()
-        # elif args.direct == "SNMPTest":
-        #     hostnamer.snmp_test(args.ipaddr, config, args.oid)
-        elif cmdargs.direct == "WriteTest":
-            #hostnamer.write_test(cmdargs.ipaddr, config)
-            hostnamer.write_test(cmdargs.ipaddr)
-        elif cmdargs.direct == "BulkVlanChange":
-            hostnamer.bulk_vlan_change(cmdargs.ipaddr,cmdargs.oldvlan,int(cmdargs.newvlan))
-        elif cmdargs.direct == "UpgradeCheck":
-            #UpgradeCheck.main()
+    if cmdargs.maincommand == "MACSearch":
+        macsearcher.begin_search()
+    elif cmdargs.maincommand == "HostnameUpdate":
+        hostnamer.hostname_update()
+    # elif args.direct == "SNMPTest":
+    #     hostnamer.snmp_test(args.ipaddr, config, args.oid)
+    elif cmdargs.maincommand == "WriteTest":
+        #hostnamer.write_test(cmdargs.ipaddr, config)
+        hostnamer.write_test(cmdargs.ipaddr)
+    elif cmdargs.maincommand == "BulkVlanChange":
+        hostnamer.bulk_vlan_change(cmdargs.ipaddr,cmdargs.oldvlan,int(cmdargs.newvlan))
+    elif cmdargs.maincommand == "UpgradeCheck":
+        #UpgradeCheck.main()
 
-            if cmdargs.upgradecheck == 'single' and cmdargs.ipaddr:
-                upgradeCheck.single_search(cmdargs.ipaddr)
-            elif cmdargs.upgradecheck == 'batch' and cmdargs.file:
-                upgradeCheck.begin()
-        elif cmdargs.direct == "tools":
-            if cmdargs.tools == 'AP_Poke':
-                try:  #<TODO ADD THIS FUNCTIONALITY EVERYWHERE>
-                    tools.Ap_Poke()
-                except SystemExit as errcode:
-                    sys.exit(errcode)
+        if cmdargs.upgradecheck == 'single' and cmdargs.ipaddr:
+            upgradeCheck.single_search(cmdargs.ipaddr)
+        elif cmdargs.upgradecheck == 'batch' and cmdargs.file:
+            upgradeCheck.begin()
+    elif cmdargs.maincommand == "tools":
+        if cmdargs.tools == 'AP_Poke':
+            try:  #<TODO ADD THIS FUNCTIONALITY EVERYWHERE>
+                tools.Ap_Poke()
+            except SystemExit as errcode:
+                sys.exit(errcode)
 
 
 

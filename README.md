@@ -3,18 +3,15 @@
 The Direct Network Management Tool *(DNMT)* is intended to house various functions that
 require directly accessing switches through either SSH or SNMP.
 
-DNMT can operate in direct or interactive mode. In direct, it will execute a 
-single operation/function. In interactive mode it will show a prompt that displays
-the various commands available. After using each command, the prompt will reappear.
  
  A config file (config.text) is required to get user information (username/pass/snmp/etc)
 
 Current functionality:
 
-* **MAC Search** - *dnmt.py direct MACSearch  -m MAC START_IP* . Based on the previous "Lefty" program,
+* **MAC Search** - *dnmt.py MACSearch  -m MAC START_IP* . Based on the previous "Lefty" program,
  this is currently operational
-in interactive or direct mode.
-* **Hostname Updater** - *dnmt.py direct MACSearch IP MAC* . This will compare switch hostnames
+
+* **Hostname Updater** *dnmt.py MACSearch IP MAC* . This will compare switch hostnames
 with dns hostnames, updating the switch hostname if they are different.
 
 ## Requirements
@@ -53,11 +50,11 @@ an IP address to begin searching at
     
 Example commands:
 
-**dnmt direct MACSearch -m *AAAA.BBBB.CCCC* *1.1.1.1***
+**dnmt MACSearch -m *AAAA.BBBB.CCCC* *1.1.1.1***
 
 This command will search for MAC address *AAAA.BBBB.CCCC* starting from IP address 1.1.1.1
 
-**dnmt direct MACSearch -b *macfile.txt* *1.1.1.1* -c *output.csv***
+**dnmt MACSearch -b *macfile.txt* *1.1.1.1* -c *output.csv***
 
 This command will search for all MAC addresses listed in *macfile.txt* 
  starting from IP address 1.1.1.1 and store results in *output.csv*
@@ -76,7 +73,7 @@ it will then update the switch hostname.
     
 Example commands:
 
-**dnmt direct HostnameUpdate -c *IPList.txt***
+**dnmt HostnameUpdate -c *IPList.txt***
 
 This command will check all of the hostnames for IP addresses listed in IPList.txt. 
 It will not update if there is a difference, due to the -c flag.
@@ -111,9 +108,9 @@ after reload state with the before reload state. This can be run in single mode 
    
 Example commands:
 
-**dnmt direct UpgradeCheck single *A.A.A.A***
+**dnmt UpgradeCheck single *A.A.A.A***
 
-**dnmt direct UpgradeCheck batch *FILENAME***
+**dnmt UpgradeCheck batch *FILENAME***
 
 ### Write Test
 
@@ -127,7 +124,7 @@ Example commands:
     
 Example commands:
 
-**dnmt direct WriteTest  *A.A.A.A***
+**dnmt WriteTest  *A.A.A.A***
 
 This command will copy the running config of A.A.A.A to the startup config
 
