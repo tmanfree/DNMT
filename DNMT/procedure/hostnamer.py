@@ -73,7 +73,7 @@ class HostNamer:
              errorStatus,
              errorIndex,
              varBinds) in nextCmd(SnmpEngine(),
-                                  CommunityData(config.ro),
+                                  CommunityData(self.config.ro),
                                   UdpTransportTarget((ipaddr, 161)),
                                   ContextData(),
                                   ObjectType(ObjectIdentity('CISCO-VLAN-MEMBERSHIP-MIB', 'vmVlan').addAsn1MibSource('file:///usr/share/snmp',
