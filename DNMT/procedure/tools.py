@@ -32,9 +32,19 @@ class Tools:
         self.config.logpath = os.path.join(os.path.expanduser(self.config.logpath), "logs", "UpgradeCheck",
                                            datetime.date.today().strftime('%Y%m%d'))
 
-    def TDR_Test(self,net_connect):
-        #net_connect.send_command('term shell 0')
+    def TDR_Test(self,net_connect,interface):
+        net_connect.enable()
+        print("performing diagnostic on {}".format(interface))
+        result = net_connect.send_command('test cable-diagno tdr interface {}'.format(interface))
+        print("waiting for 15 seconds")
+        time.sleep(15)
+        test_result = net_connect.send_command('show cable-diagnostics tdr int {}'.format(interface))
+        print("Results are:\n{}".format(test_result))
+        #net_connect.disable() #incorrect syntax
+
         return
+
+
     def Ap_Poke(self):
         #cmdargs.interface
         #cmdargs.ipaddr
@@ -98,6 +108,8 @@ class Tools:
 
                         print("Change appears safe") # change mac addresses to be 0,
                         if not self.cmdargs.skip:
+                            if self.cmdargs.tdr: #Run a TDR test before if flag is set
+                                self.TDR_Test(net_connect,swcheck_dict['local_int'])
                             response = input("Confirm action of toggling port on/off ('yes'):")
                             if not response == 'yes':
                                 self.subs.verbose_printer('Did not proceed with change.')
@@ -111,9 +123,6 @@ class Tools:
                         config_command = ["interface " + swcheck_dict["local_int"], "no shutdown"]
                         shutdown_output = net_connect.send_config_set(config_command)
                         self.subs.verbose_printer('Port Enabled.')
-                        #if self.cmdargs.tdr:
-                        #    self.TDR_Test(net_connect)
-
 
                     else:
                         print("Change may be unsafe, exiting.")
