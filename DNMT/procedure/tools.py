@@ -32,7 +32,9 @@ class Tools:
         self.config.logpath = os.path.join(os.path.expanduser(self.config.logpath), "logs", "UpgradeCheck",
                                            datetime.date.today().strftime('%Y%m%d'))
 
-
+    def TDR_Test(self,net_connect):
+        #net_connect.send_command('term shell 0')
+        return
     def Ap_Poke(self):
         #cmdargs.interface
         #cmdargs.ipaddr
@@ -109,6 +111,10 @@ class Tools:
                         config_command = ["interface " + swcheck_dict["local_int"], "no shutdown"]
                         shutdown_output = net_connect.send_config_set(config_command)
                         self.subs.verbose_printer('Port Enabled.')
+                        #if self.cmdargs.tdr:
+                        #    self.TDR_Test(net_connect)
+
+
                     else:
                         print("Change may be unsafe, exiting.")
                        # net_connect.send_command('int {}'.format(swcheck_dict["local_int"]))

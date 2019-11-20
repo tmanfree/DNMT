@@ -101,12 +101,13 @@ def dnmt():
     # create subcategory for tools
     tools_parser = subparsers.add_parser("tools", help="various tools").add_subparsers(dest="tools")
 
-    # parser commands for MAC Search
+    # parser commands for AP_Poke
     appoke_parser = tools_parser.add_parser("AP_Poke", help="Toggle APs with issues")
     appoke_parser.add_argument('ipaddr', metavar='IP', help='Switch Address AP is on')
     appoke_parser.add_argument('interface', metavar='interface', help='interface AP is on')
     appoke_parser.add_argument('-v', '--verbose', help="run in verbose mode", default=False, action="store_true")
     appoke_parser.add_argument('-s', '--skip', help="skip verification", default=False,action="store_true")
+    appoke_parser.add_argument('-t', '--tdr', help="perform TDR test", default=False, action="store_true")
     appoke_parser.add_argument('-l', '--login', help="Ask for login credentials", default=False, action="store_true")
 
 
