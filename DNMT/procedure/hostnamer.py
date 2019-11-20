@@ -145,6 +145,7 @@ class HostNamer:
                     #     '1.3.6.1.2.1.1.5.0'),dns_hostname.upper()))
                     varBinds = self.subs.snmp_set(ipaddr, ObjectType(ObjectIdentity(
                         '1.3.6.1.2.1.1.5.0'), dns_hostname.upper()))
+                    self.write_test(ipaddr)
                     if (varBinds):#hostname was updated successfully
                         #call itself to confirm it is updated.
                         self.snmpproc(ipaddr, dns_hostname, dns_domain)
