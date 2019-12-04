@@ -62,6 +62,11 @@ class SnmpFuncs:
 
         #check what vlan is now
         newVlan = self.get_interface_vlan(self.cmdargs.ipaddr, intId)
+
+
+        print ("new Vlan:{} type: old Vlan:{} type:{} ".format(newVlan,type(newVlan),currentVlan,type(currentVlan)))
+
+
         if int(newVlan) == int(currentVlan): # <TODO> LOGIC NOT WORKING HERE
             print("Vlan updated to Vlan {}".format(newVlan))
         else:
