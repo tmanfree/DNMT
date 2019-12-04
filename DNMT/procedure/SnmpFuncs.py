@@ -82,7 +82,7 @@ class SnmpFuncs:
                 intId = oidId
         return intId
 
-    def get_full_interface_vlan(self,ipaddr,intId):
+    def get_full_interface(self,ipaddr,intId):
         oidstring = '1.3.6.1.2.1.2.2.1.2.{}'.format(intId)
         # find the current vlan assignment for the port
         varBind = self.subs.snmp_get(ipaddr, ObjectType(ObjectIdentity(oidstring)))
