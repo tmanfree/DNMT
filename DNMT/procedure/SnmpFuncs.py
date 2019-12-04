@@ -39,11 +39,14 @@ class SnmpFuncs:
         # Find the ID of the requested interface
         intId = self.get_interface_id(self.cmdargs.ipaddr, self.cmdargs.interface)
 
+        fullInterface = self.get_full_interface(self.cmdargs.ipaddr,intId)
+        intDescription = self.get_interface_description(self.cmdargs.ipaddr,intId)
         currentVlan = self.get_interface_vlan(self.cmdargs.ipaddr,intId)
 
         #enter vlan id to change to
         bLoop = True  # TODO make this more efficient
         while (bLoop):
+            print("Interface {} Description:{}".format(fullInterface,intDescription))
             vlanResponse = input("Current Vlan is {} Enter VLAN ID to change to:".format(currentVlan ))
             if any(d['ID'] == int(vlanResponse) for d in vlanList):
                 bLoop = False
@@ -52,7 +55,7 @@ class SnmpFuncs:
 
 
         response = input("Do you want to change vlan on port {} from {} to {}?\n"
-                         "enter (yes) to proceed".format(self.cmdargs.interface,currentVlan,vlanResponse))
+                         "enter (yes) to proceed:".format(self.cmdargs.interface,currentVlan,vlanResponse))
         if not response == 'yes':
             self.subs.verbose_printer('Did not proceed with change.')
             sys.exit(1)
@@ -79,6 +82,14 @@ class SnmpFuncs:
                 intId = oidId
         return intId
 
+    def get_full_interface_vlan(self,ipaddr,intId):
+        oidstring = '1.3.6.1.2.1.2.2.1.2.{}'.format(intId)
+        # find the current vlan assignment for the port
+        varBind = self.subs.snmp_get(ipaddr, ObjectType(ObjectIdentity(oidstring)))
+        fullInt = varBind[0]._ObjectType__args[1]._value
+
+        return fullInt
+
     def get_interface_vlan(self,ipaddr,intId):
         oidstring = '1.3.6.1.4.1.9.9.68.1.2.2.1.2.{}'.format(intId)
         # find the current vlan assignment for the port
@@ -86,6 +97,14 @@ class SnmpFuncs:
         currentVlan = varBind[0]._ObjectType__args[1]._value
 
         return currentVlan
+
+    def get_interface_description(self,ipaddr,intId):
+        oidstring = '1.3.6.1.2.1.31.1.1.1.18.{}'.format(intId)
+        # find the current vlan assignment for the port
+        varBind = self.subs.snmp_get(ipaddr, ObjectType(ObjectIdentity(oidstring)))
+        interfaceDescription = varBind[0]._ObjectType__args[1]._value
+
+        return interfaceDescription
 
     def set_interface_vlan(self,ipaddr,intId,vlan):
         oidstring = '1.3.6.1.4.1.9.9.68.1.2.2.1.2.{}'.format(intId)
