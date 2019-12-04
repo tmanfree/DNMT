@@ -232,24 +232,3 @@ class HostNamer:
                 print("Hostname not found in DNS for IP:{}".format(ipaddr))
         file.close()
         return
-
-
-#
-# #if being run by itself
-# if __name__ == "__main__":
-#     #import files to load config and parse CLI
-#     import config
-#     import argparse
-#
-#     config.load_sw_base_conf()
-#     parser = argparse.ArgumentParser(description='Check if the hostnames of a list of IPs are identical to DNS.')
-#     parser.add_argument('iplist', metavar='FILENAME',
-#                         help='The list that contains the ip addresses to check')
-#     parser.add_argument('-c', '--check', help="Compare hostname, do not change", action="store_true")
-#     cmdargs = parser.parse_args()
-#
-#     MainFunc = HostNamer(cmdargs,config)
-#     MainFunc.hostname_update(cmdargs.check)
-
-
-

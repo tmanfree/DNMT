@@ -53,6 +53,26 @@ class SubRoutines:
             # success
             return varBinds
 
+
+    def snmp_walk(self,  ipaddr, *args):
+        snmpList = []
+        for (errorIndication, errorStatus, errorIndex, varBinds) in nextCmd(SnmpEngine(),
+            CommunityData(self.config.ro),UdpTransportTarget((ipaddr, 161)), ContextData(),
+                                                                            *args, lexicographicMode=False):
+            if errorIndication:
+                print(errorIndication, file=sys.stderr)
+                break
+            elif errorStatus:
+                print('%s at %s' % (errorStatus.prettyPrint(),
+                                    errorIndex and varBinds[int(errorIndex) - 1][0] or '?'),
+                      file=sys.stderr)
+                break
+            else:
+                snmpList.append(varBinds[0])
+
+        return snmpList
+
+
     ####################
     ####SSH COMMANDS####
     ####################

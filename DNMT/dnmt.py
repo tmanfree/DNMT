@@ -16,6 +16,7 @@ from DNMT.procedure.lefty import Lefty
 from DNMT.procedure.check import Check
 from DNMT.procedure import config
 from DNMT.procedure.hostnamer import HostNamer
+from DNMT.procedure.SnmpFuncs import SnmpFuncs
 from DNMT.procedure.tools import Tools
 from DNMT.procedure import hostnamer
 
@@ -101,6 +102,15 @@ def dnmt():
     # create subcategory for tools
     tools_parser = subparsers.add_parser("tools", help="various tools").add_subparsers(dest="tools")
 
+    # parser commands for Vlan_get
+
+
+    port_change_parser = tools_parser.add_parser("Port_Change", help="update a port")
+    port_change_parser.add_argument('ipaddr', metavar='IP', help='Switch Address interface is on')
+    port_change_parser.add_argument('interface', metavar='interface', help='interface to update')
+    # vlan_parser.add_argument('-v', '--verbose', help="run in verbose mode", default=False, action="store_true")
+
+
     # parser commands for AP_Poke
     appoke_parser = tools_parser.add_parser("AP_Poke", help="Toggle APs with issues")
     appoke_parser.add_argument('ipaddr', metavar='IP', help='Switch Address AP is on')
@@ -120,6 +130,7 @@ def dnmt():
     hostnamer = HostNamer(cmdargs,config)
     upgradeCheck = Check(cmdargs, config)
     tools = Tools(cmdargs, config)
+    snmpFuncs = SnmpFuncs(cmdargs,config)
 
     ### complete CLI Parsing
 
@@ -150,6 +161,9 @@ def dnmt():
                 tools.Ap_Poke()
             except SystemExit as errcode:
                 sys.exit(errcode)
+        elif cmdargs.tools == 'Port_Change':
+            snmpFuncs.Change_Port_Vlan()
+
 
 
 
