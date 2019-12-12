@@ -116,7 +116,8 @@ class Tools:
                                 sys.exit(1)
 
                         self.subs.snmp_reset_interface(self.cmdargs.ipaddr,
-                            self.subs.snmp_get_interface_description(swcheck_dict["local_int"]))
+                            self.subs.snmp_get_interface_description(self.cmdargs.ipaddr,
+                                                                     swcheck_dict["local_int"]))
                         # net_connect.enable()
                         # config_command = ["interface " + swcheck_dict["local_int"], "shutdown"]
                         # shutdown_output = net_connect.send_config_set(config_command)
