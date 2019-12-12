@@ -115,14 +115,16 @@ class Tools:
                                 self.subs.verbose_printer('Did not proceed with change.')
                                 sys.exit(1)
 
-                        net_connect.enable()
-                        config_command = ["interface " + swcheck_dict["local_int"], "shutdown"]
-                        shutdown_output = net_connect.send_config_set(config_command)
-                        self.subs.verbose_printer('Port Shutdown, waiting 5 seconds.')
-                        time.sleep(5)
-                        config_command = ["interface " + swcheck_dict["local_int"], "no shutdown"]
-                        shutdown_output = net_connect.send_config_set(config_command)
-                        self.subs.verbose_printer('Port Enabled.')
+                        self.subs.snmp_reset_interface(
+                            self.subs.snmp_get_interface_description(swcheck_dict["local_int"]))
+                        # net_connect.enable()
+                        # config_command = ["interface " + swcheck_dict["local_int"], "shutdown"]
+                        # shutdown_output = net_connect.send_config_set(config_command)
+                        # self.subs.verbose_printer('Port Shutdown, waiting 5 seconds.')
+                        # time.sleep(5)
+                        # config_command = ["interface " + swcheck_dict["local_int"], "no shutdown"]
+                        # shutdown_output = net_connect.send_config_set(config_command)
+                        # self.subs.verbose_printer('Port Enabled.')
 
                     else:
                         print("Change may be unsafe, exiting.")

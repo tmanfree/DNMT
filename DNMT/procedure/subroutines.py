@@ -5,6 +5,9 @@ import subprocess,platform
 import netmiko
 from pysnmp.hlapi import *
 
+from pysnmp.entity.rfc3413.oneliner import cmdgen
+from pysnmp.proto import rfc1902
+
 
 class SubRoutines:
     def __init__(self, cmdargs, config):
@@ -19,6 +22,7 @@ class SubRoutines:
 ###SNMP COMMANDS####
 ####################
 
+    ###BASE SNMP COMMANDS####
     def snmp_set(self, ipaddr, *args):
         errorIndication, errorStatus, errorIndex, varBinds = next(
             setCmd(SnmpEngine(),
@@ -71,6 +75,74 @@ class SubRoutines:
                 snmpList.append(varBinds[0])
 
         return snmpList
+
+    ###ADVANCED SNMP COMMANDS####
+    #assumes getting infor in 1/0/10 format
+    def snmp_get_interface_id(self, ipaddr, interface):
+        intId = 0  # intitalize as 0 as not found
+        varBinds = self.snmp_walk(ipaddr, ObjectType(ObjectIdentity(
+            '1.3.6.1.2.1.31.1.1.1.1')))
+        #'1.3.6.1.2.1.2.2.1.2')))
+
+        for varBind in varBinds:
+            oidTuple = varBind._ObjectType__args[0]._ObjectIdentity__oid._value
+            oidId = oidTuple[len(oidTuple) - 1]
+            if (varBind._ObjectType__args[1]._value.decode("utf-8").endswith(interface)):
+                intId = oidId
+        return intId
+
+    def snmp_get_full_interface(self, ipaddr, intId):
+        oidstring = '1.3.6.1.2.1.2.2.1.2.{}'.format(intId)
+        # find the current vlan assignment for the port
+        varBind = self.snmp_get(ipaddr, ObjectType(ObjectIdentity(oidstring)))
+        fullInt = varBind[0]._ObjectType__args[1]._value
+
+        return fullInt.decode("utf-8")
+
+    def snmp_get_interface_vlan(self, ipaddr, intId):
+        oidstring = '1.3.6.1.4.1.9.9.68.1.2.2.1.2.{}'.format(intId)
+        # find the current vlan assignment for the port
+        varBind = self.snmp_get(ipaddr, ObjectType(ObjectIdentity(oidstring)))
+        currentVlan = varBind[0]._ObjectType__args[1]._value
+
+        return currentVlan
+
+    def snmp_get_interface_description(self, ipaddr, intId):
+        oidstring = '1.3.6.1.2.1.31.1.1.1.18.{}'.format(intId)
+        # find the current vlan assignment for the port
+        varBind = self.snmp_get(ipaddr, ObjectType(ObjectIdentity(oidstring)))
+        interfaceDescription = varBind[0]._ObjectType__args[1]._value
+
+        return interfaceDescription.decode("utf-8")
+
+    def snmp_set_interface_vlan(self, ipaddr, intId, vlan):
+        oidstring = '1.3.6.1.4.1.9.9.68.1.2.2.1.2.{}'.format(intId)
+        self.snmp_set(ipaddr, ObjectType(ObjectIdentity(oidstring), rfc1902.Integer(vlan)))
+
+    def snmp_reset_interface(self,ipaddr,intId):
+        oidstring = '1.3.6.1.2.1.2.2.1.7.{}'.format(intId)
+        self.snmp_set(ipaddr, ObjectType(ObjectIdentity(oidstring), rfc1902.Integer(2)))
+        time.sleep(2)
+        self.snmp_set(ipaddr, ObjectType(ObjectIdentity(oidstring), rfc1902.Integer(1)))
+
+    def snmp_vlan_grab(self, ipaddr):
+
+        oidstring = '1.3.6.1.4.1.9.9.46.1.3.1.1.4.{}'.format('1')
+        varBinds = self.snmp_walk(ipaddr, ObjectType(ObjectIdentity(oidstring)))
+        vlansToIgnore = [1002, 1003, 1004, 1005]  # declare what vlans we will ignore.
+        vlanList = []  # intitalize a blank list
+
+
+        for varBind in varBinds:
+            oidTuple = varBind._ObjectType__args[0]._ObjectIdentity__oid._value
+            vlanId = oidTuple[len(oidTuple) - 1]
+            if (vlanId not in vlansToIgnore):
+                vlanList.append({'ID': vlanId, "Name": varBind._ObjectType__args[1]._value})
+
+        ##if in verbose mode
+        # for vlan in vlanList:
+        #     print("Vlan ID:{} Vlan Name:{}".format(vlan["ID"],vlan["Name"].decode("utf-8")))
+        return vlanList
 
 
     ####################
