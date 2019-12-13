@@ -77,7 +77,18 @@ class SubRoutines:
         return snmpList
 
     ###ADVANCED SNMP COMMANDS####
-    #assumes getting infor in 1/0/10 format
+    # Name: snmp_get_interface_id
+    # Input:
+    #   ipaddr (string)
+    #      -The ipaddress/hostname to grab info from
+    #   interface (string)
+    #      -The interface to grab the ID of (Currently assumes the straight number format ( X/X/X or X/X) or GiX/X
+    # Return:
+    #  interfaceDescription (a string of the interface description)
+    # Summary:
+    #   grabs the interface id of a supplied interface.
+    #   currently using 1.3.6.1.2.1.31.1.1.1.1, OiD could be updated to 1.3.6.1.2.1.2.2.1.2 for full name checking
+    #     (ie GigabitEthernet X/X)
     def snmp_get_interface_id(self, ipaddr, interface):
         intId = 0  # intitalize as 0 as not found
         varBinds = self.snmp_walk(ipaddr, ObjectType(ObjectIdentity(
@@ -91,6 +102,16 @@ class SubRoutines:
                 intId = oidId
         return intId
 
+    # Name: snmp_get_full_interface
+    # Input:
+    #   ipaddr (string)
+    #      -The ipaddress/hostname to grab info from
+    #   intId (string)
+    #      -The id of the interface to set
+    # Return:
+    #  fullInt (a string of the full interface name)
+    # Summary:
+    #   grabs the interface name
     def snmp_get_full_interface(self, ipaddr, intId):
         oidstring = '1.3.6.1.2.1.2.2.1.2.{}'.format(intId)
         # find the current vlan assignment for the port
@@ -99,6 +120,16 @@ class SubRoutines:
 
         return fullInt.decode("utf-8")
 
+    # Name: snmp_get_interface_vlan
+    # Input:
+    #   ipaddr (string)
+    #      -The ipaddress/hostname to grab info from
+    #   intId (string)
+    #      -The id of the interface to set
+    # Return:
+    #  currentVlan (a string of the current vlan on a port)
+    # Summary:
+    #   grabs the assigned vlan of an interface
     def snmp_get_interface_vlan(self, ipaddr, intId):
         oidstring = '1.3.6.1.4.1.9.9.68.1.2.2.1.2.{}'.format(intId)
         # find the current vlan assignment for the port
@@ -107,24 +138,64 @@ class SubRoutines:
 
         return currentVlan
 
+    # Name: snmp_get_interface_description
+    # Input:
+    #   ipaddr (string)
+    #      -The ipaddress/hostname to grab info from
+    #   intId (string)
+    #      -The id of the interface to set
+    # Return:
+    #  interfaceDescription (a string of the interface description)
+    # Summary:
+    #   grabs the description of an interface
     def snmp_get_interface_description(self, ipaddr, intId):
         oidstring = '1.3.6.1.2.1.31.1.1.1.18.{}'.format(intId)
-        # find the current vlan assignment for the port
         varBind = self.snmp_get(ipaddr, ObjectType(ObjectIdentity(oidstring)))
         interfaceDescription = varBind[0]._ObjectType__args[1]._value
 
         return interfaceDescription.decode("utf-8")
 
+    # Name: snmp_set_interface_vlan
+    # Input:
+    #   ipaddr (string)
+    #      -The ipaddress/hostname to grab info from
+    #   intId (string)
+    #      -The id of the interface to set
+    #   vlan (string)
+    #      -The vlan to set the interface to
+    # Return:
+    #   none
+    # Summary:
+    #   Sets the specified interface to the specified vlan
     def snmp_set_interface_vlan(self, ipaddr, intId, vlan):
         oidstring = '1.3.6.1.4.1.9.9.68.1.2.2.1.2.{}'.format(intId)
         self.snmp_set(ipaddr, ObjectType(ObjectIdentity(oidstring), rfc1902.Integer(vlan)))
 
+    # Name: snmp_reset_interface
+    # Input:
+    #   ipaddr (string)
+    #      -The ipaddress/hostname to grab info from
+    #   intId (string)
+    #      -The id of the interface to reset
+    # Return:
+    #   none
+    # Summary:
+    #   Shuts down the specified interface, then re-enables it after 2 seconds
     def snmp_reset_interface(self,ipaddr,intId):
         oidstring = '1.3.6.1.2.1.2.2.1.7.{}'.format(intId)
         self.snmp_set(ipaddr, ObjectType(ObjectIdentity(oidstring), rfc1902.Integer(2)))
         time.sleep(2)
         self.snmp_set(ipaddr, ObjectType(ObjectIdentity(oidstring), rfc1902.Integer(1)))
 
+    # Name: snmp_vlan_grab
+    # Input:
+    #   ipaddr (string)
+    #      -The ipaddress/hostname to grab info from
+    # Return:
+    #   vlanList (list of vlans from switch)
+    # Summary:
+    #   Grabs list of vlans from 1.3.6.1.4.1.9.9.46.1.3.1.1.4.1
+    #   currently ignores vlan 1002 - 1005 as they are defaults on cisco
     def snmp_vlan_grab(self, ipaddr):
 
         oidstring = '1.3.6.1.4.1.9.9.46.1.3.1.1.4.{}'.format('1')
@@ -144,6 +215,30 @@ class SubRoutines:
         #     print("Vlan ID:{} Vlan Name:{}".format(vlan["ID"],vlan["Name"].decode("utf-8")))
         return vlanList
 
+        # Name: snmp_port_poe_alloc_list
+        # Input:
+        #   ipaddr (string)
+        #      -The ipaddress/hostname to grab info from
+        # Return:
+        #   vlanList (list of vlans from switch)
+        # Summary:
+        #   Grabs list of ports 1.3.6.1.4.1.9.9.402.1.2.1.7
+        #   currently ignores vlan 1002 - 1005 as they are defaults on cisco
+    def snmp_port_poe_alloc_list(self, ipaddr):
+
+        oidstring = '1.3.6.1.4.1.9.9.402.1.2.1.7.1'
+        varBinds = self.snmp_walk(ipaddr, ObjectType(ObjectIdentity(oidstring)))
+        vlansToIgnore = [1002, 1003, 1004, 1005]  # declare what vlans we will ignore.
+        intList = []  # intitalize a blank list
+
+        for varBind in varBinds:
+            oidTuple = varBind._ObjectType__args[0]._ObjectIdentity__oid._value
+            vlanId = oidTuple[len(oidTuple) - 1]
+            # if (vlanId not in vlansToIgnore):
+            intList.append(vlanId)
+
+        return intList
+
 
     ####################
     ####SSH COMMANDS####
@@ -155,7 +250,8 @@ class SubRoutines:
     #      -The ipaddress/hostname to connect to
     # Return:
     #   net_connect (connection handler)
-    # Sets up a connection to the provided ip address. Currently setup to connect to cisco switches
+    # Summary:
+    #   Sets up a connection to the provided ip address. Currently setup to connect to cisco switches
     def create_connection(self,ipaddr):
         if 'verbose' in self.cmdargs and self.cmdargs.verbose:
             print('------- CONNECTING to switch {}-------'.format(ipaddr))
@@ -184,10 +280,11 @@ class SubRoutines:
     #   *printvar
     #      -This variable(s) will allow the function to be passed two vars, 1 for what to print if verbose,
     #      and 1 to print if not.
-    # verbose printer currently is passed a command line argument variable (cmdargs) and 1-2 strings to print
-    # the 1st string is what to print if verbose, the second is what to print if not.
-    # printvar accepts a variable number of values in case nothing will be printed for not verbose
-    # verbose printer will return True if verbose, and false if not (redundant?)
+    # Summary:
+    #   verbose printer currently is passed a command line argument variable (cmdargs) and 1-2 strings to print
+    #   the 1st string is what to print if verbose, the second is what to print if not.
+    #   printvar accepts a variable number of values in case nothing will be printed for not verbose
+    #   verbose printer will return True if verbose, and false if not (redundant?)
     def verbose_printer(self,*printvar):
         # if in verbose mode, print the first printvar variable and return that it is in verbose mode
         if 'verbose' in self.cmdargs and self.cmdargs.verbose:
@@ -205,7 +302,8 @@ class SubRoutines:
     #      -The ipaddress/hostname to ping.
     # Return:
     #   true if pingable, false if not
-    # function trys to ping the provided host and returns boolean success
+    # Summary:
+    #   function trys to ping the provided host and returns boolean success
     def ping_check(self, sHost):
         try:
             output = subprocess.check_output(
@@ -222,9 +320,9 @@ class SubRoutines:
     #      -This variable contains the string to apply the regex search to.
     # Return:
     #   matched string or N/A if nothing is found
-    #
-    # regex_parser_var0 adds some error handling to the regex searching functions. returning a "N/A" default if
-    #   nothing is found
+    # Summary:
+    #   regex_parser_var0 adds some error handling to the regex searching functions. returning a "N/A" default if
+    #       nothing is found
     def regex_parser_var0 (self,regex, input):
         findval = re.findall(regex, input, re.MULTILINE);
         if len(findval) > 0:

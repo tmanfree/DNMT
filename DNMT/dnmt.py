@@ -19,6 +19,7 @@ from DNMT.procedure.hostnamer import HostNamer
 from DNMT.procedure.SnmpFuncs import SnmpFuncs
 from DNMT.procedure.tools import Tools
 from DNMT.procedure import hostnamer
+from DNMT.procedure.test import Test
 
 #3rd party imports
 import argcomplete
@@ -99,11 +100,16 @@ def dnmt():
     batch_check_parser.add_argument('-v', '--verbose', help="run in verbose mode", default=False, action="store_true")
     batch_check_parser.add_argument('-c', '--compare', help="specify config file to match current config")
 
+    #Tests Begin
+    test_parser = subparsers.add_parser("test", help="various tests").add_subparsers(dest="test")
+    power_check_parser = test_parser.add_parser("Power_Check", help="check port power")
+    power_check_parser.add_argument('ipaddr', metavar='IP', help='Switch Address interface is on')
+    power_check_parser.add_argument('interface', metavar='interface', help='interface to update')
+    #Tests End
+
+
     # create subcategory for tools
     tools_parser = subparsers.add_parser("tools", help="various tools").add_subparsers(dest="tools")
-
-    # parser commands for Vlan_get
-
 
     port_change_parser = tools_parser.add_parser("Port_Change", help="update a port")
     port_change_parser.add_argument('ipaddr', metavar='IP', help='Switch Address interface is on')
@@ -131,6 +137,7 @@ def dnmt():
     upgradeCheck = Check(cmdargs, config)
     tools = Tools(cmdargs, config)
     snmpFuncs = SnmpFuncs(cmdargs,config)
+    test = Test(cmdargs, config)
 
     ### complete CLI Parsing
 
@@ -163,6 +170,10 @@ def dnmt():
                 sys.exit(errcode)
         elif cmdargs.tools == 'Port_Change':
             snmpFuncs.Change_Port_Vlan()
+    elif cmdargs.maincommand == 'test':
+        if cmdargs.test == 'Power_Check':
+            test.Power_Check()
+
 
 
 
