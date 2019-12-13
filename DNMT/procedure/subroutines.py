@@ -148,6 +148,14 @@ class SubRoutines:
     ####################
     ####SSH COMMANDS####
     ####################
+
+    # Name: create_connection
+    # Input:
+    #   ipaddr (string)
+    #      -The ipaddress/hostname to connect to
+    # Return:
+    #   net_connect (connection handler)
+    # Sets up a connection to the provided ip address. Currently setup to connect to cisco switches
     def create_connection(self,ipaddr):
         if 'verbose' in self.cmdargs and self.cmdargs.verbose:
             print('------- CONNECTING to switch {}-------'.format(ipaddr))
@@ -191,6 +199,13 @@ class SubRoutines:
                 print(printvar[1])
             return False
 
+    # Name: ping_check
+    # Input:
+    #   host (string)
+    #      -The ipaddress/hostname to ping.
+    # Return:
+    #   true if pingable, false if not
+    # function trys to ping the provided host and returns boolean success
     def ping_check(self, sHost):
         try:
             output = subprocess.check_output(
@@ -198,3 +213,21 @@ class SubRoutines:
         except Exception as e:
             return False
         return True
+
+    # Name: regex_parser_var0
+    # Input:
+    #   regex (raw string)
+    #      -This variable will contains the regex expression to use.
+    #   input (string)
+    #      -This variable contains the string to apply the regex search to.
+    # Return:
+    #   matched string or N/A if nothing is found
+    #
+    # regex_parser_var0 adds some error handling to the regex searching functions. returning a "N/A" default if
+    #   nothing is found
+    def regex_parser_var0 (self,regex, input):
+        findval = re.findall(regex, input, re.MULTILINE);
+        if len(findval) > 0:
+            return findval[0];
+        else:
+            return "N/A"

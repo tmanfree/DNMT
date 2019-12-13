@@ -45,6 +45,7 @@ class Tools:
         return
 
 
+
     def Ap_Poke(self):
         #cmdargs.interface
         #cmdargs.ipaddr
@@ -74,9 +75,8 @@ class Tools:
                     # if re.search('[a-zA-Z]', self.cmdargs.interface):
                     #     swcheck_dict["local_int"] = self.cmdargs.interface
                     # else:
-                    swcheck_dict["local_int"] = \
-                        re.findall(r'^(\S+)', swcheck_dict["sh_int_status"],
-                                   re.MULTILINE)[0]
+                    swcheck_dict["local_int"] = self.subs.regex_parser_var0(r'^(\S+)',swcheck_dict["sh_int_status"])
+
                     swcheck_dict["sh_int"] = net_connect.send_command(
                         'show int {} | include {} .'.format(swcheck_dict["local_int"], swcheck_dict["interface"]))
                     swcheck_dict["sh_mac"] = net_connect.send_command(
@@ -89,11 +89,13 @@ class Tools:
                         re.findall(r'entries displayed : (\S+)', swcheck_dict["sh_cdp"], re.MULTILINE)
                     swcheck_dict["sh_power"] = net_connect.send_command(
                         'show power inline | include {} .'.format(swcheck_dict["interface"]))
-                    swcheck_dict["power_stat"] = \
-                    re.findall(r'^(?:\S+\s+\S+\s+\S+\s+\S+\s+)(\S+)', swcheck_dict["sh_power"], re.MULTILINE)[0]
-                    #re.findall(r'^(?:\S+\s+\S+\s+)(\S+)', swcheck_dict["sh_power"], re.MULTILINE)[0]
-                    swcheck_dict["int_stat"] = \
-                        re.findall(r'(?:line protocol is )(\S+)', swcheck_dict["sh_int"], re.MULTILINE)[0]
+                    swcheck_dict["power_stat"] = self.subs.regex_parser_var0(r'^(?:\S+\s+\S+\s+\S+\s+\S+\s+)(\S+)',
+                                                                             swcheck_dict["sh_power"])
+                    swcheck_dict["int_stat"] = self.subs.regex_parser_var0(r'(?:line protocol is )(\S+)',
+                                                                           swcheck_dict["sh_int"])
+                    swcheck_dict["power_stat"] = self.subs.regex_parser_var0(r'^(?:\S+\s+\S+\s+\S+\s+\S+\s+)(\S+)', swcheck_dict["sh_power"])
+                    swcheck_dict["int_stat"] = self.subs.regex_parser_var0(r'(?:line protocol is )(\S+)',swcheck_dict["sh_int"] )
+
 
                     self.subs.verbose_printer(
                         "Switch:{}\nInterface:{}\nInt Status:{}\nPower Status:{}\n# of MACs:{}".format(
@@ -115,17 +117,17 @@ class Tools:
                                 self.subs.verbose_printer('Did not proceed with change.')
                                 sys.exit(1)
 
-                        # self.subs.snmp_reset_interface(self.cmdargs.ipaddr,
-                        #     self.subs.snmp_get_interface_description(self.cmdargs.ipaddr,
-                        #                                              swcheck_dict["local_int"]))
-                        net_connect.enable()
-                        config_command = ["interface " + swcheck_dict["local_int"], "shutdown"]
-                        shutdown_output = net_connect.send_config_set(config_command)
-                        self.subs.verbose_printer('Port Shutdown, waiting 5 seconds.')
-                        time.sleep(5)
-                        config_command = ["interface " + swcheck_dict["local_int"], "no shutdown"]
-                        shutdown_output = net_connect.send_config_set(config_command)
-                        self.subs.verbose_printer('Port Enabled.')
+                        self.subs.snmp_reset_interface(self.cmdargs.ipaddr,
+                            self.subs.snmp_get_interface_id(self.cmdargs.ipaddr,
+                                                                     swcheck_dict["local_int"]))
+                        # net_connect.enable()
+                        # config_command = ["interface " + swcheck_dict["local_int"], "shutdown"]
+                        # shutdown_output = net_connect.send_config_set(config_command)
+                        # self.subs.verbose_printer('Port Shutdown, waiting 5 seconds.')
+                        # time.sleep(5)
+                        # config_command = ["interface " + swcheck_dict["local_int"], "no shutdown"]
+                        # shutdown_output = net_connect.send_config_set(config_command)
+                        # self.subs.verbose_printer('Port Enabled.')
 
                     else:
                         print("Change may be unsafe, exiting.")
