@@ -220,24 +220,26 @@ class SubRoutines:
         #   ipaddr (string)
         #      -The ipaddress/hostname to grab info from
         # Return:
-        #   vlanList (list of vlans from switch)
+        #   vlanList (list of ports)
         # Summary:
-        #   Grabs list of ports 1.3.6.1.4.1.9.9.402.1.2.1.7
-        #   currently ignores vlan 1002 - 1005 as they are defaults on cisco
+        #   Grabs list of ports power allocation 1.3.6.1.4.1.9.9.402.1.2.1.7
+        #   ports map 1 - 1  for ethernet port to ID number
     def snmp_port_poe_alloc_list(self, ipaddr):
 
-        oidstring = '1.3.6.1.4.1.9.9.402.1.2.1.7.1'
+        oidstring = '1.3.6.1.4.1.9.9.402.1.2.1.7'
         varBinds = self.snmp_walk(ipaddr, ObjectType(ObjectIdentity(oidstring)))
-        vlansToIgnore = [1002, 1003, 1004, 1005]  # declare what vlans we will ignore.
         intList = []  # intitalize a blank list
 
         for varBind in varBinds:
-            oidTuple = varBind._ObjectType__args[0]._ObjectIdentity__oid._value
-            vlanId = oidTuple[len(oidTuple) - 1]
-            # if (vlanId not in vlansToIgnore):
-            intList.append({'Port': vlanId, "Power": varBind._ObjectType__args[1]._value})
+            switchList = []
+            for ports in varBind:
+                oidTuple = ports._ObjectType__args[0]._ObjectIdentity__oid._value
+                vlanId = oidTuple[len(oidTuple) - 1]
+                # if (vlanId not in vlansToIgnore):
+                switchList.append({'Port': vlanId, "Power": ports._ObjectType__args[1]._value})
+            intList.append(switchList)
 
-        return intList
+        return switchList
 
 
     ####################

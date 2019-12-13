@@ -104,7 +104,6 @@ def dnmt():
     test_parser = subparsers.add_parser("test", help="various tests").add_subparsers(dest="test")
     power_check_parser = test_parser.add_parser("Power_Check", help="check port power")
     power_check_parser.add_argument('ipaddr', metavar='IP', help='Switch Address interface is on')
-    power_check_parser.add_argument('interface', metavar='interface', help='interface to update')
     #Tests End
 
 
