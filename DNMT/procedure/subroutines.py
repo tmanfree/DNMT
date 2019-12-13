@@ -235,7 +235,7 @@ class SubRoutines:
             oidTuple = varBind._ObjectType__args[0]._ObjectIdentity__oid._value
             vlanId = oidTuple[len(oidTuple) - 1]
             # if (vlanId not in vlansToIgnore):
-            intList.append(vlanId)
+            intList.append({'Port': vlanId, "Power": varBind._ObjectType__args[1]._value})
 
         return intList
 
