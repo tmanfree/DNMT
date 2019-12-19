@@ -8,6 +8,8 @@ from pysnmp.hlapi import *
 from pysnmp.entity.rfc3413.oneliner import cmdgen
 from pysnmp.proto import rfc1902
 
+from DNMT.procedure.switchstruct import StackStruct
+
 
 class SubRoutines:
     def __init__(self, cmdargs, config):
@@ -102,6 +104,46 @@ class SubRoutines:
                 intId = oidId
         return intId
 
+
+    # Name: snmp_get_interface_id_bulk
+    # Input:
+    #   ipaddr (string)
+    #      -The ipaddress/hostname to grab info from
+    # Return:
+    #  interfaceDescriptions (a string of the interface description)
+    # Summary:
+    #   returns all interface ids
+    def snmp_get_interface_id_bulk(self, ipaddr):
+        intId = 0  # intitalize as 0 as not found
+        varBinds = self.snmp_walk(ipaddr, ObjectType(ObjectIdentity(
+            '1.3.6.1.2.1.31.1.1.1.1')))
+        returnList = []
+
+
+        for varBind in varBinds:
+            portname = varBind._ObjectType__args[1]._value.decode("utf-8")
+            oidTuple = varBind._ObjectType__args[0]._ObjectIdentity__oid._value
+            oidId = oidTuple[len(oidTuple) - 1]
+            # if (re.match(r"^\w{2}[1-9](/\d)?/\d+", portname)):
+            if(re.match(r"^\w{2}[0-9](/\d)?/\d+", portname )):
+                switchnum = self.regex_parser_varx(r"^\w{2}([0-9])(?:/(\d))?/(\d+)", portname)
+                if (len(switchnum) == 3): #verify that return isn't borked, should get 3 length tuple
+                    if((switchnum[2] != 0) and (switchnum[1] != '')): # get rid of 0/0 interface
+                        if (switchnum[1] == ''):
+                            returnList.append({'Switch': 1, 'Module': int(switchnum[0]), 'Port': int(switchnum[2]),
+                                               'PortName': portname, 'Id': oidId})
+                        else:
+                            returnList.append(
+                                {'Switch': int(switchnum[0]), 'Module': int(switchnum[1]), 'Port': int(switchnum[2]),
+                                 'PortName': portname,
+                                 'Id': oidId})
+
+
+                # switchnum = self.regex_parser_varx(r"^\w{2}([1-9])((/\d))?/(\d+)", portname, 3)
+                # if(re.match(r"^\w{2}[1-9](/\d)?/\d+", portname )):
+
+        return returnList
+
     # Name: snmp_get_full_interface
     # Input:
     #   ipaddr (string)
@@ -138,6 +180,32 @@ class SubRoutines:
 
         return currentVlan
 
+
+    # Name: snmp_get_interface_vlan_bulk
+    # Input:
+    #   ipaddr (string)
+    #      -The ipaddress/hostname to grab info from
+    #   intId (string)
+    #      -The id of the interface to set
+    # Return:
+    #  currentVlan (a string of the current vlan on a port)
+    # Summary:
+    #   grabs all interface vlan assignments
+    def snmp_get_interface_vlan_bulk(self, ipaddr):
+        oidstring = '1.3.6.1.4.1.9.9.68.1.2.2.1.2'
+        varBinds = self.snmp_walk(ipaddr, ObjectType(ObjectIdentity(oidstring)))
+        interfaceVlanList = []
+
+        for varBind in varBinds:
+            interfaceVlan = varBind._ObjectType__args[1]._value
+            oidTuple = varBind._ObjectType__args[0]._ObjectIdentity__oid._value
+            intId = oidTuple[len(oidTuple) - 1]
+            interfaceVlanList.append({'Id':intId,'Vlan':interfaceVlan})
+
+
+        return interfaceVlanList
+
+
     # Name: snmp_get_interface_description
     # Input:
     #   ipaddr (string)
@@ -154,6 +222,8 @@ class SubRoutines:
         interfaceDescription = varBind[0]._ObjectType__args[1]._value
 
         return interfaceDescription.decode("utf-8")
+
+
 
     # Name: snmp_set_interface_vlan
     # Input:
@@ -187,7 +257,7 @@ class SubRoutines:
         time.sleep(2)
         self.snmp_set(ipaddr, ObjectType(ObjectIdentity(oidstring), rfc1902.Integer(1)))
 
-    # Name: snmp_vlan_grab
+    # Name: snmp_get_vlan_database
     # Input:
     #   ipaddr (string)
     #      -The ipaddress/hostname to grab info from
@@ -196,7 +266,7 @@ class SubRoutines:
     # Summary:
     #   Grabs list of vlans from 1.3.6.1.4.1.9.9.46.1.3.1.1.4.1
     #   currently ignores vlan 1002 - 1005 as they are defaults on cisco
-    def snmp_vlan_grab(self, ipaddr):
+    def snmp_get_vlan_database(self, ipaddr):
 
         oidstring = '1.3.6.1.4.1.9.9.46.1.3.1.1.4.{}'.format('1')
         varBinds = self.snmp_walk(ipaddr, ObjectType(ObjectIdentity(oidstring)))
@@ -215,32 +285,187 @@ class SubRoutines:
         #     print("Vlan ID:{} Vlan Name:{}".format(vlan["ID"],vlan["Name"].decode("utf-8")))
         return vlanList
 
-        # Name: snmp_port_poe_alloc_list
+        # Name: snmp_get_vendor
+        # Input:
+        #   ipaddr (string)
+        #      -The ipaddress/hostname to grab info from
+        #   interface (string)
+        #      -The interface to grab the ID of (Currently assumes the straight number format ( X/X/X or X/X) or GiX/X
+        # Return:
+        #  interfaceDescription (a string of the interface description)
+        # Summary:
+        #   grabs the interface id of a supplied interface.
+        #   currently using 1.3.6.1.2.1.31.1.1.1.1, OiD could be updated to 1.3.6.1.2.1.2.2.1.2 for full name checking
+        #     (ie GigabitEthernet X/X)
+
+    def snmp_get_vendor(self, ipaddr):
+        oidstring = '.1.3.6.1.2.1.1.1.0'
+        varBind = self.snmp_get(ipaddr, ObjectType(ObjectIdentity(oidstring)))
+        interfaceDescription = varBind[0]._ObjectType__args[1]._value
+
+        return interfaceDescription.decode("utf-8")
+
+
+
+    ###CUSTOM SNMP COMMANDS####
+    #Returns are more tailored to specific functions
+        # Name: snmp_get_port_poe_alloc_bulk
         # Input:
         #   ipaddr (string)
         #      -The ipaddress/hostname to grab info from
         # Return:
         #   vlanList (list of ports)
         # Summary:
-        #   Grabs list of ports power allocation 1.3.6.1.4.1.9.9.402.1.2.1.7
-        #   ports map 1 - 1  for ethernet port to ID number
-    def snmp_port_poe_alloc_list(self, ipaddr):
+        #   Returns a list of poe allocation in the format {Switch:X,Port:X,"Power:X"}
+    def snmp_get_port_poe_alloc_bulk(self, ipaddr):
 
         oidstring = '1.3.6.1.4.1.9.9.402.1.2.1.7'
+        # oidstring = '1.3.6.1.4.1.9.9.402.1.2.1.7.1'
         varBinds = self.snmp_walk(ipaddr, ObjectType(ObjectIdentity(oidstring)))
         intList = []  # intitalize a blank list
 
         for varBind in varBinds:
-            switchList = []
-            for ports in varBind:
-                oidTuple = ports._ObjectType__args[0]._ObjectIdentity__oid._value
-                vlanId = oidTuple[len(oidTuple) - 1]
-                # if (vlanId not in vlansToIgnore):
-                switchList.append({'Port': vlanId, "Power": ports._ObjectType__args[1]._value})
-            intList.append(switchList)
+            switchNumber = varBind._ObjectType__args[0]._ObjectIdentity__oid._value[len(varBind._ObjectType__args[0]._ObjectIdentity__oid._value)-2]
+            oidTuple = varBind._ObjectType__args[0]._ObjectIdentity__oid._value
+            vlanId = oidTuple[len(oidTuple) - 1]
+            intList.append({'Switch':switchNumber,'Port': vlanId, "Power": varBind._ObjectType__args[1]._value})
 
-        return switchList
+        return intList
 
+        # Name: snmp_get_port_activity_bulk
+        # Input:
+        #   ipaddr (string)
+        #      -The ipaddress/hostname to grab info from
+        # Return:
+        #   interfaceList (list of ports)
+        # Summary:
+        #   Returns a list of active ports in structure {Switch:X,Port:X}
+        #   Has an issue with uplinks of X/1/X currently
+
+    def snmp_get_port_activity_bulk(self, ipaddr):
+
+        oidstring = '1.3.6.1.2.1.2.2.1.8'
+        varBinds = self.snmp_walk(ipaddr, ObjectType(ObjectIdentity(oidstring)))
+        intList = []  # intitalize a blank list
+
+        for varBind in varBinds:
+            oidTuple = varBind._ObjectType__args[0]._ObjectIdentity__oid._value
+            vlanId = oidTuple[len(oidTuple) - 1]
+            intList.append({'Id': vlanId, "Status": varBind._ObjectType__args[1]._value})
+
+        # start = time.time()
+        # end = time.time()
+        # print("first time:{} seconds".format(end-start))
+
+        return intList
+
+    # Name: snmp_get_interface_description_bulk
+    # Input:
+    #   ipaddr (string)
+    #      -The ipaddress/hostname to grab info from
+    # Return:
+    #  interfaceDescriptionList (a list of strings of the interface descriptions)
+    # Summary:
+    #   grabs the description of all physical interfaces
+    def snmp_get_interface_description_bulk(self, ipaddr):
+        # oidstring = '1.3.6.1.2.1.31.1.1.1.1'
+        oidstring = '1.3.6.1.2.1.31.1.1.1.18'
+        varBinds = self.snmp_walk(ipaddr, ObjectType(ObjectIdentity(oidstring)))
+        interfaceDescriptionList = []
+
+        for varBind in varBinds:
+            interfaceDescription = varBind._ObjectType__args[1]._value.decode("utf-8")
+            # if '/' in interfaceDescription:
+            oidTuple = varBind._ObjectType__args[0]._ObjectIdentity__oid._value
+            intId = oidTuple[len(oidTuple) - 1]
+            interfaceDescriptionList.append({'Id':intId,'Description':interfaceDescription})
+
+            # intList.append({'Switch': switchNumber, 'Port': vlanId, "Power": varBind._ObjectType__args[1]._value})
+
+        return interfaceDescriptionList
+
+        # Name: snmp_get_cdp_type_bulk
+        # Input:
+        #   ipaddr (string)
+        #      -The ipaddress/hostname to grab info from
+        # Return:
+        #  cdp neighbour list
+        # Summary:
+        #   grabs the cdp object type that is connected to each interface
+    def snmp_get_cdp_type_bulk(self, ipaddr):
+        # oidstring = '1.3.6.1.2.1.31.1.1.1.1'
+        oidstring = '1.3.6.1.4.1.9.9.23.1.2.1.1.8'
+        varBinds = self.snmp_walk(ipaddr, ObjectType(ObjectIdentity(oidstring)))
+        interfaceCdpList = []
+
+        for varBind in varBinds:
+            interfaceCdp = varBind._ObjectType__args[1]._value.decode("utf-8")
+            # if '/' in interfaceDescription:
+            oidTuple = varBind._ObjectType__args[0]._ObjectIdentity__oid._value
+            intId = oidTuple[len(oidTuple) - 2]
+            interfaceCdpList.append({'Id': intId, 'Cdp': interfaceCdp})
+
+        return interfaceCdpList
+
+
+        # Name: snmp_get_switch_data_full
+        # Input:
+        #   ipaddr (string)
+        #      -The ipaddress/hostname to grab info from
+        # Return:
+        #  a data structure (a list of strings of the interface descriptions)
+        # Summary:
+        #   grabs information from the switch to put in a datastructure
+
+
+    def snmp_get_switch_data_full(self, ipaddr):
+        switchStruct = StackStruct(ipaddr)
+
+        #get interfaces and create them on the structure if they are not there
+        for port in self.snmp_get_interface_id_bulk(ipaddr):
+            if (switchStruct.getSwitch(port['Switch']) is None):
+                switchStruct.addSwitch(port['Switch'])
+            if (switchStruct.getSwitch(port['Switch']).getModule(port['Module']) is None):
+                switchStruct.getSwitch(port['Switch']).addModule(port['Module'])
+            if (switchStruct.getSwitch(port['Switch']).getModule(port['Module']).getPort(port['Port']) is None):
+                switchStruct.getSwitch(port['Switch']).getModule(port['Module']).addPort(port['Port'])
+            switchStruct.getSwitch(port['Switch']).getModule(port['Module']).getPort(port['Port']).portname = port['PortName']
+            switchStruct.getSwitch(port['Switch']).getModule(port['Module']).getPort(port['Port']).intID = port[
+                'Id']
+
+
+        #go through power return
+        for port in self.snmp_get_port_poe_alloc_bulk(ipaddr):
+            switchStruct.getSwitch(port['Switch']).getModule(0).getPort(port['Port']).poe = port['Power']
+            #hard set using module 0^
+
+        #go through interface returns (includes vlans, so need to map id to port)
+        #get port status (2 is up, 1 is down)
+        for port in self.snmp_get_port_activity_bulk(ipaddr):
+            if port is not None: #ignore vlan interfaces and non existant interfaces
+                foundport = switchStruct.getPortById(port['Id'])
+                if foundport is not None:
+                    foundport.status = port['Status']
+        #get descriptions
+        for port in self.snmp_get_interface_description_bulk(ipaddr):
+            if port is not None:  # ignore vlan interfaces and non existant interfaces
+                foundport = switchStruct.getPortById(port['Id'])
+                if foundport is not None:
+                    foundport.description = port['Description']
+        #get Vlans on ports
+        for port in self.snmp_get_interface_vlan_bulk(ipaddr):
+            if port is not None:  # ignore vlan interfaces and non existant interfaces
+                foundport = switchStruct.getPortById(port['Id'])
+                if foundport is not None:
+                    foundport.datavlan = port['Vlan']
+
+        for port in self.snmp_get_cdp_type_bulk(ipaddr):
+            if port is not None:  # ignore vlan interfaces and non existant interfaces
+                foundport = switchStruct.getPortById(port['Id'])
+                if foundport is not None:
+                    foundport.cdp = port['Cdp']
+
+        return True
 
     ####################
     ####SSH COMMANDS####
@@ -329,5 +554,25 @@ class SubRoutines:
         findval = re.findall(regex, input, re.MULTILINE);
         if len(findval) > 0:
             return findval[0];
+        else:
+            return "N/A"
+
+    # Name: regex_parser_varx
+    # Input:
+    #   regex (raw string)
+    #      -This variable will contains the regex expression to use.
+    #   input (string)
+    #      -This variable contains the string to apply the regex search to.
+    # Return:
+    #   matched string or N/A if nothing is found
+    # Summary:
+    #   regex_parser_varx adds some error handling to the regex searching functions. returning a "N/A" default if
+    #       nothing is found
+    def regex_parser_varx (self,regex, input):
+        findval = re.findall(regex, input, re.MULTILINE);
+        if len(findval) > 0 :
+            return findval[0]
+            # if len(findval[0]) > numMatches:
+
         else:
             return "N/A"

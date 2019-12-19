@@ -104,6 +104,8 @@ def dnmt():
     test_parser = subparsers.add_parser("test", help="various tests").add_subparsers(dest="test")
     power_check_parser = test_parser.add_parser("Power_Check", help="check port power")
     power_check_parser.add_argument('ipaddr', metavar='IP', help='Switch Address interface is on')
+    switch_check_parser = test_parser.add_parser("Switch_Check", help="check switch info")
+    switch_check_parser.add_argument('ipaddr', metavar='IP', help='Switch Address interface is on')
     #Tests End
 
 
@@ -172,6 +174,8 @@ def dnmt():
     elif cmdargs.maincommand == 'test':
         if cmdargs.test == 'Power_Check':
             test.Power_Check()
+        elif cmdargs.test == 'Switch_Check':
+            test.Switch_Check()
 
 
 

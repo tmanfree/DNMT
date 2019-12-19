@@ -28,7 +28,7 @@ class SnmpFuncs:
         self.subs = SubRoutines(cmdargs, config)
 
     def Change_Port_Vlan(self):
-        vlanList = self.subs.snmp_vlan_grab(self.cmdargs.ipaddr)
+        vlanList = self.subs.snmp_get_vlan_database(self.cmdargs.ipaddr)
 
 
         for vlan in vlanList:
