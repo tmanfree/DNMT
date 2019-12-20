@@ -66,6 +66,8 @@ class SwitchStruct:
 
         self.switchnumber = int(switchNum)
         self.model = None
+        self.id = None
+        self.version = None
         self.serialnumber = None
         #self.uptime = None
         self.modules = []

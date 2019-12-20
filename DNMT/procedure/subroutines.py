@@ -144,6 +144,119 @@ class SubRoutines:
 
         return returnList
 
+        # Name: snmp_get_switch_id_bulk
+        # Input:
+        #   ipaddr (string)
+        #      -The ipaddress/hostname to grab info from
+        # Return:
+        #  returnList (a list of switch IDs to get model number/serial number info)
+        # Summary:
+        #   returns all switch IDs
+
+    def snmp_get_switch_id_bulk(self, ipaddr):
+        intId = 0  # intitalize as 0 as not found
+        varBinds = self.snmp_walk(ipaddr, ObjectType(ObjectIdentity(
+            '1.3.6.1.2.1.47.1.1.1.1.7')))
+        returnList = []
+
+        for varBind in varBinds:
+            varName = varBind._ObjectType__args[1]._value.decode("utf-8")
+            oidTuple = varBind._ObjectType__args[0]._ObjectIdentity__oid._value
+            oidId = oidTuple[len(oidTuple) - 1]
+            # if (re.match(r"^\w{2}[1-9](/\d)?/\d+", portname)):
+            if (re.match(r"^Switch [0-9]$", varName)):
+                switchnum = self.regex_parser_var0(r"^Switch ([0-9])?", varName)
+                if switchnum is not None:
+                    returnList.append({'Switch': int(switchnum), 'Id': oidId})
+            elif ((re.match(r"^[0-9]$", varName)) and oidId == 1001):
+                returnList.append({'Switch': int(varName), 'Id': oidId})
+
+        return returnList
+
+        # Name: snmp_get_serial_number
+        # Input:
+        #   ipaddr (string)
+        #      -The ipaddress/hostname to grab info from
+        #   intId (string)
+        #      -The id of the switch
+        # Return:
+        #  serialNum (serial number in string format)
+        # Summary:
+        #   grabs the switch serial number
+
+    def snmp_get_serial_number(self, ipaddr, intId):
+        oidstring = '1.3.6.1.2.1.47.1.1.1.1.11.{}'.format(intId)
+        # find the current vlan assignment for the port
+        varBind = self.snmp_get(ipaddr, ObjectType(ObjectIdentity(oidstring)))
+        serialNum = varBind[0]._ObjectType__args[1]._value
+
+        return serialNum.decode("utf-8")
+
+        # Name: snmp_get_serial_number_bulk
+        # Input:
+        #   ipaddr (string)
+        #      -The ipaddress/hostname to grab info from
+        #   intId (string)
+        #      -The id of the switch
+        # Return:
+        #  serialNum (serial number in string format)
+        # Summary:
+        #   grabs the switch serial number
+
+    def snmp_get_serial_number_bulk(self, ipaddr):
+        varBinds = self.snmp_walk(ipaddr, ObjectType(ObjectIdentity(
+            '1.3.6.1.2.1.47.1.1.1.1.11')))
+        returnList = []
+
+        for varBind in varBinds:
+            varName = varBind._ObjectType__args[1]._value.decode("utf-8")
+            oidTuple = varBind._ObjectType__args[0]._ObjectIdentity__oid._value
+            oidId = oidTuple[len(oidTuple) - 1]
+            # if (re.match(r"^\w{2}[1-9](/\d)?/\d+", portname)):
+            # if (varName != ""):
+            returnList.append({'Serial': varName, 'Id': oidId})
+
+        return returnList
+
+      # Name: snmp_get_model
+        # Input:
+        #   ipaddr (string)
+        #      -The ipaddress/hostname to grab info from
+        #   intId (string)
+        #      -The id of the switch
+        # Return:
+        #  model (model type in string format)
+        # Summary:
+        #   grabs the switch model type
+
+    def snmp_get_model(self, ipaddr, intId):
+        oidstring = '1.3.6.1.2.1.47.1.1.1.1.13.{}'.format(intId)
+        # find the current vlan assignment for the port
+        varBind = self.snmp_get(ipaddr, ObjectType(ObjectIdentity(oidstring)))
+        model = varBind[0]._ObjectType__args[1]._value
+
+        return model.decode("utf-8")
+
+      # Name: snmp_get_software
+        # Input:
+        #   ipaddr (string)
+        #      -The ipaddress/hostname to grab info from
+        #   intId (string)
+        #      -The id of the switch
+        # Return:
+        #  softwareVersion (software version in string format)
+        # Summary:
+        #   grabs the switch software version
+
+    def snmp_get_software(self, ipaddr, intId):
+        oidstring = '1.3.6.1.2.1.47.1.1.1.1.10.{}'.format(intId)
+        # find the current vlan assignment for the port
+        varBind = self.snmp_get(ipaddr, ObjectType(ObjectIdentity(oidstring)))
+        softwareVersion = varBind[0]._ObjectType__args[1]._value
+
+        return softwareVersion.decode("utf-8")
+
+
     # Name: snmp_get_full_interface
     # Input:
     #   ipaddr (string)
@@ -201,7 +314,6 @@ class SubRoutines:
             oidTuple = varBind._ObjectType__args[0]._ObjectIdentity__oid._value
             intId = oidTuple[len(oidTuple) - 1]
             interfaceVlanList.append({'Id':intId,'Vlan':interfaceVlan})
-
 
         return interfaceVlanList
 
@@ -285,25 +397,21 @@ class SubRoutines:
         #     print("Vlan ID:{} Vlan Name:{}".format(vlan["ID"],vlan["Name"].decode("utf-8")))
         return vlanList
 
-        # Name: snmp_get_vendor
-        # Input:
-        #   ipaddr (string)
-        #      -The ipaddress/hostname to grab info from
-        #   interface (string)
-        #      -The interface to grab the ID of (Currently assumes the straight number format ( X/X/X or X/X) or GiX/X
-        # Return:
-        #  interfaceDescription (a string of the interface description)
-        # Summary:
-        #   grabs the interface id of a supplied interface.
-        #   currently using 1.3.6.1.2.1.31.1.1.1.1, OiD could be updated to 1.3.6.1.2.1.2.2.1.2 for full name checking
-        #     (ie GigabitEthernet X/X)
-
-    def snmp_get_vendor(self, ipaddr):
-        oidstring = '.1.3.6.1.2.1.1.1.0'
-        varBind = self.snmp_get(ipaddr, ObjectType(ObjectIdentity(oidstring)))
-        interfaceDescription = varBind[0]._ObjectType__args[1]._value
-
-        return interfaceDescription.decode("utf-8")
+    #     # Name: snmp_get_vendor
+    #     # Input:
+    #     #   ipaddr (string)
+    #     #      -The ipaddress/hostname to grab info from
+    #     # Return:
+    #     #  interfaceDescription (a string of the interface description)
+    #     # Summary:
+    #     #  Currently Defunct
+    #
+    # def snmp_get_vendor(self, ipaddr):
+    #     oidstring = '.1.3.6.1.2.1.1.1.0'
+    #     varBind = self.snmp_get(ipaddr, ObjectType(ObjectIdentity(oidstring)))
+    #     interfaceDescription = varBind[0]._ObjectType__args[1]._value
+    #
+    #     return interfaceDescription.decode("utf-8")
 
 
 
@@ -483,12 +591,24 @@ class SubRoutines:
 
 
     def snmp_get_switch_data_full(self, ipaddr):
+        test = self.snmp_get_switch_id_bulk(ipaddr)
         switchStruct = StackStruct(ipaddr)
+        for switch in self.snmp_get_switch_id_bulk(ipaddr):
+            if (switchStruct.getSwitch(switch['Switch']) is None):
+                switchStruct.addSwitch(switch['Switch'])
+            switchStruct.getSwitch(switch['Switch']).id = switch['Id']
+
+        for switch in switchStruct.switches: #individual calls for this seem to be resolving faster than a bulk
+            switch.serialnumber=self.snmp_get_serial_number(ipaddr,switch.id)
+            switch.model = self.snmp_get_model(ipaddr,switch.id)
+            switch.version = self.snmp_get_software(ipaddr,switch.id)
+
+
 
         #get interfaces and create them on the structure if they are not there
         for port in self.snmp_get_interface_id_bulk(ipaddr):
-            if (switchStruct.getSwitch(port['Switch']) is None):
-                switchStruct.addSwitch(port['Switch'])
+            # if (switchStruct.getSwitch(port['Switch']) is None):
+            #     switchStruct.addSwitch(port['Switch'])
             if (switchStruct.getSwitch(port['Switch']).getModule(port['Module']) is None):
                 switchStruct.getSwitch(port['Switch']).addModule(port['Module'])
             if (switchStruct.getSwitch(port['Switch']).getModule(port['Module']).getPort(port['Port']) is None):
@@ -638,7 +758,7 @@ class SubRoutines:
         if len(findval) > 0:
             return findval[0];
         else:
-            return "N/A"
+            return None
 
     # Name: regex_parser_varx
     # Input:
@@ -658,4 +778,4 @@ class SubRoutines:
             # if len(findval[0]) > numMatches:
 
         else:
-            return "N/A"
+            return None
