@@ -353,9 +353,6 @@ class SubRoutines:
             vlanId = oidTuple[len(oidTuple) - 1]
             intList.append({'Id': vlanId, "Status": varBind._ObjectType__args[1]._value})
 
-        # start = time.time()
-        # end = time.time()
-        # print("first time:{} seconds".format(end-start))
 
         return intList
 
@@ -406,6 +403,29 @@ class SubRoutines:
             interfaceCdpList.append({'Id': intId, 'Cdp': interfaceCdp})
 
         return interfaceCdpList
+
+        # Name: snmp_get_voice_vlan_bulk
+        # Input:
+        #   ipaddr (string)
+        #      -The ipaddress/hostname to grab info from
+        # Return:
+        #  cdp neighbour list
+        # Summary:
+        #   grabs the voice vlan that is connected to each interface
+    def snmp_get_voice_vlan_bulk(self, ipaddr):
+        oidstring = '1.3.6.1.4.1.9.9.68.1.5.1.1.1'
+        varBinds = self.snmp_walk(ipaddr, ObjectType(ObjectIdentity(oidstring)))
+        interfaceVlanList = []
+
+        for varBind in varBinds:
+            interfaceVlan = varBind._ObjectType__args[1]._value
+            # if '/' in interfaceDescription:
+            oidTuple = varBind._ObjectType__args[0]._ObjectIdentity__oid._value
+            intId = oidTuple[len(oidTuple) - 1]
+            interfaceVlanList.append({'Id': intId, 'Vlan': interfaceVlan})
+
+        return interfaceVlanList
+
 
 
         # Name: snmp_get_switch_data_full
@@ -465,7 +485,14 @@ class SubRoutines:
                 if foundport is not None:
                     foundport.cdp = port['Cdp']
 
-        return True
+
+        for port in self.snmp_get_voice_vlan_bulk(ipaddr):
+            if port is not None:  # ignore vlan interfaces and non existent interfaces
+                foundport = switchStruct.getPortById(port['Id'])
+                if foundport is not None:
+                    foundport.voicevlan = port['Vlan']
+
+        return switchStruct
 
     ####################
     ####SSH COMMANDS####

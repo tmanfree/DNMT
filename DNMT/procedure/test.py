@@ -48,4 +48,8 @@ class Test:
         print(power)
 
     def Switch_Check(self):
+        start = time.time()
         test = self.subs.snmp_get_switch_data_full(self.cmdargs.ipaddr)
+        end = time.time()
+        print("first time:{} seconds".format(end-start))
+        print(test)
