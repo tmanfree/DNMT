@@ -48,8 +48,14 @@ class Test:
         print(power)
 
     def Switch_Check(self):
+        #3560X with ten gig uplink doesn't show gi 1/1-2 only ten 1/1-2.
         start = time.time()
         test = self.subs.snmp_get_switch_data_full(self.cmdargs.ipaddr)
         end = time.time()
         print("first time:{} seconds".format(end-start))
-        print(test)
+        # test.printStack()
+        # test.printSingleLine()
+        if 'csv' in self.cmdargs and self.cmdargs.csv is not None:
+            test.exportCSV(self.cmdargs.csv)
+        else:
+            test.printStack()

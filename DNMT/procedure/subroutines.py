@@ -128,15 +128,15 @@ class SubRoutines:
             if(re.match(r"^\w{2}[0-9](/\d)?/\d+", portname )):
                 switchnum = self.regex_parser_varx(r"^\w{2}([0-9])(?:/(\d))?/(\d+)", portname)
                 if (len(switchnum) == 3): #verify that return isn't borked, should get 3 length tuple
-                    if((switchnum[2] != 0) and (switchnum[1] != '')): # get rid of 0/0 interface
-                        if (switchnum[1] == ''):
-                            returnList.append({'Switch': 1, 'Module': int(switchnum[0]), 'Port': int(switchnum[2]),
-                                               'PortName': portname, 'Id': oidId})
-                        else:
-                            returnList.append(
-                                {'Switch': int(switchnum[0]), 'Module': int(switchnum[1]), 'Port': int(switchnum[2]),
-                                 'PortName': portname,
+                    # if((switchnum[2] != 0) and (switchnum[1] != '')): # get rid of 0/0 interface
+                    if ((int(switchnum[2]) != 0) and (switchnum[1] != '')):  # get rid of 0/0 interface
+                        returnList.append(
+                            {'Switch': int(switchnum[0]), 'Module': int(switchnum[1]), 'Port': int(switchnum[2]),
+                             'PortName': portname,
                                  'Id': oidId})
+                    elif ((int(switchnum[2]) != 0) and (switchnum[1] == '')):
+                        returnList.append({'Switch': 1, 'Module': int(switchnum[0]), 'Port': int(switchnum[2]),
+                                           'PortName': portname, 'Id': oidId})
 
 
                 # switchnum = self.regex_parser_varx(r"^\w{2}([1-9])((/\d))?/(\d+)", portname, 3)
@@ -426,6 +426,50 @@ class SubRoutines:
 
         return interfaceVlanList
 
+        # Name: snmp_get_input_errors_bulk
+        # Input:
+        #   ipaddr (string)
+        #      -The ipaddress/hostname to grab info from
+        # Return:
+        #  input errors list
+        # Summary:
+        #   grabs the a list of input errors
+    def snmp_get_input_errors_bulk(self, ipaddr):
+        oidstring = '1.3.6.1.2.1.2.2.1.14 '
+        varBinds = self.snmp_walk(ipaddr, ObjectType(ObjectIdentity(oidstring)))
+        interfaceErrorist = []
+
+        for varBind in varBinds:
+            interfaceError = varBind._ObjectType__args[1]._value
+            # if '/' in interfaceDescription:
+            oidTuple = varBind._ObjectType__args[0]._ObjectIdentity__oid._value
+            intId = oidTuple[len(oidTuple) - 1]
+            interfaceErrorist.append({'Id': intId, 'Errors': interfaceError})
+
+        return interfaceErrorist
+
+        # Name: snmp_get_output_errors_bulk
+        # Input:
+        #   ipaddr (string)
+        #      -The ipaddress/hostname to grab info from
+        # Return:
+        #  input errors list
+        # Summary:
+        #   grabs the a list of input errors
+    def snmp_get_output_errors_bulk(self, ipaddr):
+        oidstring = '1.3.6.1.2.1.2.2.1.20 '
+        varBinds = self.snmp_walk(ipaddr, ObjectType(ObjectIdentity(oidstring)))
+        interfaceErrorist = []
+
+        for varBind in varBinds:
+            interfaceError = varBind._ObjectType__args[1]._value
+            # if '/' in interfaceDescription:
+            oidTuple = varBind._ObjectType__args[0]._ObjectIdentity__oid._value
+            intId = oidTuple[len(oidTuple) - 1]
+            interfaceErrorist.append({'Id': intId, 'Errors': interfaceError})
+
+        return interfaceErrorist
+
 
 
         # Name: snmp_get_switch_data_full
@@ -484,6 +528,18 @@ class SubRoutines:
                 foundport = switchStruct.getPortById(port['Id'])
                 if foundport is not None:
                     foundport.cdp = port['Cdp']
+
+        for port in self.snmp_get_input_errors_bulk(ipaddr):
+            if port is not None:  # ignore vlan interfaces and non existant interfaces
+                foundport = switchStruct.getPortById(port['Id'])
+                if foundport is not None:
+                    foundport.inputerrors = port['Errors']
+
+        for port in self.snmp_get_output_errors_bulk(ipaddr):
+            if port is not None:  # ignore vlan interfaces and non existant interfaces
+                foundport = switchStruct.getPortById(port['Id'])
+                if foundport is not None:
+                    foundport.outputerrors = port['Errors']
 
 
         for port in self.snmp_get_voice_vlan_bulk(ipaddr):

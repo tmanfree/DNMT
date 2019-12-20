@@ -106,6 +106,7 @@ def dnmt():
     power_check_parser.add_argument('ipaddr', metavar='IP', help='Switch Address interface is on')
     switch_check_parser = test_parser.add_parser("Switch_Check", help="check switch info")
     switch_check_parser.add_argument('ipaddr', metavar='IP', help='Switch Address interface is on')
+    switch_check_parser.add_argument('-c', '--csv', help="save to a specified csv file")
     #Tests End
 
 
