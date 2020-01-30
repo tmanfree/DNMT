@@ -39,7 +39,7 @@ class StackStruct:
             switch.printSwitch()
 
     def printSingleLine(self):
-        print("IP,SwitchNum,Model,Serial,ModuleNum,PortNum,PortName,PortDesc,PoE,CDP,Status,DataVlan,VoiceVlan,Mode,IntID,InputErrors,OutputErrors")
+        print("IP,SwitchNum,Model,Serial,SoftwareVer,ModuleNum,PortNum,PortName,PortDesc,PoE,CDP,Status,DataVlan,VoiceVlan,Mode,IntID,InputErrors,OutputErrors")
         for switch in self.switches:
             switch.printSingleLine(self.ip)
 
@@ -47,7 +47,7 @@ class StackStruct:
         with open(filename, 'w', encoding='utf-8') as filePointer:
 
             print(
-                "IP,SwitchNum,Model,Serial,ModuleNum,PortNum,PortName,PortDesc,PoE,CDP,Status,DataVlan,VoiceVlan,Mode,IntID,InputErrors,OutputErrors",
+                "IP,SwitchNum,Model,Serial,SoftwareVer,ModuleNum,PortNum,PortName,PortDesc,PoE,CDP,Status,DataVlan,VoiceVlan,Mode,IntID,InputErrors,OutputErrors",
                 file=filePointer)
 
             for switch in self.switches:
@@ -81,17 +81,18 @@ class SwitchStruct:
 
     def printSwitch(self):
         for module in self.modules:
-            print("Switch #:{}\nModel:{}\nSerial #:{}".format(self.switchnumber,self.model,self.serialnumber))
+            print("Switch #:{}\nModel:{}\nSerial #:{}\nVersion:{}".format(self.switchnumber, self.model,
+                                                                          self.serialnumber), self.version)
             module.printModule()
 
     def printSingleLine(self,ip):
         for module in self.modules:
             #print("{},{},{}".format(self.switchnumber,self.model,self.serialnumber), end = ",")
-            module.printSingleLine((ip,self.switchnumber,self.model,self.serialnumber))
+            module.printSingleLine((ip,self.switchnumber,self.model,self.serialnumber,self.version))
 
     def exportCSV(self,ip,filePointer):
         for module in self.modules:
-            module.exportCSV((ip,self.switchnumber,self.model,self.serialnumber),filePointer)
+            module.exportCSV((ip,self.switchnumber,self.model,self.serialnumber,self.version),filePointer)
 
 
 class ModuleStruct:
