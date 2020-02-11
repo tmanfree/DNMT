@@ -82,7 +82,7 @@ class SwitchStruct:
     def printSwitch(self):
         for module in self.modules:
             print("Switch #:{}\nModel:{}\nSerial #:{}\nVersion:{}".format(self.switchnumber, self.model,
-                                                                          self.serialnumber), self.version)
+                                                                          self.serialnumber,self.version))
             module.printModule()
 
     def printSingleLine(self,ip):

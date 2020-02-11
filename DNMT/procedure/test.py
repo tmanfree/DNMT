@@ -25,8 +25,8 @@ class Test:
         self.cmdargs = cmdargs
         self.config = config
         self.subs = SubRoutines(cmdargs, config)
-        self.config.logpath = os.path.join(os.path.expanduser(self.config.logpath), "logs", "UpgradeCheck",
-                                           datetime.date.today().strftime('%Y%m%d'))
+       # self.config.logpath = os.path.join(os.path.expanduser(self.config.logpath), "logs", "UpgradeCheck",
+        #                                   datetime.date.today().strftime('%Y%m%d'))
 
 
     def Power_Check(self):

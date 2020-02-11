@@ -109,7 +109,6 @@ class Check:
             return False
         return True
 
-
     def single_search(self,ipaddr):
         ExitOut = False #temporary boolean to control exiting out of things while still writing
 
@@ -221,7 +220,7 @@ class Check:
                                             "{} {} packages.conf is different than master".format(before_swcheck_dict["ip"], f))
                                         ExitOut = True
                                     before_swcheck_dict[f] = net_connect.send_command('show ' + f)
-                            else: # if it is not a 3650,
+                            else: # if it is not a 3650, or 9000 model catalyst
                                 before_swcheck_dict["curVer"] += "\nSw#{}, Ver:{}".format(
                                     str(show_version[0][0]), str(show_version[0][3]))
                                 # loop through each of the switches
@@ -509,6 +508,7 @@ class Check:
             #pool = Pool(4) # 4 concurrent processes
             pool = Pool(len(iplist))  # 4 concurrent processes
             results = pool.map(self.single_search,iplist)
+
             #TODO add printout for comparing as well as reload
             if ('apply' in self.cmdargs and self.cmdargs.apply) or (
                     'compare' in self.cmdargs and self.cmdargs.compare is not None):
@@ -520,6 +520,7 @@ class Check:
                         print("******Switch {}  upgraded******".format(result["ip"]))
                     self.subs.verbose_printer(result["summary"])
             print("***Batch Done***")
+        print("***Job Complete, Exiting Program***")
 
 
 

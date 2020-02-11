@@ -161,7 +161,8 @@ def dnmt():
         #UpgradeCheck.main()
 
         if cmdargs.upgradecheck == 'single' and cmdargs.ipaddr:
-            upgradeCheck.single_search(cmdargs.ipaddr)
+            #upgradeCheck.single_search(cmdargs.ipaddr)
+            upgradeCheck.begin()
         elif cmdargs.upgradecheck == 'batch' and cmdargs.file:
             upgradeCheck.begin()
     elif cmdargs.maincommand == "tools":

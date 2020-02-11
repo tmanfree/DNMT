@@ -29,8 +29,8 @@ class Tools:
         self.cmdargs = cmdargs
         self.config = config
         self.subs = SubRoutines(cmdargs, config)
-        self.config.logpath = os.path.join(os.path.expanduser(self.config.logpath), "logs", "UpgradeCheck",
-                                           datetime.date.today().strftime('%Y%m%d'))
+        #self.config.logpath = os.path.join(os.path.expanduser(self.config.logpath), "logs", "UpgradeCheck",
+        #                                   datetime.date.today().strftime('%Y%m%d'))
 
     def TDR_Test(self,net_connect,interface):
         net_connect.enable()
