@@ -67,7 +67,7 @@ class Check:
             return False
 
         for f in package_test_list:
-            verification = net_connect.send_command('Verify /md5 {}{} '.format(flashnum, f))
+            verification = net_connect.send_command('Verify /md5 {}{} '.format(flashnum, f)) #verifying, but showing % Invalid input detected at '^' marker. on 2960x for .bin
             self.subs.verbose_printer("{} {}{}\n{}".format(before_swcheck_dict["ip"], flashnum, f, verification))
             if "ERROR".lower() in verification.lower():
                 self.subs.verbose_printer(
@@ -163,7 +163,7 @@ class Check:
                         before_swcheck_dict["master"] = re.findall(r'^\*\s+(\d)', sh_ver,re.MULTILINE)[0]
 
                         #create the list that holds the parsed show version file
-                        if any(n in sh_ver for n in ["3650","9300"]):
+                        if any(n in sh_ver for n in ["3650","9300", "9200"]):
                             show_version = re.findall(r'''(?:\s+)(\d) #Switch Number [x][0]
                                                                          (?:\s+)(\d{1,2}) #Ports [x][1]
                                                                          (?:\s+)(\S+) #Model [x][2]
@@ -221,8 +221,9 @@ class Check:
                                         ExitOut = True
                                     before_swcheck_dict[f] = net_connect.send_command('show ' + f)
                             else: # if it is not a 3650, or 9000 model catalyst
-                                before_swcheck_dict["curVer"] += "\nSw#{}, Ver:{}".format(
-                                    str(show_version[0][0]), str(show_version[0][3]))
+                                pass
+                                # before_swcheck_dict["curVer"] += "\nSw#{}, Ver:{}".format(
+                                #     str(show_version[0][0]), str(show_version[0][3]))
                                 # loop through each of the switches
                                 #################################################*******
 
@@ -329,7 +330,8 @@ class Check:
                                 print("***{} 3650/9300 flash checking verification successful***".format(
                                     before_swcheck_dict["ip"]))
                                 before_swcheck_dict["newVer"] = \
-                                re.findall(r'(?:guestshell\s+)(cat\S+)', before_swcheck_dict["packages.conf"])[0]
+                                re.findall(r'(?:rp_base\s+)(cat\S+)', before_swcheck_dict["packages.conf"])[0]
+                                #re.findall(r'(?:guestshell\s+)(cat\S+)', before_swcheck_dict["packages.conf"])[0]
                             else:
                                 print("***{} non 3650/9300 flash checking verification successful***".format(
                                     before_swcheck_dict["ip"]))
@@ -355,7 +357,12 @@ class Check:
                     elif ExitOut:
                         print("***{}, ERROR!!! pre-check errors encountered. exiting out ***".format(ipaddr))
                     else:
+                        print("***{}, Current Version:{} ***".format(ipaddr,
+                                                                                         before_swcheck_dict['curVer']))
+                        print("***{}, Booting Version:{} ***".format(ipaddr,
+                                                                                         before_swcheck_dict['newVer']))
                         print("***{}, status grabbed, NO pre-check errors encountered. exiting out ***".format(ipaddr))
+
                     # Close Connection
                     net_connect.disconnect()
                     # netmiko connection error handling
