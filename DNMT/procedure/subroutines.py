@@ -78,6 +78,24 @@ class SubRoutines:
 
         return snmpList
 
+    def vlan_at_snmp_walk(self,  ipaddr, vlanid, *args):
+        snmpList = []
+        for (errorIndication, errorStatus, errorIndex, varBinds) in nextCmd(SnmpEngine(),
+            CommunityData(self.config.ro+"@"+str(vlanid)),UdpTransportTarget((ipaddr, 161)), ContextData(),
+                                                                            *args, lexicographicMode=False):
+            if errorIndication:
+                print(errorIndication, file=sys.stderr)
+                break
+            elif errorStatus:
+                print('%s at %s' % (errorStatus.prettyPrint(),
+                                    errorIndex and varBinds[int(errorIndex) - 1][0] or '?'),
+                      file=sys.stderr)
+                break
+            else:
+                snmpList.append(varBinds[0])
+
+        return snmpList
+
     ###ADVANCED SNMP COMMANDS####
     # Name: snmp_get_interface_id
     # Input:
@@ -422,7 +440,7 @@ class SubRoutines:
         #   ipaddr (string)
         #      -The ipaddress/hostname to grab info from
         # Return:
-        #   vlanList (list of ports)
+        #   intList (list of ports)
         # Summary:
         #   Returns a list of poe allocation in the format {Switch:X,Port:X,"Power:X"}
     def snmp_get_port_poe_alloc_bulk(self, ipaddr):
@@ -578,7 +596,33 @@ class SubRoutines:
 
         return interfaceErrorist
 
+        # Name: snmp_get_mac_table_bulk
+        # Input:
+        #   ipaddr (string)
+        #      -The ipaddress/hostname to grab info from
+        # Return:
+        #  mac_address_list
+        # Summary:
+        #   grabs the a list of mac addresses on the switch. Time intensive procedure.
+    def snmp_get_mac_table_bulk(self, ipaddr):
 
+        oidstring = '1.3.6.1.2.1.17.4.3.1'
+        macList=[]
+        vlanList = self.snmp_get_vlan_database(ipaddr)
+
+        for vlan in vlanList:
+            #Return should always be a factor of 3. X=MAC, X+1=Port, X+2=status
+            varBinds = self.vlan_at_snmp_walk(ipaddr,vlan['ID'],ObjectType(ObjectIdentity(oidstring)))
+            i = 0
+            while ( i < len(varBinds)/3):
+                macList.append({"MAC": varBinds[i]._ObjectType__args[1]._value,
+                                "InterfaceID": varBinds[i + int(len(varBinds)/3)]._ObjectType__args[1]._value,
+                                "Status": varBinds[i + int((len(varBinds)/3)*2)]._ObjectType__args[1]._value,
+                                "Vlan": vlan['ID']})
+                i += 1
+
+
+        return macList
 
         # Name: snmp_get_switch_data_full
         # Input:
@@ -725,6 +769,7 @@ class SubRoutines:
             if len(printvar) > 1:
                 print(printvar[1])
             return False
+
 
     # Name: ping_check
     # Input:

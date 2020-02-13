@@ -100,6 +100,11 @@ def dnmt():
     batch_check_parser.add_argument('-v', '--verbose', help="run in verbose mode", default=False, action="store_true")
     batch_check_parser.add_argument('-c', '--compare', help="specify config file to match current config")
 
+    single_check_parser.add_argument('-x', '--xtest', help="use temporary snmp function", default=False, action="store_true")
+    batch_check_parser.add_argument('-x', '--xtest', help="use temporary snmp function", default=False,
+                                     action="store_true")
+
+
     #Tests Begin
     test_parser = subparsers.add_parser("test", help="various tests").add_subparsers(dest="test")
     power_check_parser = test_parser.add_parser("Power_Check", help="check port power")
