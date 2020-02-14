@@ -100,9 +100,6 @@ def dnmt():
     batch_check_parser.add_argument('-v', '--verbose', help="run in verbose mode", default=False, action="store_true")
     batch_check_parser.add_argument('-c', '--compare', help="specify config file to match current config")
 
-    single_check_parser.add_argument('-x', '--xtest', help="use temporary snmp function", default=False, action="store_true")
-    batch_check_parser.add_argument('-x', '--xtest', help="use temporary snmp function", default=False,
-                                     action="store_true")
 
 
     #Tests Begin
