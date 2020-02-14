@@ -212,7 +212,7 @@ class Check:
             else:
                 before_swcheck_dict = {"ip": ipaddr}
                 #Grabs a snapshot of the switch, not currently used for anything but archival
-                before_swcheck_dict["SwitchStatus"] = self.subs.snmp_get_switch_data_full(self.cmdargs.ipaddr)
+                before_swcheck_dict["SwitchStatus"] = self.subs.snmp_get_switch_data_full(ipaddr)
                 print("ping response for {}, grabbing data".format(ipaddr))
 
             # TODO: add something to map out attached connections in the ip list, to prevent reloading an upstream
@@ -492,7 +492,7 @@ class Check:
             if ('apply' in self.cmdargs and self.cmdargs.apply and not ExitOut) or ('compare' in self.cmdargs and self.cmdargs.compare is not None):
                 after_swcheck_dict = {"ip": ipaddr}
                 # Grabs a snapshot of the switch, not currently used for anything but archival
-                after_swcheck_dict["SwitchStatus"] = self.subs.snmp_get_switch_data_full(self.cmdargs.ipaddr)
+                after_swcheck_dict["SwitchStatus"] = self.subs.snmp_get_switch_data_full(ipaddr)
                 #perform reload if apply flag is set
                 if 'apply' in self.cmdargs and self.cmdargs.apply:
                     mins_waited = 80
