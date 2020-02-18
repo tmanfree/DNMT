@@ -152,6 +152,8 @@ class Check:
             #print(delta)
             return sumstring
 
+
+
     def ping_check(self,sHost):
         try:
             output = subprocess.check_output("ping -{} 1 {}".format('n' if platform.system().lower() == "windows" else 'c', sHost), shell=True)
@@ -188,10 +190,10 @@ class Check:
                 for result in results:
                     if "identical" in result["ver"] :
                         print("******Switch {}  not upgraded******".format(result["ip"]))
-
                     else:
                         print("******Switch {}  upgraded******".format(result["ip"]))
-                    self.subs.verbose_printer(result["summary"])
+
+                    self.subs.verbose_printer(result["summary"]) # make this printing by default?
             print("***Batch Done***")
         print("***Job Complete, Exiting Program***")
 
@@ -503,6 +505,7 @@ class Check:
                         mins_waited += 10
                         # if waiting longer than one hour, exit out?
                         if mins_waited > 3600 :
+                            #TODO Add writing to log file here?
                             print("No reply from switch IP:{}: for {} minutes\n Please investigate!".format(ipaddr,mins_waited/60))
                             sys.exit(1)
 
@@ -597,7 +600,28 @@ class Check:
                                                                         ipaddr)
                      status_dict["summary"] += status_dict[varname]
 
+                # Compare SwitchStruct variables
+                b_switchgood = True
+                ver_before_list = []
+                ver_after_list = []
+                #create a list to compare versions from the switch structure
+                for switch in before_swcheck_dict['SwitchStatus'].getSwitches():
+                    temp_after_sw = after_swcheck_dict['SwitchStatus'].getSwitch(switch.switchnumber)
 
+                    # create lists to format output
+                    ver_before_list.append((switch.switchnumber, switch.version))
+                    ver_after_list.append((temp_after_sw.switchnumber, temp_after_sw.version))
+
+                    if temp_after_sw.serialnumber != switch.serialnumber:
+                        b_switchgood = False
+                if b_switchgood:
+                    status_dict["Version"] = self.var_list_compare(ver_before_list,
+                                                             ver_after_list,
+                                                             "Version",
+                                                             ipaddr)
+                    status_dict["summary"] += status_dict["Version"]
+                else:
+                    status_dict["summary"] += "\n!#!#!#!#!#!#!#!#!#Switches are Out of Order!#!#!#!#!#!#!#!#!#\n"
 
             #create the logpath directory if it doesn't exist
             if not os.path.exists(self.config.logpath):
