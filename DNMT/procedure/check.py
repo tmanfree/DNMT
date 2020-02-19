@@ -257,9 +257,11 @@ class Check:
                         # and interacting here to verify that things are setup correctly before reload
                         net_connect.enable()  # move this out of the if/else statements
                         output = net_connect.send_command('term shell')
-                        before_swcheck_dict["packages.conf"] = net_connect.send_command('cat packages.conf')
+
                         before_swcheck_dict["flash"] = net_connect.send_command('show flash:')
                         before_swcheck_dict["boot"] = net_connect.send_command('show boot')
+
+                        before_swcheck_dict["packages.conf"] = net_connect.send_command('cat packages.conf')
                         sh_ver = net_connect.send_command('show ver')  # local
                         # TODO Check if gateway on same range as mangement address, use regex
                         before_swcheck_dict["gateway"] = net_connect.send_command('show run | include default-gateway')
