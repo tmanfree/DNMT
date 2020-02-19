@@ -121,9 +121,9 @@ class Check:
                 sumstring += "{} are the same length, but different entries\n".format(vartext)
 
                 if len(MissingEntries) > 0:
-                    sumstring += "Missing Entries: " + str(MissingEntries)
+                    sumstring += "Missing Entries: " + str(MissingEntries) + "\n"
                 if len(NewEntries) > 0:
-                    sumstring += "\nNew Entries: " + str(NewEntries)
+                    sumstring += "New Entries: " + str(NewEntries)+ "\n"
 
                 self.subs.verbose_printer(sumstring)
                 return sumstring
@@ -132,9 +132,9 @@ class Check:
                 sumstring += "{} are similar \nOld Entries:{}\nNew Entries:{}\n".format(vartext, len(before_list),
                                                                                         len(after_list))
                 if len(MissingEntries) > 0:
-                    sumstring += "Missing Entries: " + str(MissingEntries)
+                    sumstring += "Missing Entries: " + str(MissingEntries) + "\n"
                 if len(NewEntries) > 0:
-                    sumstring += "\nNew Entries: " + str(NewEntries)
+                    sumstring += "New Entries: " + str(NewEntries)+ "\n"
                 self.subs.verbose_printer(sumstring)
 
             else:
@@ -142,9 +142,9 @@ class Check:
                                                                                                        len(before_list),
                                                                                                        len(after_list))
                 if len(MissingEntries) > 0:
-                    sumstring += "Missing Entries: " + str(MissingEntries)
+                    sumstring += "Missing Entries: " + str(MissingEntries)+ "\n"
                 if len(NewEntries) > 0:
-                    sumstring += "\nNew Entries: " + str(NewEntries)
+                    sumstring += "New Entries: " + str(NewEntries)+ "\n"
                 self.subs.verbose_printer(sumstring)
 
             diff = difflib.ndiff(before_list, after_list)
@@ -168,10 +168,8 @@ class Check:
             #not printing right now!
             if ('apply' in self.cmdargs and self.cmdargs.apply) or(
                     'compare' in self.cmdargs and self.cmdargs.compare is not None):
-                if "identical" in result["ver"]:
-                    print("******Switch {}  not upgraded******".format(result["ip"]))
-                else:
-                    print("******Switch {}  upgraded******".format(result["ip"]))
+                print(result["UpgradeStatus"])
+
                 self.subs.verbose_printer(result["summary"])
         elif self.cmdargs.upgradecheck == 'batch' and self.cmdargs.file:
             iplist = []
@@ -188,10 +186,8 @@ class Check:
             if ('apply' in self.cmdargs and self.cmdargs.apply) or (
                     'compare' in self.cmdargs and self.cmdargs.compare is not None):
                 for result in results:
-                    if "identical" in result["ver"] :
-                        print("******Switch {}  not upgraded******".format(result["ip"]))
-                    else:
-                        print("******Switch {}  upgraded******".format(result["ip"]))
+                    # if "identical" in result["Version"] :
+                    print(result["UpgradeStatus"])
 
                     self.subs.verbose_printer(result["summary"]) # make this printing by default?
             print("***Batch Done***")
@@ -494,7 +490,6 @@ class Check:
             if ('apply' in self.cmdargs and self.cmdargs.apply and not ExitOut) or ('compare' in self.cmdargs and self.cmdargs.compare is not None):
                 after_swcheck_dict = {"ip": ipaddr}
                 # Grabs a snapshot of the switch, not currently used for anything but archival
-                after_swcheck_dict["SwitchStatus"] = self.subs.snmp_get_switch_data_full(ipaddr)
                 #perform reload if apply flag is set
                 if 'apply' in self.cmdargs and self.cmdargs.apply:
                     mins_waited = 80
@@ -515,6 +510,7 @@ class Check:
                         after_swcheck_dict["seconds_to_reload"] = mins_waited
 
                 try:
+                    after_swcheck_dict["SwitchStatus"] = self.subs.snmp_get_switch_data_full(ipaddr)
                     net_connect = self.subs.create_connection(ipaddr)
                     if net_connect:
                         net_connect.send_command('term shell 0')
@@ -581,11 +577,42 @@ class Check:
             if ('apply' in self.cmdargs and self.cmdargs.apply and not ExitOut) or ('compare' in self.cmdargs and self.cmdargs.compare is not None):
                 status_dict = {"ip": ipaddr}
                 status_dict["summary"] = ""
-                status_dict["summary"] += "Before Version:{}\nAfter Version:{}\n".format(before_swcheck_dict["ver"],
-                                                                                       after_swcheck_dict["ver"])
+                if "seconds_to_reload" in after_swcheck_dict:
+                    status_dict["summary"] += str(after_swcheck_dict['seconds_to_reload']) + " seconds to reload\n"
+                # status_dict["summary"] += "Before Version:{}\nAfter Version:{}\n".format(before_swcheck_dict["ver"],
+                #                                                                        after_swcheck_dict["ver"])
+
+                # Compare SwitchStruct variables - Version
+                b_switchgood = True
+                ver_before_list = []
+                ver_after_list = []
+                # create a list to compare versions from the switch structure
+                for switch in before_swcheck_dict['SwitchStatus'].getSwitches():
+                    temp_after_sw = after_swcheck_dict['SwitchStatus'].getSwitch(switch.switchnumber)
+
+                    # create lists to format output
+                    ver_before_list.append((switch.switchnumber, switch.version))
+                    ver_after_list.append((temp_after_sw.switchnumber, temp_after_sw.version))
+
+                    if temp_after_sw.serialnumber != switch.serialnumber:
+                        b_switchgood = False
+
+                status_dict["Version"] = self.var_list_compare(ver_before_list,ver_after_list,"Version",ipaddr)
+
+                if not b_switchgood:
+                    status_dict["summary"] += "\n!#!#!#!#!#!#!# WARNING: Switches are Out of Order!#!#!#!#!#!#!#\n"
+
+                if "Version entries are the same" in status_dict["Version"]:
+                    status_dict["UpgradeStatus"] = "******Switch {} not upgraded******".format(ipaddr)
+                else:
+                    status_dict["UpgradeStatus"] = "******Switch {} upgraded******".format(ipaddr)
+
+                status_dict["summary"] += status_dict["UpgradeStatus"] + "\n"
+                status_dict["summary"] += "Before Version:{}\nAfter Version:{}\n".format(str(ver_before_list),
+                                                                                         str(ver_after_list))
+                status_dict["summary"] += status_dict["Version"]
 
                 #Compare String variables
-
                 for varname in "ver","ints", "cdp":
                     tempstring, status_dict[varname] = self.var_compare(before_swcheck_dict[varname],
                                                                         after_swcheck_dict[varname],
@@ -600,28 +627,7 @@ class Check:
                                                                         ipaddr)
                      status_dict["summary"] += status_dict[varname]
 
-                # Compare SwitchStruct variables
-                b_switchgood = True
-                ver_before_list = []
-                ver_after_list = []
-                #create a list to compare versions from the switch structure
-                for switch in before_swcheck_dict['SwitchStatus'].getSwitches():
-                    temp_after_sw = after_swcheck_dict['SwitchStatus'].getSwitch(switch.switchnumber)
 
-                    # create lists to format output
-                    ver_before_list.append((switch.switchnumber, switch.version))
-                    ver_after_list.append((temp_after_sw.switchnumber, temp_after_sw.version))
-
-                    if temp_after_sw.serialnumber != switch.serialnumber:
-                        b_switchgood = False
-                if b_switchgood:
-                    status_dict["Version"] = self.var_list_compare(ver_before_list,
-                                                             ver_after_list,
-                                                             "Version",
-                                                             ipaddr)
-                    status_dict["summary"] += status_dict["Version"]
-                else:
-                    status_dict["summary"] += "\n!#!#!#!#!#!#!#!#!#Switches are Out of Order!#!#!#!#!#!#!#!#!#\n"
 
             #create the logpath directory if it doesn't exist
             if not os.path.exists(self.config.logpath):
