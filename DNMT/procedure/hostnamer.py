@@ -96,8 +96,6 @@ class HostNamer:
 
         self.write_test(ipaddr)
 
-
-
     # def snmp_test(ipaddr,config,oid):
     #
     #

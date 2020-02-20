@@ -147,7 +147,6 @@ def dnmt():
 
     ### complete CLI Parsing
 
-
     #create the loop for interactive prompt
 
     if cmdargs.maincommand == "MACSearch":

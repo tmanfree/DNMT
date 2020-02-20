@@ -163,7 +163,6 @@ class Check:
 
     def begin(self):
         if self.cmdargs.upgradecheck == 'single' and self.cmdargs.ipaddr:
-
             result = self.single_search(self.cmdargs.ipaddr)
             #not printing right now!
             if ('apply' in self.cmdargs and self.cmdargs.apply) or(
