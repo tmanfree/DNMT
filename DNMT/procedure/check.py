@@ -260,7 +260,7 @@ class Check:
 
                         before_swcheck_dict["flash"] = net_connect.send_command('show flash:')
                         before_swcheck_dict["boot"] = net_connect.send_command('show boot')
-
+                        #TODO grab from boot file what the config file is rather than hard setting packages.conf
                         before_swcheck_dict["packages.conf"] = net_connect.send_command('cat packages.conf')
                         sh_ver = net_connect.send_command('show ver')  # local
                         # TODO Check if gateway on same range as mangement address, use regex

@@ -137,8 +137,8 @@ class HostNamer:
             #Send the new hostname if they are different
                 print("hostnames are different\n"
                       "IP:{}\n"
-                      "DNS   :{}\n"
-                      "Switch:{}\n".format(ipaddr, dns_hostname, sw_hostname))
+                      "DNS/Manual:{}\n"
+                      "Switch    :{}\n".format(ipaddr, dns_hostname, sw_hostname))
                 if not self.cmdargs.check:
                     print("Attempting to update hostname on switch...")
                     # varBinds = self.subs.snmp_get(ipaddr, ObjectType(ObjectIdentity(
@@ -155,8 +155,8 @@ class HostNamer:
             else:  #they are the same
                 print("hostnames are up to date\n"
                       "IP:{}\n"
-                      "DNS   :{}\n"
-                      "Switch:{}\n".format(ipaddr, dns_hostname, sw_hostname))
+                      "DNS/Manual:{}\n"
+                      "Switch    :{}\n".format(ipaddr, dns_hostname, sw_hostname))
                 return True
             #if sending was not successful
         return False
@@ -213,16 +213,23 @@ class HostNamer:
 
 
         file = open(self.cmdargs.iplist, "r")
+        #if not self.cmdargs.check:
         for ipaddr in file:
             #have a check for gethostbyname or addr)
             try:
-                ipaddr = ipaddr.rstrip()
-                dns_fqdn = socket.gethostbyaddr(ipaddr)
-                dns_reg_hostname = reg_FQDN.search(dns_fqdn[0])
-                dns_hostname = dns_reg_hostname.group(1)
-                dns_domain = dns_reg_hostname.group(2)
+                ipaddr = ipaddr.rstrip().replace(" ","").split(",")
+                if len(ipaddr) == 1:
+                    dns_fqdn = socket.gethostbyaddr(ipaddr[0])
+                    dns_reg_hostname = reg_FQDN.search(dns_fqdn[0])
+                    dns_hostname = dns_reg_hostname.group(1)
+                    dns_domain = dns_reg_hostname.group(2)
+                else:
+                    dns_hostname = ipaddr[1]
+                    dns_domain = ipaddr[2]
+
+
                 #success = snmpproc(ipaddr,dns_hostname,dns_domain,snmp_ro,snmp_rw,check_flag)
-                success = self.snmpproc(ipaddr, dns_hostname, dns_domain)
+                success = self.snmpproc(ipaddr[0], dns_hostname, dns_domain)
 
                 if not success:
                     print("SNMP failed, attempting through SSH")

@@ -61,8 +61,10 @@ def dnmt():
     #parser commands for hostname updater
     hostnameupdate_parser = subparsers.add_parser("HostnameUpdate", help= "Check switch hostnames with their DNS names & update")
     hostnameupdate_parser.add_argument('iplist', metavar='FILENAME',
-                        help='The list that contains the ip addresses to check')
+                        help='The list that contains the ip addresses to check. '
+                             'specify "IP,hostname,domain" on each line of the file to not check dns for that ip')
     hostnameupdate_parser.add_argument('-c', '--check', help="Compare hostname, do not change", action="store_true")
+
 
     # #parser commands for snmp test (temporary)
     # snmptest_parser = direct_parser.add_parser("SNMPTest", help= "grab snmp variables")
