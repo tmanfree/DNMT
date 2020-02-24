@@ -102,13 +102,23 @@ class Tools:
                             swcheck_dict["ip"], swcheck_dict["local_int"], swcheck_dict["int_stat"],
                             swcheck_dict["power_stat"], len(swcheck_dict["mac_stat"])))
 
-
+                    # Currently will only work if:
+                    # -The port is down (AP may be locked up)
+                    # -The port is up with an AP (catches some odd APs behaviour, used on 100M connections)
+                    # -The port is up with Ieee and 0 Mac Addresses (AP is locked up)
                     if (swcheck_dict["int_stat"] == "down") or (swcheck_dict["int_stat"] == "up" and (
                             ("AIR" in swcheck_dict["power_stat"]) or (
                             "Ieee" in swcheck_dict["power_stat"] and len(swcheck_dict["mac_stat"]) == 0))):
 
 
-                        print("Change appears safe") # change mac addresses to be 0,
+                        #TODO Add some logic to reload APs if not fincioning correctly
+                        if "AIR" in swcheck_dict['sh_cdp']:
+                            response = input("Port appears to have a live AP, confirm action of toggling port on/off ('yes'):")
+                            if not response == 'yes':
+                                self.subs.verbose_printer('Did not proceed with change.')
+                                sys.exit(1)
+
+                        print("Change appears safe*") # change mac addresses to be 0,
                         if not self.cmdargs.skip:
                             if self.cmdargs.tdr: #Run a TDR test before if flag is set
                                 self.TDR_Test(net_connect,swcheck_dict['local_int'])
@@ -116,6 +126,8 @@ class Tools:
                             if not response == 'yes':
                                 self.subs.verbose_printer('Did not proceed with change.')
                                 sys.exit(1)
+
+
 
                         self.subs.snmp_reset_interface(self.cmdargs.ipaddr,
                             self.subs.snmp_get_interface_id(self.cmdargs.ipaddr,
