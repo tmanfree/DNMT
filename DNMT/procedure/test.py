@@ -59,3 +59,37 @@ class Test:
             test.exportCSV(self.cmdargs.csv)
         else:
             test.printStack()
+
+
+
+    def Command_Blaster_Begin(self):
+
+        #Make Command List
+        commandlist = []
+        file = open(self.cmdargs.commandfile, "r")
+        for ip in file:
+            commandlist.append(ip.rstrip())
+        file.close()
+
+        #Iterate through addresses List
+        file = open(self.cmdargs.ipaddrfile, "r")
+        for ip in file:
+            self.Command_Blast(ip.rstrip(), commandlist)
+        file.close()
+
+
+
+    def Command_Blast(self,ipaddr,commandlist):
+        # SSH Connection
+        net_connect = self.subs.create_connection(ipaddr)
+        # net_connect = ConnectHandler(**cisco_sw)
+        if net_connect:
+            ### ADD ERROR HANDLING FOR FAILED CONNECTION
+            print("-------- CONNECTED TO {}--------".format(ipaddr))
+
+            for command in commandlist:
+                result = net_connect.send_command(command)
+                print("COMMAND:{}\nRESPONSE:{}".format(command,result))
+            net_connect.disconnect()
+        else:
+            print("-------- FAILED TO CONNECTED TO {}--------".format(ipaddr))

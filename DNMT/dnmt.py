@@ -111,6 +111,12 @@ def dnmt():
     switch_check_parser = test_parser.add_parser("Switch_Check", help="check switch info")
     switch_check_parser.add_argument('ipaddr', metavar='IP', help='Switch Address interface is on')
     switch_check_parser.add_argument('-c', '--csv', help="save to a specified csv file")
+    command_blaster_parser = test_parser.add_parser("Command_Blaster", help="send some non-enabled commands")
+    command_blaster_parser.add_argument('ipaddrfile', help='text file with switch addresses to run commands on')
+    command_blaster_parser.add_argument('commandfile', help='text file with commands to run')
+
+
+
     #Tests End
 
 
@@ -181,6 +187,8 @@ def dnmt():
             test.Power_Check()
         elif cmdargs.test == 'Switch_Check':
             test.Switch_Check()
+        elif cmdargs.test == 'Command_Blaster':
+            test.Command_Blaster_Begin()
 
 
 
