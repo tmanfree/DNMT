@@ -81,15 +81,24 @@ class Test:
 
     def Command_Blast(self,ipaddr,commandlist):
         # SSH Connection
-        net_connect = self.subs.create_connection(ipaddr)
-        # net_connect = ConnectHandler(**cisco_sw)
-        if net_connect:
-            ### ADD ERROR HANDLING FOR FAILED CONNECTION
-            print("-------- CONNECTED TO {}--------".format(ipaddr))
+        try:
+            net_connect = self.subs.create_connection(ipaddr)
+            # net_connect = ConnectHandler(**cisco_sw)
+            if net_connect:
+                ### ADD ERROR HANDLING FOR FAILED CONNECTION
+                print("-------- CONNECTED TO {}--------".format(ipaddr))
 
-            for command in commandlist:
-                result = net_connect.send_command(command)
-                print("COMMAND:{}\nRESPONSE:{}".format(command,result))
-            net_connect.disconnect()
-        else:
-            print("-------- FAILED TO CONNECTED TO {}--------".format(ipaddr))
+                for command in commandlist:
+                    result = net_connect.send_command(command)
+                    print("COMMAND:{}\nRESPONSE:{}".format(command,result))
+                net_connect.disconnect()
+            else:
+                print("-------- FAILED TO CONNECTED TO {}--------".format(ipaddr))
+        except netmiko.ssh_exception.NetMikoAuthenticationException as err:
+            self.subs.verbose_printer(err.args[0], "Netmiko Authentication Failure")
+        except netmiko.ssh_exception.NetMikoTimeoutException as err:
+            self.subs.verbose_printer(err.args[0], "Netmiko Timeout Failure")
+        except ValueError as err:
+            print(err.args[0])
+        except Exception as err:  # currently a catch all to stop linux from having a conniption when reloading
+            print("NETMIKO ERROR {}:{}".format(ipaddr, err.args[0]))
