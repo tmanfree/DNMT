@@ -111,12 +111,12 @@ class Tools:
                             "Ieee" in swcheck_dict["power_stat"] and len(swcheck_dict["mac_stat"]) == 0))):
 
 
-                        #TODO Add some logic to reload APs if not fincioning correctly
-                        if "AIR" in swcheck_dict['sh_cdp']:
-                            response = input("Port appears to have a live AP, confirm action of toggling port on/off ('yes'):")
-                            if not response == 'yes':
-                                self.subs.verbose_printer('Did not proceed with change.')
-                                sys.exit(1)
+                        # #TODO Add some logic to reload APs if not fincioning correctly
+                        # if "AIR" in swcheck_dict['sh_cdp']:
+                        #     response = input("Port appears to have a live AP, confirm action of toggling port on/off ('yes'):")
+                        #     if not response == 'yes':
+                        #         self.subs.verbose_printer('Did not proceed with change.')
+                        #         sys.exit(1)
 
                         print("Change appears safe*") # change mac addresses to be 0,
                         if not self.cmdargs.skip:
