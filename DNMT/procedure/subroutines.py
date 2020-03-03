@@ -651,8 +651,8 @@ class SubRoutines:
 
         #get interfaces and create them on the structure if they are not there
         for port in self.snmp_get_interface_id_bulk(ipaddr):
-            if (switchStruct.getSwitch(port['Switch']) is None):
-                switchStruct.addSwitch(port['Switch'])
+            if (switchStruct.getSwitch(port['Switch']) is None): #Comment out?
+                switchStruct.addSwitch(port['Switch'])  #Comment out?
             if (switchStruct.getSwitch(port['Switch']).getModule(port['Module']) is None):
                 switchStruct.getSwitch(port['Switch']).addModule(port['Module'])
             if (switchStruct.getSwitch(port['Switch']).getModule(port['Module']).getPort(port['Port']) is None):
@@ -664,7 +664,10 @@ class SubRoutines:
 
         #go through power return
         for port in self.snmp_get_port_poe_alloc_bulk(ipaddr):
-            switchStruct.getSwitch(port['Switch']).getModule(0).getPort(port['Port']).poe = port['Power']
+            if port is not None:
+                switchStruct.getSwitch(port['Switch']).getModule(0).getPort(port['Port']).poe = port['Power']
+            else:
+                port['Power'] = "N/A" #TODO update this to align with not found verbage
             #hard set using module 0^
 
         #go through interface returns (includes vlans, so need to map id to port)
