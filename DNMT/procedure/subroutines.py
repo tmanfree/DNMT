@@ -651,8 +651,8 @@ class SubRoutines:
 
         #get interfaces and create them on the structure if they are not there
         for port in self.snmp_get_interface_id_bulk(ipaddr):
-            # if (switchStruct.getSwitch(port['Switch']) is None):
-            #     switchStruct.addSwitch(port['Switch'])
+            if (switchStruct.getSwitch(port['Switch']) is None):
+                switchStruct.addSwitch(port['Switch'])
             if (switchStruct.getSwitch(port['Switch']).getModule(port['Module']) is None):
                 switchStruct.getSwitch(port['Switch']).addModule(port['Module'])
             if (switchStruct.getSwitch(port['Switch']).getModule(port['Module']).getPort(port['Port']) is None):
