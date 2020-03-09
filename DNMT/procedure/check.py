@@ -64,6 +64,8 @@ class Check:
         try:
             package_test_list.append(re.findall(r'^BOOT path-list\s+:\s+flash:(\S+)', before_swcheck_dict["boot"], re.MULTILINE)[0])
             package_test_list.append(re.findall(r'^Config file\s+:\s+flash:(\S+)', before_swcheck_dict["boot"], re.MULTILINE)[0])
+            #TODO extract each binary/packages when multiple files are listed
+            # package_test_list.append(re.findall('flash:(\S+)', before_swcheck_dict["boot"], re.DOTALL))
         except Exception as e: # super broad exception temporarily
             return False
 
@@ -85,7 +87,7 @@ class Check:
         after_list = after_str.splitlines(1)
         sumstring = "################# {} {} ####################\n".format(ipaddr,vartext)
         if before_str == after_str:
-            sumstring += "{} are the same\n".format(vartext)
+            sumstring += "{} entries are the same\n".format(vartext)
             self.subs.verbose_printer(sumstring)
             return sumstring,"{} identical".format(vartext)
         elif (len(after_list) / len(before_list)) >= 0.8:
@@ -167,7 +169,7 @@ class Check:
             #not printing right now!
             if ('apply' in self.cmdargs and self.cmdargs.apply) or(
                     'compare' in self.cmdargs and self.cmdargs.compare is not None):
-                print(result["UpgradeStatus"])
+                print(result["Print_Sum"])
 
                 self.subs.verbose_printer(result["summary"])
         elif self.cmdargs.upgradecheck == 'batch' and self.cmdargs.file:
@@ -186,7 +188,7 @@ class Check:
                     'compare' in self.cmdargs and self.cmdargs.compare is not None):
                 for result in results:
                     # if "identical" in result["Version"] :
-                    print(result["UpgradeStatus"])
+                    print(result["Print_Sum"])
 
                     self.subs.verbose_printer(result["summary"]) # make this printing by default?
             print("***Batch Done***")
@@ -458,17 +460,34 @@ class Check:
                             print("***{} flash checking verification failed***".format(before_swcheck_dict["ip"]))
                             before_swcheck_dict["flash_error_bool"] = True # redundant?
             ################################# Flash Checking ^^^############################
-
-
-
+                    # TODO fix placeholder for curVer & newVer for skipping flag
+                    if 'skip' in self.cmdargs and self.cmdargs.skip:
+                        before_swcheck_dict['curVer'] = before_swcheck_dict['ver']
+                        before_swcheck_dict['newVer'] = before_swcheck_dict['boot']
+                        #TODO END placeholder
                     #reload if the apply flag is set, and flash verified successfully
                     if 'apply' in self.cmdargs and self.cmdargs.apply and not ExitOut:
-                        output = net_connect.send_command('wr mem')
+                        output = net_connect.send_command_timing('wr mem')
+                        if "confirm" in output:
+                            output += net_connect.send_command_timing("y", strip_prompt=False, strip_command=False)
+                        # output = net_connect.send_command('wr mem') #failing on prompt where nvram was saved on old ver
                         print("***{}, reloading***".format(ipaddr))
-                        output = net_connect.send_command_timing('reload in 1')
+                        if 'delay' in self.cmdargs and self.cmdargs.delay is not None:
+                            reload_delay = self.cmdargs.delay
+                            # reload_string = "reload in {}\n".format(self.cmdargs.delay)
+                        else:
+                            reload_delay = "1"
+                            # reload_string = "reload in {}\n".format("1")
+
+                        output = net_connect.send_command('reload in {}'.format(reload_delay), expect_string='confirm')
+                        # output = net_connect.send_command_timing('reload in {}'.format(reload_delay))
+                        if "confirm" in output:
+                            output += net_connect.send_command_timing("\n", strip_prompt=False, strip_command=False)
+
                     elif ExitOut:
                         print("***{}, ERROR!!! pre-check errors encountered. exiting out ***".format(ipaddr))
                     else:
+
                         print("***{}, Current Version:{} ***".format(ipaddr,
                                                                                          before_swcheck_dict['curVer']))
                         print("***{}, Booting Version:{} ***".format(ipaddr,
@@ -493,12 +512,16 @@ class Check:
                 # Grabs a snapshot of the switch, not currently used for anything but archival
                 #perform reload if apply flag is set
                 if 'apply' in self.cmdargs and self.cmdargs.apply:
+                    if 'updateinterval' in self.cmdargs and self.cmdargs.updateinterval is not None:
+                        update_interval = int(self.cmdargs.updateinterval)
+                    else:
+                        update_interval = 30
                     mins_waited = 80
                     time.sleep(70)
                     while not self.subs.ping_check(ipaddr):
-                        time.sleep(10)
+                        time.sleep(update_interval)
                         print("no response from {}, waited {} seconds (equal to {} minutes) ".format(ipaddr,mins_waited,mins_waited/60))
-                        mins_waited += 10
+                        mins_waited += update_interval
                         # if waiting longer than one hour, exit out?
                         if mins_waited > 3600 :
                             #TODO Add writing to log file here?
@@ -574,6 +597,15 @@ class Check:
                 except Exception as err:  # currently a catch all
                     print("NETMIKO ERROR {}:{}".format(ipaddr,err.args[0]))
 
+            #create the logpath directory if it doesn't exist
+            if not os.path.exists(self.config.logpath):
+                os.makedirs(self.config.logpath)
+
+            #only create the before file if not loading from a file
+            if 'compare' in self.cmdargs and self.cmdargs.compare is None:
+                with open(os.path.join(self.config.logpath, ipaddr + "-Before.txt"), "wb") as myFile:
+                    pickle.dump(before_swcheck_dict, myFile)
+
             #perform the compare on the two files to create a comparison dict (status_dict)
             if ('apply' in self.cmdargs and self.cmdargs.apply and not ExitOut) or ('compare' in self.cmdargs and self.cmdargs.compare is not None):
                 status_dict = {"ip": ipaddr}
@@ -584,23 +616,42 @@ class Check:
                 #                                                                        after_swcheck_dict["ver"])
 
                 # Compare SwitchStruct variables - Version
-                b_switchgood = True
+                b_SwitchOutofOrder = False
+                # create lists to compare versions from the switch structure basic functionality without snmp
                 ver_before_list = []
                 ver_after_list = []
-                # create a list to compare versions from the switch structure
-                for switch in before_swcheck_dict['SwitchStatus'].getSwitches():
-                    temp_after_sw = after_swcheck_dict['SwitchStatus'].getSwitch(switch.switchnumber)
+                #Will work if SNMP connectivity was successful before and after
+                if 'SwitchStatus' in before_swcheck_dict and 'SwitchStatus' in after_swcheck_dict:
+                    for switch in before_swcheck_dict['SwitchStatus'].getSwitches():
+                        temp_after_sw = after_swcheck_dict['SwitchStatus'].getSwitch(switch.switchnumber)
 
-                    # create lists to format output
-                    ver_before_list.append((switch.switchnumber, switch.version))
-                    ver_after_list.append((temp_after_sw.switchnumber, temp_after_sw.version))
+                        # create lists to format output
+                        ver_before_list.append((switch.switchnumber, switch.version))
+                        ver_after_list.append((temp_after_sw.switchnumber, temp_after_sw.version))
 
-                    if temp_after_sw.serialnumber != switch.serialnumber:
-                        b_switchgood = False
+                        if temp_after_sw.serialnumber != switch.serialnumber:
+                            b_SwitchOutofOrder = True
+                    status_dict["Version"] = self.var_list_compare(ver_before_list, ver_after_list, "Version",
+                                                                   ipaddr)
+                else:
+                    #TODO FIX INTERMITTANT ERROR
+                    try:
+                        for switch in before_swcheck_dict['sw_list']:
+                            temp_after_sw_num = [item[1] for item in after_swcheck_dict['sw_list'] if item[0] == switch[0]]
+                            if switch[1] != temp_after_sw_num[0]:
+                                b_SwitchOutofOrder = True
+                        ver_before_list.append(before_swcheck_dict["ver"])
+                        ver_after_list.append(after_swcheck_dict["ver"])
+                        status_dict["Version"] = self.var_list_compare(ver_before_list, ver_after_list, "Version",
+                                                                       ipaddr)
+                    except Exception as err:  # currently a catch all
+                        print("Switch Order Check ERROR {}:{}".format(ipaddr, err.args[0]))
+                        status_dict["Version"] = "Unsure of Version, issue occurred"
 
-                status_dict["Version"] = self.var_list_compare(ver_before_list,ver_after_list,"Version",ipaddr)
 
-                if not b_switchgood:
+############################END CHANGE
+
+                if b_SwitchOutofOrder:
                     status_dict["summary"] += "\n!#!#!#!#!#!#!# WARNING: Switches are Out of Order!#!#!#!#!#!#!#\n"
 
                 if "Version entries are the same" in status_dict["Version"]:
@@ -611,6 +662,7 @@ class Check:
                 status_dict["summary"] += status_dict["UpgradeStatus"] + "\n"
                 status_dict["summary"] += "Before Version:{}\nAfter Version:{}\n".format(str(ver_before_list),
                                                                                          str(ver_after_list))
+                status_dict["Print_Sum"] = status_dict["summary"]
                 status_dict["summary"] += status_dict["Version"]
 
                 #Compare String variables
@@ -628,16 +680,28 @@ class Check:
                                                                         ipaddr)
                      status_dict["summary"] += status_dict[varname]
 
+                temp = '\n'.join(', '.join(elems) for elems in after_swcheck_dict["sw_list"])
 
 
-            #create the logpath directory if it doesn't exist
-            if not os.path.exists(self.config.logpath):
-                os.makedirs(self.config.logpath)
+                status_dict["Print_Sum"] += "\n".join(', '.join(elems) for elems in after_swcheck_dict["sw_list"]) \
+                                            + "\n--------\n" \
+                                            + "Snooping Bindings before:" + str(len(before_swcheck_dict["snoop_list"])) \
+                                            + "\n" + "Snooping Bindings after:" + str(len(after_swcheck_dict["snoop_list"])) \
+                                            + "\n--------\n"
+                status_dict["Print_Sum"] += re.search('cdp \#+\n((.*\n){1,3}?)\#', status_dict["summary"]).group(1)
+                status_dict["Print_Sum"] += "\n******Switch {} log complete******\n\n".format(after_swcheck_dict['ip'])
 
-            #only create the before file if not loading from a file
-            if 'compare' in self.cmdargs and self.cmdargs.compare is None:
-                with open(os.path.join(self.config.logpath, ipaddr + "-Before.txt"), "wb") as myFile:
-                    pickle.dump(before_swcheck_dict, myFile)
+
+
+
+                # #create the logpath directory if it doesn't exist
+            # if not os.path.exists(self.config.logpath):
+            #     os.makedirs(self.config.logpath)
+            #
+            # #only create the before file if not loading from a file
+            # if 'compare' in self.cmdargs and self.cmdargs.compare is None:
+            #     with open(os.path.join(self.config.logpath, ipaddr + "-Before.txt"), "wb") as myFile:
+            #         pickle.dump(before_swcheck_dict, myFile)
 
             ####print out summary of verification if not skipping
             if 'skip' in self.cmdargs and not self.cmdargs.skip:
