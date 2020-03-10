@@ -47,8 +47,8 @@ class Check:
                 package_test_list.append(item[1])
 #        package_test_list.append("TEST")
 
-        for f in package_test_list:
-            verification = net_connect.send_command('Verify /md5 {}{} '.format(flashnum, f))
+        for f in package_test_list: #Added Delay factor of 4 for timing
+            verification = net_connect.send_command('Verify /md5 {}{} '.format(flashnum, f), delay_factor=4)
             if "ERROR".lower() in verification.lower():
                 veribool = False
             self.subs.verbose_printer("{} {}{}\n{}".format(before_swcheck_dict["ip"], flashnum, f, verification))
