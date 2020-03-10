@@ -125,6 +125,7 @@ def dnmt():
     error_counter_parser = test_parser.add_parser("Error_Counter", help="check the errors of an interface")
     error_counter_parser.add_argument('ipaddr', help='address of switch to check')
     error_counter_parser.add_argument('interface', help='string to grab error counts of example:8/10')
+    error_counter_parser.add_argument('-v', '--verbose', help="run in verbose mode", default=False, action="store_true")
 
 
 

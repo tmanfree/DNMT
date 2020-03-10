@@ -63,6 +63,7 @@ class Test:
     def Error_Check(self):
         error_dict = {"ip": self.cmdargs.ipaddr}
         intId = self.subs.snmp_get_interface_id(self.cmdargs.ipaddr,self.cmdargs.interface)
+        self.subs.verbose_printer("interface ID:{}".format(intId))
         error_dict["input errors"] = self.subs.snmp_get_input_errors_by_id(self.cmdargs.ipaddr,intId)
         error_dict["output errors"] = self.subs.snmp_get_output_errors_by_id(self.cmdargs.ipaddr, intId)
         error_dict["crc errors"] = self.subs.snmp_get_crc_errors_by_id(self.cmdargs.ipaddr, intId)
