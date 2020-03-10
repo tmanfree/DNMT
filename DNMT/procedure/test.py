@@ -60,7 +60,14 @@ class Test:
         else:
             test.printStack()
 
-
+    def Error_Check(self):
+        error_dict = {"ip": self.cmdargs.ipaddr}
+        intId = self.subs.snmp_get_interface_id(self.cmdargs.ipaddr,self.cmdargs.interface)
+        error_dict["input errors"] = self.subs.snmp_get_input_errors_by_id(self.cmdargs.ipaddr,intId)
+        error_dict["output errors"] = self.subs.snmp_get_output_errors_by_id(self.cmdargs.ipaddr, intId)
+        error_dict["crc errors"] = self.subs.snmp_get_crc_errors_by_id(self.cmdargs.ipaddr, intId)
+        for entry in error_dict:
+            print("{}:{}".format(entry, error_dict[entry]))
 
     def Command_Blaster_Begin(self):
 

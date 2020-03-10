@@ -122,6 +122,9 @@ def dnmt():
     command_blaster_parser = test_parser.add_parser("Command_Blaster", help="send some non-enabled commands")
     command_blaster_parser.add_argument('ipaddrfile', help='text file with switch addresses to run commands on')
     command_blaster_parser.add_argument('commandfile', help='text file with commands to run')
+    error_counter_parser = test_parser.add_parser("Error_Counter", help="check the errors of an interface")
+    error_counter_parser.add_argument('ipaddr', help='address of switch to check')
+    error_counter_parser.add_argument('interface', help='string to grab error counts of example:8/10')
 
 
 
@@ -197,6 +200,8 @@ def dnmt():
             test.Switch_Check()
         elif cmdargs.test == 'Command_Blaster':
             test.Command_Blaster_Begin()
+        elif cmdargs.test == 'Error_Counter':
+            test.Error_Check()
 
 
 

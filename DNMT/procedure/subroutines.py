@@ -123,6 +123,66 @@ class SubRoutines:
         return intId
 
 
+        # Name: snmp_get_crc_errors_by_id
+        # Input:
+        #   ipaddr (string)
+        #      -The ipaddress/hostname to grab info from
+        #   intId (string)
+        #      -The interfaceID to grab the info for
+        # Return:
+        #  (int)crc errors for supplied port
+        # Summary:
+        #   grabs the crc errors for a port
+
+    def snmp_get_crc_errors_by_id(self, ipaddr, intId):
+        oidstring = '1.3.6.1.4.1.9.2.2.1.1.12.{}'.format(intId)
+        # find the current vlan assignment for the port
+        varBind = self.snmp_get(ipaddr, ObjectType(ObjectIdentity(oidstring)))
+        interfaceErrors = varBind[0]._ObjectType__args[1]._value
+
+        return interfaceErrors
+
+        # Name: snmp_get_input_errors_by_id
+        # Input:
+        #   ipaddr (string)
+        #      -The ipaddress/hostname to grab info from
+        #   intId (string)
+        #      -The interfaceID to grab the info for
+        # Return:
+        #  (int)output errors for supplied port
+        # Summary:
+        #   grabs the output errors for a port
+
+    def snmp_get_input_errors_by_id(self, ipaddr,intId):
+        oidstring = '1.3.6.1.2.1.2.2.1.14.{}'.format(intId)
+        # find the current vlan assignment for the port
+        varBind = self.snmp_get(ipaddr, ObjectType(ObjectIdentity(oidstring)))
+        interfaceErrors = varBind[0]._ObjectType__args[1]._value
+
+        return interfaceErrors
+
+        # Name: snmp_get_output_errors_by_id
+        # Input:
+        #   ipaddr (string)
+        #      -The ipaddress/hostname to grab info from
+        #   intId (string)
+        #      -The interfaceID to grab the info for
+        # Return:
+        #  (int) input errors for supplied port
+        # Summary:
+        #   grabs the input errors for a port
+
+    def snmp_get_output_errors_by_id(self, ipaddr,intId):
+        oidstring = '1.3.6.1.2.1.2.2.1.20.{}'.format(intId)
+        # find the current vlan assignment for the port
+        varBind = self.snmp_get(ipaddr, ObjectType(ObjectIdentity(oidstring)))
+        interfaceErrors = varBind[0]._ObjectType__args[1]._value
+
+        return interfaceErrors
+
+
+
+
     # Name: snmp_get_interface_id_bulk
     # Input:
     #   ipaddr (string)
@@ -551,6 +611,7 @@ class SubRoutines:
             interfaceVlanList.append({'Id': intId, 'Vlan': interfaceVlan})
 
         return interfaceVlanList
+
 
         # Name: snmp_get_input_errors_bulk
         # Input:
