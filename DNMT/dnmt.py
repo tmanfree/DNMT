@@ -126,7 +126,8 @@ def dnmt():
     error_counter_parser.add_argument('ipaddr', help='address of switch to check')
     error_counter_parser.add_argument('interface', help='string to grab error counts of example:8/10')
     error_counter_parser.add_argument('-v', '--verbose', help="run in verbose mode", default=False, action="store_true")
-
+    bad_phone_parser = test_parser.add_parser("BadPhone", help="look for bad phones")
+    bad_phone_parser.add_argument('file', metavar='file',help='The file with IPs to check')
 
 
     #Tests End
@@ -203,6 +204,8 @@ def dnmt():
             test.Command_Blaster_Begin()
         elif cmdargs.test == 'Error_Counter':
             test.Error_Check()
+        elif cmdargs.test == 'BadPhone':
+            test.BadPhoneBegin()
 
 
 

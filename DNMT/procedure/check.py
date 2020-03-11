@@ -667,20 +667,26 @@ class Check:
 
                 #Compare String variables
                 for varname in "ver","ints", "cdp":
-                    tempstring, status_dict[varname] = self.var_compare(before_swcheck_dict[varname],
-                                                                        after_swcheck_dict[varname],
-                                                                        varname,
-                                                                        ipaddr)
-                    status_dict["summary"] += tempstring
+                    if varname in before_swcheck_dict and varname in after_swcheck_dict:
+                        tempstring, status_dict[varname] = self.var_compare(before_swcheck_dict[varname],
+                                                                            after_swcheck_dict[varname],
+                                                                            varname,
+                                                                            ipaddr)
+                        status_dict["summary"] += tempstring
+                    else:
+                        status_dict["summary"] += "################# {} missing in a list ####################\n\n".format(varname)
                 #Compare List variables
                 for varname in "sw_list","mac_list", "snoop_list":
-                     status_dict[varname] = self.var_list_compare(before_swcheck_dict[varname],
-                                                                        after_swcheck_dict[varname],
-                                                                        varname,
-                                                                        ipaddr)
-                     status_dict["summary"] += status_dict[varname]
+                    if varname in before_swcheck_dict and varname in after_swcheck_dict:
+                         status_dict[varname] = self.var_list_compare(before_swcheck_dict[varname],
+                                                                            after_swcheck_dict[varname],
+                                                                            varname,
+                                                                            ipaddr)
+                         status_dict["summary"] += status_dict[varname]
+                    else:
+                        status_dict["summary"] += "################# {} missing in a list ####################\n\n".format(varname)
 
-                temp = '\n'.join(', '.join(elems) for elems in after_swcheck_dict["sw_list"])
+                # temp = '\n'.join(', '.join(elems) for elems in after_swcheck_dict["sw_list"])
 
 
                 status_dict["Print_Sum"] += "\n".join(', '.join(elems) for elems in after_swcheck_dict["sw_list"]) \

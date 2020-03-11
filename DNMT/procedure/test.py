@@ -110,3 +110,56 @@ class Test:
             print(err.args[0])
         except Exception as err:  # currently a catch all to stop linux from having a conniption when reloading
             print("NETMIKO ERROR {}:{}".format(ipaddr, err.args[0]))
+
+    def BadPhoneBegin(self):
+        iplist = []
+        file = open(self.cmdargs.file, "r")
+        for ip in file:
+            iplist.append(ip.rstrip())
+        file.close()
+
+        for ip in iplist:
+            self.BadPhoneFinder(ip)
+
+    def BadPhoneFinder(self,ipaddr):
+        try:
+            # test = self.subs.snmp_get_mac_table_bulk(self.cmdargs.ipaddr)
+            # test1 = self.subs.snmp_get_switch_data_full(self.cmdargs.ipaddr)
+            net_connect = self.subs.create_connection(ipaddr)
+            if net_connect:
+                sw_dict = {"ip": ipaddr}
+                sw_dict["int_return"] = net_connect.send_command('show power inline | include Ieee')
+                sw_dict["int_list"] = re.findall('(?:\s*)(\S+)(?:\s+.*)', sw_dict["int_return"], re.VERBOSE | re.MULTILINE)
+                if len(sw_dict["int_list"]) is not 0:
+                    print("{} --- {} Ieee interfaces found".format(sw_dict["ip"], len(sw_dict["int_list"])))
+                    for interface in sw_dict["int_list"]:
+                        int_status = net_connect.send_command('show int {}'.format(interface)).split("\n")[0]
+
+                        if "notconnect" in int_status:
+                            response = input("{} is showing NotConnected, toggle port on/off ('yes'):".format(interface))
+                            if not response == 'yes':
+                                self.subs.verbose_printer('Did not proceed with change.')
+                                sys.exit(1)
+                            self.subs.snmp_reset_interface(ipaddr,
+                                                           self.subs.snmp_get_interface_id(ipaddr,
+                                                                                           interface))
+                            print("{} --- {} interface restarted".format(sw_dict["ip"], interface))
+
+
+                        else:
+                            print("{} --- {} Port is showing connected".format(sw_dict["ip"],interface))
+                else:
+                    print("{} --- No Ieee entries found".format(sw_dict["ip"]))
+
+
+            net_connect.disconnect()
+                # netmiko connection error handling
+        except netmiko.ssh_exception.NetMikoAuthenticationException as err:
+            self.subs.verbose_printer(err.args[0], "Netmiko Authentication Failure")
+        except netmiko.ssh_exception.NetMikoTimeoutException as err:
+            self.subs.verbose_printer(err.args[0], "Netmiko Timeout Failure")
+        except ValueError as err:
+            print(err.args[0])
+        except Exception as err: #currently a catch all to stop linux from having a conniption when reloading
+            print("NETMIKO ERROR {}:{}".format(ipaddr,err.args[0]))
+
