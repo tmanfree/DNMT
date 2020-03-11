@@ -137,7 +137,7 @@ class Test:
 
                         if "notconnect" in int_status:
                             if 'skip' in self.cmdargs and not self.cmdargs.skip:
-                                response = input("{} is showing NotConnected, toggle port on/off ('yes'):".format(interface))
+                                response = input("{} --- {} is showing NotConnected, toggle port on/off ('yes'):".format(sw_dict["ip"], interface))
                                 if not response == 'yes':
                                     self.subs.verbose_printer('Did not proceed with change.')
                                     sys.exit(1)
