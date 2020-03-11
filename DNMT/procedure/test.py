@@ -136,10 +136,11 @@ class Test:
                         int_status = net_connect.send_command('show int {}'.format(interface)).split("\n")[0]
 
                         if "notconnect" in int_status:
-                            response = input("{} is showing NotConnected, toggle port on/off ('yes'):".format(interface))
-                            if not response == 'yes':
-                                self.subs.verbose_printer('Did not proceed with change.')
-                                sys.exit(1)
+                            if 'skip' in self.cmdargs and not self.cmdargs.skip:
+                                response = input("{} is showing NotConnected, toggle port on/off ('yes'):".format(interface))
+                                if not response == 'yes':
+                                    self.subs.verbose_printer('Did not proceed with change.')
+                                    sys.exit(1)
                             self.subs.snmp_reset_interface(ipaddr,
                                                            self.subs.snmp_get_interface_id(ipaddr,
                                                                                            interface))

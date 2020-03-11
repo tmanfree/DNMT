@@ -128,6 +128,7 @@ def dnmt():
     error_counter_parser.add_argument('-v', '--verbose', help="run in verbose mode", default=False, action="store_true")
     bad_phone_parser = test_parser.add_parser("BadPhone", help="look for bad phones")
     bad_phone_parser.add_argument('file', metavar='file',help='The file with IPs to check')
+    bad_phone_parser.add_argument('-s', '--skip', help="skip verification", default=False, action="store_true")
 
 
     #Tests End
