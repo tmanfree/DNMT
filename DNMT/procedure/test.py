@@ -94,14 +94,14 @@ class Test:
             # net_connect = ConnectHandler(**cisco_sw)
             if net_connect:
                 ### ADD ERROR HANDLING FOR FAILED CONNECTION
-                print("-------- CONNECTED TO {}--------".format(ipaddr))
+                print("-------- CONNECTED TO {} --------".format(ipaddr))
 
                 for command in commandlist:
                     result = net_connect.send_command(command)
                     print("COMMAND:{}\nRESPONSE:{}".format(command,result))
                 net_connect.disconnect()
             else:
-                print("-------- FAILED TO CONNECTED TO {}--------".format(ipaddr))
+                print("-------- FAILED TO CONNECTED TO {} --------".format(ipaddr))
         except netmiko.ssh_exception.NetMikoAuthenticationException as err:
             self.subs.verbose_printer(err.args[0], "Netmiko Authentication Failure")
         except netmiko.ssh_exception.NetMikoTimeoutException as err:

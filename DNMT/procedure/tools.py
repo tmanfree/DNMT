@@ -91,7 +91,7 @@ class Tools:
                         'show power inline | include {} .'.format(swcheck_dict["interface"]))
                     swcheck_dict["power_stat"] = self.subs.regex_parser_var0(r'^(?:\S+\s+\S+\s+\S+\s+\S+\s+)(\S+)',
                                                                              swcheck_dict["sh_power"])
-                    swcheck_dict["int_stat"] = self.subs.regex_parser_var0(r'(?:line protocol is )(\S+)',
+                    swcheck_dict["int_stat"] = self.subs.regex_parser_var0(r'(?:line protocol is \S+ \()(\S+)\)',
                                                                            swcheck_dict["sh_int"])
                     swcheck_dict["power_stat"] = self.subs.regex_parser_var0(r'^(?:\S+\s+\S+\s+\S+\s+\S+\s+)(\S+)', swcheck_dict["sh_power"])
                     swcheck_dict["int_stat"] = self.subs.regex_parser_var0(r'(?:line protocol is )(\S+)',swcheck_dict["sh_int"] )
@@ -106,7 +106,7 @@ class Tools:
                     # -The port is down (AP may be locked up)
                     # -The port is up with an AP (catches some odd APs behaviour, used on 100M connections)
                     # -The port is up with Ieee and 0 Mac Addresses (AP is locked up)
-                    if (swcheck_dict["int_stat"] == "down") or (swcheck_dict["int_stat"] == "up" and (
+                    if (swcheck_dict["int_stat"] == "notconnect") or (swcheck_dict["int_stat"] == "connected" and (
                             ("AIR" in swcheck_dict["power_stat"]) or (
                             "Ieee" in swcheck_dict["power_stat"] and len(swcheck_dict["mac_stat"]) == 0))):
 
