@@ -114,8 +114,6 @@ def dnmt():
 
     #Tests Begin
     test_parser = subparsers.add_parser("test", help="various tests").add_subparsers(dest="test")
-    power_check_parser = test_parser.add_parser("Power_Check", help="check port power")
-    power_check_parser.add_argument('ipaddr', metavar='IP', help='Switch Address interface is on')
     switch_check_parser = test_parser.add_parser("Switch_Check", help="check switch info")
     switch_check_parser.add_argument('ipaddr', metavar='IP', help='Switch Address interface is on')
     switch_check_parser.add_argument('-c', '--csv', help="save to a specified csv file")
@@ -197,9 +195,7 @@ def dnmt():
         elif cmdargs.tools == 'Port_Change':
             snmpFuncs.Change_Port_Vlan()
     elif cmdargs.maincommand == 'test':
-        if cmdargs.test == 'Power_Check':
-            test.Power_Check()
-        elif cmdargs.test == 'Switch_Check':
+        if cmdargs.test == 'Switch_Check':
             test.Switch_Check()
         elif cmdargs.test == 'Command_Blaster':
             test.Command_Blaster_Begin()

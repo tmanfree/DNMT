@@ -29,24 +29,6 @@ class Test:
         #                                   datetime.date.today().strftime('%Y%m%d'))
 
 
-    def Power_Check(self):
-        power = self.subs.snmp_get_port_poe_alloc_bulk(self.cmdargs.ipaddr)
-        ports = self.subs.snmp_get_port_activity_bulk(self.cmdargs.ipaddr)
-
-        #test removing things this has issues with uplinks like 1/1/1 = 51 resolving to switch 1 port 1
-        removalList = []
-        for poePort in power:
-            found = False
-            for activePort in ports:
-                if str(activePort["Switch"]) == str(poePort["Switch"]) and str(activePort["Port"]) == str(poePort["Port"]):
-                    found = True
-                    break;
-            if not found:
-                removalList.append(poePort)
-        for port in removalList:
-            power.remove(port)
-        print(power)
-
     def Switch_Check(self):
         #3560X with ten gig uplink doesn't show gi 1/1-2 only ten 1/1-2.
         start = time.time()

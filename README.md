@@ -203,16 +203,14 @@ This will provide an interactive prompt to change the vlan on port 1/0/1 of swit
 
 ###Test Commands
 Commands that are being tested out before moving into permanence
-####Power_Check
-         check port power
 ####Switch_Check
-        check switch info
+Grab the state of the switch through snmp 
 ####Command_Blaster
-     send some non-enabled commands
+send some non-enabled commands
 ####Error_Counter
-       check the errors of an interface
+check the errors of an interface
 ####BadPhone
-            look for bad phones
+look for bad phones (Ieee and notconnect)
 
 
 
