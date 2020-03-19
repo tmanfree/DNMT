@@ -413,6 +413,21 @@ class SubRoutines:
 
         return interfaceDescription.decode("utf-8")
 
+    # Name: snmp_set_interface_description
+    # Input:
+    #   ipaddr (string)
+    #      -The ipaddress/hostname to grab info from
+    #   intId (string)
+    #      -The id of the interface to set
+    #   dssc (string)
+    #      -The description to assign to the interface
+    # Return:
+    #   none
+    # Summary:
+    #   Sets the description for the specified interface
+    def snmp_set_interface_description(self, ipaddr, intId, desc):
+        oidstring = '1.3.6.1.2.1.31.1.1.1.18.{}'.format(intId)
+        self.snmp_set(ipaddr, ObjectType(ObjectIdentity(oidstring), desc))
 
 
     # Name: snmp_set_interface_vlan

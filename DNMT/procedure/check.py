@@ -156,12 +156,12 @@ class Check:
 
 
 
-    def ping_check(self,sHost):
-        try:
-            output = subprocess.check_output("ping -{} 1 {}".format('n' if platform.system().lower() == "windows" else 'c', sHost), shell=True)
-        except Exception as e:
-            return False
-        return True
+    # def ping_check(self,sHost):
+    #     try:
+    #         output = subprocess.check_output("ping -{} 1 {}".format('n' if platform.system().lower() == "windows" else 'c', sHost), shell=True)
+    #     except Exception as e:
+    #         return False
+    #     return True
 
     def begin(self):
         if self.cmdargs.upgradecheck == 'single' and self.cmdargs.ipaddr:

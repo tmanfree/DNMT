@@ -16,7 +16,8 @@ from DNMT.procedure.lefty import Lefty
 from DNMT.procedure.check import Check
 from DNMT.procedure import config
 from DNMT.procedure.hostnamer import HostNamer
-from DNMT.procedure.SnmpFuncs import SnmpFuncs
+# from DNMT.procedure.SnmpFuncs import SnmpFuncs
+from DNMT.procedure.functions import Functions
 from DNMT.procedure.tools import Tools
 from DNMT.procedure import hostnamer
 from DNMT.procedure.test import Test
@@ -160,7 +161,8 @@ def dnmt():
     hostnamer = HostNamer(cmdargs,config)
     upgradeCheck = Check(cmdargs, config)
     tools = Tools(cmdargs, config)
-    snmpFuncs = SnmpFuncs(cmdargs,config)
+    functions = Functions(cmdargs,config)
+    # snmpFuncs = SnmpFuncs(cmdargs,config)
     test = Test(cmdargs, config)
 
     ### complete CLI Parsing
@@ -193,7 +195,7 @@ def dnmt():
             except SystemExit as errcode:
                 sys.exit(errcode)
         elif cmdargs.tools == 'Port_Change':
-            snmpFuncs.Change_Port_Vlan()
+            functions.Change_Port_Vlan()
     elif cmdargs.maincommand == 'test':
         if cmdargs.test == 'Switch_Check':
             test.Switch_Check()
