@@ -427,7 +427,8 @@ class SubRoutines:
     #   Sets the description for the specified interface
     def snmp_set_interface_description(self, ipaddr, intId, desc):
         oidstring = '1.3.6.1.2.1.31.1.1.1.18.{}'.format(intId)
-        self.snmp_set(ipaddr, ObjectType(ObjectIdentity(oidstring), desc))
+        # self.snmp_set(ipaddr, ObjectType(ObjectIdentity(oidstring), desc))
+        self.snmp_set(ipaddr, ObjectType(ObjectIdentity(oidstring), rfc1902.Integer(5)))
 
 
     # Name: snmp_set_interface_vlan
