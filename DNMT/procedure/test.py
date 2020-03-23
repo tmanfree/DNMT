@@ -153,6 +153,7 @@ class Test:
 
     def Activity_Tracking_Begin(self):
         iplist = []
+
         if not os.path.exists(os.path.join(self.log_path, "activitycheck", "rawfiles")):
             os.makedirs(os.path.join(self.log_path, "activitycheck", "rawfiles"))
 
@@ -166,7 +167,7 @@ class Test:
             print("##### {} -  Processing #####".format(ip))
             self.Activity_Tracking(ip)
             end = time.time()
-            print("##### {} -  Processing Complete, time:{} seconds #####".format(ip,end-start))
+            print("##### {} -  Processing Complete, time:{} seconds #####".format(ip,((end-start)*100)/100))
         # After all processes return, read in each pickle and create a single output file?
         self.Create_Readable_Activity_File()
 
