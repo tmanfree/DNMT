@@ -162,9 +162,11 @@ class Test:
         file.close()
         #TODO CHANGE to do them with individual processes
         for ip in iplist:
+            start = time.time()
             print("##### {} -  Processing #####".format(ip))
             self.Activity_Tracking(ip)
-            print("##### {} -  Processing Complete #####".format(ip))
+            end = time.time()
+            print("##### {} -  Processing Complete, time:{} seconds #####".format(ip,end-start))
         # After all processes return, read in each pickle and create a single output file?
         self.Create_Readable_Activity_File()
 
