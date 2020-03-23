@@ -162,19 +162,20 @@ class Test:
         file.close()
         #TODO CHANGE to do them with individual processes
         for ip in iplist:
+            print("##### {} -  Processing #####".format(ip))
             self.Activity_Tracking(ip)
+            print("##### {} -  Processing Complete #####".format(ip))
         # After all processes return, read in each pickle and create a single output file?
         self.Create_Readable_Activity_File()
-
 
         #EMail finished file:
         try:
             msg = EmailMessage()
             msg["From"] = "admin@localhost"
-            msg["Subject"] = "updated activitycheck - date"
+            msg["Subject"] = "updated activitycheck - {}".format(datetime.date.today().strftime('%Y-%m-%d'))
             msg["To"] = "mandzie@ualberta.ca"
-            msg.set_content("This is the message body")
-            msg.add_attachment(open(os.path.join(self.log_path,"activitycheck","FullStatus.csv"), "r").read(), filename="status.csv")
+            msg.set_content("Attached is the status document for {}",format(datetime.date.today().strftime('%Y-%m-%d')))
+            msg.add_attachment(open(os.path.join(self.log_path,"activitycheck","FullStatus.csv"), "r").read(), filename="status-{}.csv".format(datetime.date.today().strftime('%Y-%m-%d')))
 
             s = smtplib.SMTP('localhost')
             # s.login(USERNAME, PASSWORD)
