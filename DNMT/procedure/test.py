@@ -5,6 +5,8 @@ import sys
 import subprocess,platform,os,time,datetime
 import getpass
 import difflib
+import smtplib
+from email.message import EmailMessage
 import pickle
 
 
@@ -25,6 +27,7 @@ class Test:
         self.cmdargs = cmdargs
         self.config = config
         self.subs = SubRoutines(cmdargs, config)
+        self.log_path = os.path.abspath(os.path.join(os.sep, 'var', 'log', 'dnmt'))
        # self.config.logpath = os.path.join(os.path.expanduser(self.config.logpath), "logs", "UpgradeCheck",
         #                                   datetime.date.today().strftime('%Y%m%d'))
 
@@ -145,4 +148,119 @@ class Test:
             print(err.args[0])
         except Exception as err: #currently a catch all to stop linux from having a conniption when reloading
             print("NETMIKO ERROR {}:{}".format(ipaddr,err.args[0]))
+
+
+
+    def Activity_Tracking_Begin(self):
+        iplist = []
+        if not os.path.exists(os.path.join(self.log_path, "activitycheck", "rawfiles")):
+            os.makedirs(os.path.join(self.log_path, "activitycheck", "rawfiles"))
+
+        file = open(os.path.join(self.log_path, "activitycheck", "activitycheckIPlist"), "r")
+        for ip in file:
+            iplist.append(ip.rstrip())
+        file.close()
+        #TODO CHANGE to do them with individual processes
+        for ip in iplist:
+            self.Activity_Tracking(ip)
+        # After all processes return, read in each pickle and create a single output file?
+        self.Create_Readable_Activity_File()
+
+
+        #EMail finished file:
+        try:
+            msg = EmailMessage()
+            msg["From"] = "admin@localhost"
+            msg["Subject"] = "updated activitycheck - date"
+            msg["To"] = "mandzie@ualberta.ca"
+            msg.set_content("This is the message body")
+            msg.add_attachment(open(os.path.join(self.log_path,"activitycheck","FullStatus.csv"), "r").read(), filename="status.csv")
+
+            s = smtplib.SMTP('localhost')
+            # s.login(USERNAME, PASSWORD)
+            s.send_message(msg)
+            # smtpObj = smtplib.SMTP("localhost")
+            # smtpObj.sendmail("admin@localhost", ["mandzie@ualberta.ca"], "Test",)
+            # # smtpObj.sendmail(config.email_from, [args.email], email_string )
+            # logger.info("successfully sent Email")
+        except smtplib.SMTPException:
+            print("Failed to send Email")
+        except Exception as e:
+            print(e)
+
+
+
+    def Create_Readable_Activity_File(self):
+        TotalStatus = "IP,SwitchNum,Model,Serial,SoftwareVer,ModuleNum,PortNum,PortName,PortDesc,PoE,CDP,Status,DataVlan,VoiceVlan,Mode,IntID,InputErrors,OutputErrors,InputCounters,OutputCounters,LastTimeUpdated,DeltaInputCounters,DeltaOutputCounters\n"
+        for file in os.listdir(os.path.join(self.log_path,"activitycheck", "rawfiles")):
+            if file.endswith("-statcheck"):
+                #process
+                try:
+                    # with open(file, "rb") as myNewFile:
+                    with open(os.path.join(self.log_path, "activitycheck","rawfiles", file), "rb") as myNewFile:
+                        SwitchStatus = pickle.load(myNewFile)
+                        TotalStatus += SwitchStatus.appendSingleLine()
+                except Exception as err:  # currently a catch all to stop linux from having a conniption when reloading
+                    print("FILE ERROR {}:{}".format(file, err.args[0]))
+        with open(os.path.join(self.log_path,"activitycheck","FullStatus.csv"), 'w', encoding='utf-8') as filePointer:
+            print(TotalStatus, file=filePointer)
+
+
+    def Activity_Tracking(self,ipaddr):
+    # this function will:
+    # -grab the current status,
+    # -load a pickled switch status if there is one, create one if there is not
+    #   -Pickled switch status will also include:
+    #       -For Ports - (Time last changed} last change in state (append date for first entry, append if changed)
+    #       -For Ports - (Delta In from last change) if changed from last check
+    #       -For Ports - (Delta Out from last change) if changed from last check
+    #
+    # TODO
+    #   -Determine where these log files should go
+        NewSwitchStatus  = self.subs.snmp_get_switch_data_full(ipaddr)
+
+    #TODO Check if a previous static check exists, and load it if it does, otherwise create it and write it out
+        try:
+
+            with open(os.path.join(self.log_path, "activitycheck", "rawfiles","{}-statcheck".format(ipaddr)), "rb") as myNewFile:
+                OldSwitchStatus = pickle.load(myNewFile)
+
+            for tempswitch in OldSwitchStatus.switches:
+                for tempmodule in tempswitch.modules:
+                    for oldport in tempmodule.ports:
+                        newport = NewSwitchStatus.getPortById(oldport.intID)
+                        if oldport.activityChanged(newport):
+                            oldport.deltalastin = newport.inputcounters - oldport.inputcounters
+                            oldport.deltalastout = newport.outputcounters - oldport.outputcounters
+                            oldport.cdp = newport.cdp
+                            oldport.poe = newport.poe
+                            oldport.status = newport.status
+                            oldport.inputerrors = newport.inputerrors
+                            oldport.outputerrors = newport.outputerrors
+                            oldport.inputcounters = newport.inputcounters
+                            oldport.outputcounters = newport.outputcounters
+                            oldport.lastupdate = datetime.date.today().strftime('%Y-%m-%d')
+
+
+            #TODO Compare the two files now
+
+        except FileNotFoundError:
+            print("##### {} -  No previous status file found, one will be created #####".format(ipaddr))
+            OldSwitchStatus = NewSwitchStatus
+
+            for tempswitch in OldSwitchStatus.switches:
+                for tempmodule in tempswitch.modules:
+                    for tempport in tempmodule.ports:
+                        tempport.lastupdate = datetime.date.today().strftime('%Y-%m-%d')
+                        tempport.deltalastin = 0
+                        tempport.deltalastout = 0
+
+
+        except Exception as err: #currently a catch all to stop linux from having a conniption when reloading
+            print("FILE ERROR {}:{}".format(ipaddr,err.args[0]))
+
+
+    # WRITE IT OUT
+        with open(os.path.join(self.log_path,"activitycheck", "rawfiles","{}-statcheck".format(ipaddr)), "wb") as myFile:
+            pickle.dump(OldSwitchStatus, myFile)
 

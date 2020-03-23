@@ -17,7 +17,7 @@ from DNMT.procedure.check import Check
 from DNMT.procedure import config
 from DNMT.procedure.hostnamer import HostNamer
 # from DNMT.procedure.SnmpFuncs import SnmpFuncs
-from DNMT.procedure.functions import Functions
+# from DNMT.procedure.functions import Functions
 from DNMT.procedure.tools import Tools
 from DNMT.procedure import hostnamer
 from DNMT.procedure.test import Test
@@ -128,6 +128,9 @@ def dnmt():
     bad_phone_parser = test_parser.add_parser("BadPhone", help="look for bad phones")
     bad_phone_parser.add_argument('file', metavar='file',help='The file with IPs to check')
     bad_phone_parser.add_argument('-s', '--skip', help="skip verification", default=False, action="store_true")
+    activity_tracking_parser = test_parser.add_parser("Activity_Tracking", help="check if port status has changed")
+    # activity_tracking_parser.add_argument('file', metavar='file', help='The file with IPs to check')
+
 
 
     #Tests End
@@ -161,7 +164,7 @@ def dnmt():
     hostnamer = HostNamer(cmdargs,config)
     upgradeCheck = Check(cmdargs, config)
     tools = Tools(cmdargs, config)
-    functions = Functions(cmdargs,config)
+    # functions = Functions(cmdargs,config)
     # snmpFuncs = SnmpFuncs(cmdargs,config)
     test = Test(cmdargs, config)
 
@@ -195,7 +198,7 @@ def dnmt():
             except SystemExit as errcode:
                 sys.exit(errcode)
         elif cmdargs.tools == 'Port_Change':
-            functions.Change_Port_Vlan()
+            tools.Change_Port_Vlan()
     elif cmdargs.maincommand == 'test':
         if cmdargs.test == 'Switch_Check':
             test.Switch_Check()
@@ -205,6 +208,8 @@ def dnmt():
             test.Error_Check()
         elif cmdargs.test == 'BadPhone':
             test.BadPhoneBegin()
+        elif cmdargs.test == 'Activity_Tracking':
+            test.Activity_Tracking_Begin()
 
 
 

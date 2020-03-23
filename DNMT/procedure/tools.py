@@ -162,3 +162,63 @@ class Tools:
 #
 #
 
+    def Change_Port_Vlan(self):
+      #TODO update to have batch file act on csv with format <IP,interface,vlan,desc> desc optional?
+      # have csv in format of <KEY=VAL,KEY=VAL,KEY=VAL, need IP,interface as first two EX <A.A.A.A,Gi1/0/1,DESC=blah>
+        vlanList = self.subs.snmp_get_vlan_database(self.cmdargs.ipaddr)
+
+
+        for vlan in vlanList:
+            print("Vlan ID:{} Vlan Name:{}".format(vlan["ID"],vlan["Name"].decode("utf-8")))
+
+
+
+        # Find the ID of the requested interface
+        intId = self.subs.snmp_get_interface_id(self.cmdargs.ipaddr, self.cmdargs.interface)
+
+        fullInterface = self.subs.snmp_get_full_interface(self.cmdargs.ipaddr, intId)
+        intDescription = self.subs.snmp_get_interface_description(self.cmdargs.ipaddr, intId)
+        currentVlan = self.subs.snmp_get_interface_vlan(self.cmdargs.ipaddr, intId)
+
+        #enter vlan id to change to
+        bLoop = True  # TODO make this more efficient
+        while (bLoop):
+            print("Interface {} Description:{}".format(fullInterface,intDescription))
+            vlanResponse = input("Current Vlan is {} Enter VLAN ID to change to:".format(currentVlan ))
+            if any(d['ID'] == int(vlanResponse) for d in vlanList):
+                bLoop = False
+            else:
+                print("Please enter an existing Vlan ID")
+
+
+        response = input("Do you want to change vlan on port {} from {} to {}?\n"
+                         "enter (yes) to proceed:".format(self.cmdargs.interface,currentVlan,vlanResponse))
+        if not response == 'yes':
+            self.subs.verbose_printer('Did not proceed with change.')
+            sys.exit(1)
+
+        #set new vlan
+        self.subs.snmp_set_interface_vlan(self.cmdargs.ipaddr, intId, vlanResponse)
+
+        #check what vlan is now
+        newVlan = self.subs.snmp_get_interface_vlan(self.cmdargs.ipaddr, intId)
+
+        if int(newVlan) == int(vlanResponse): #
+            print("Vlan updated to Vlan {}".format(newVlan))
+        else:
+            print("vlan not updated, Vlan is still {}".format(newVlan))
+
+        response = input("Do you want to change description on port {} from {}?\n"
+                         "enter (yes) to proceed:".format(self.cmdargs.interface, intDescription))
+        if not response == 'yes':
+            self.subs.verbose_printer('No new Description.')
+            sys.exit(1)
+        response = input("Enter new description:")
+        self.subs.snmp_set_interface_description(self.cmdargs.ipaddr,intId,response)
+        newDescription = self.subs.snmp_get_interface_description(self.cmdargs.ipaddr, intId)
+
+        if newDescription == response: #
+            print("Description updated to \"{}\"".format(response))
+        else:
+            print("Description not updated, still \"{}\"".format(newDescription))
+

@@ -673,6 +673,73 @@ class SubRoutines:
 
         return interfaceErrorist
 
+    # Name: snmp_get_input_counters_bulk
+    # Input:
+    #   ipaddr (string)
+    #      -The ipaddress/hostname to grab info from
+    # Return:
+    #  input counters list
+    # Summary:
+    #   grabs the a list of input counters (adds ifinOctets and ifinUcast together)
+    def snmp_get_input_counters_bulk(self, ipaddr):
+        oidstring = '1.3.6.1.2.1.2.2.1.10 '
+        varBinds = self.snmp_walk(ipaddr, ObjectType(ObjectIdentity(oidstring)))
+        interfaceCounterList = []
+
+        for varBind in varBinds:
+            interfaceCounters = varBind._ObjectType__args[1]._value
+            # if '/' in interfaceDescription:
+            oidTuple = varBind._ObjectType__args[0]._ObjectIdentity__oid._value
+            intId = oidTuple[len(oidTuple) - 1]
+            interfaceCounterList.append({'Id': intId, 'Counters': interfaceCounters})
+
+        oidstring = '1.3.6.1.2.1.2.2.1.11 '
+        varBinds = self.snmp_walk(ipaddr, ObjectType(ObjectIdentity(oidstring)))
+
+        for varBind in varBinds:
+            interfaceCounters = varBind._ObjectType__args[1]._value
+            # if '/' in interfaceDescription:
+            oidTuple = varBind._ObjectType__args[0]._ObjectIdentity__oid._value
+            intId = oidTuple[len(oidTuple) - 1]
+            test = [entry for entry in interfaceCounterList if entry['Id'] == intId]
+            test[0]['Counters'] += interfaceCounters #This works as test is a reference to the list entry!
+
+
+        return interfaceCounterList
+
+    # Name: snmp_get_output_counters_bulk
+    # Input:
+    #   ipaddr (string)
+    #      -The ipaddress/hostname to grab info from
+    # Return:
+    #  output counters list
+    # Summary:
+    #   grabs the a list of out counters (adds ifoutOctets and ifoutUcast together)
+    def snmp_get_output_counters_bulk(self, ipaddr):
+        oidstring = '1.3.6.1.2.1.2.2.1.16 '
+        varBinds = self.snmp_walk(ipaddr, ObjectType(ObjectIdentity(oidstring)))
+        interfaceCounterList = []
+
+        for varBind in varBinds:
+            interfaceCounters = varBind._ObjectType__args[1]._value
+            # if '/' in interfaceDescription:
+            oidTuple = varBind._ObjectType__args[0]._ObjectIdentity__oid._value
+            intId = oidTuple[len(oidTuple) - 1]
+            interfaceCounterList.append({'Id': intId, 'Counters': interfaceCounters})
+
+        oidstring = '1.3.6.1.2.1.2.2.1.17 '
+        varBinds = self.snmp_walk(ipaddr, ObjectType(ObjectIdentity(oidstring)))
+
+        for varBind in varBinds:
+            interfaceCounters = varBind._ObjectType__args[1]._value
+            # if '/' in interfaceDescription:
+            oidTuple = varBind._ObjectType__args[0]._ObjectIdentity__oid._value
+            intId = oidTuple[len(oidTuple) - 1]
+            test = [entry for entry in interfaceCounterList if entry['Id'] == intId]
+            test[0]['Counters'] += interfaceCounters  # This works as test is a reference to the list entry!
+
+        return interfaceCounterList
+
         # Name: snmp_get_mac_table_bulk
         # Input:
         #   ipaddr (string)
@@ -732,16 +799,22 @@ class SubRoutines:
                 switchStruct.addSwitch(port['Switch'])  #Comment out?
             if (switchStruct.getSwitch(port['Switch']).getModule(port['Module']) is None):
                 switchStruct.getSwitch(port['Switch']).addModule(port['Module'])
-            if (switchStruct.getSwitch(port['Switch']).getModule(port['Module']).getPort(port['Port']) is None):
-                switchStruct.getSwitch(port['Switch']).getModule(port['Module']).addPort(port['Port'])
-            switchStruct.getSwitch(port['Switch']).getModule(port['Module']).getPort(port['Port']).portname = port['PortName']
-            switchStruct.getSwitch(port['Switch']).getModule(port['Module']).getPort(port['Port']).intID = port[
-                'Id']
+            # if (switchStruct.getSwitch(port['Switch']).getModule(port['Module']).getPort(port['Port']) is None):
+            #     switchStruct.getSwitch(port['Switch']).getModule(port['Module']).addPort(port['Port'])
+            # switchStruct.getSwitch(port['Switch']).getModule(port['Module']).getPort(port['Port']).portname = port['PortName']
+            # switchStruct.getSwitch(port['Switch']).getModule(port['Module']).getPort(port['Port']).intID = port[
+            #     'Id']
+            if (switchStruct.getPortById(port['Id']) is None):
+                switchStruct.getSwitch(port['Switch']).getModule(port['Module']).addPort(port['Id'])
+            switchStruct.getPortById(port['Id']).portname = port['PortName']
+            switchStruct.getPortById(port['Id']).portnumber = int(port['Port'])
 
 
         #go through power return
         for port in self.snmp_get_port_poe_alloc_bulk(ipaddr):
             if port is not None:
+                #This doesnt use the interfaceId, the first return should be the base-t result in the event of gi & te
+                #such as 3650 uplink module being 1/0/1 on ten and gi
                 switchStruct.getSwitch(port['Switch']).getModule(0).getPort(port['Port']).poe = port['Power']
             else:
                 port['Power'] = "N/A" #TODO update this to align with not found verbage
@@ -750,41 +823,52 @@ class SubRoutines:
         #go through interface returns (includes vlans, so need to map id to port)
         #get port status (2 is up, 1 is down)
         for port in self.snmp_get_port_activity_bulk(ipaddr):
-            if port is not None: #ignore vlan interfaces and non existant interfaces
+            if port is not None: #ignore vlan interfaces and non existent interfaces
                 foundport = switchStruct.getPortById(port['Id'])
                 if foundport is not None:
                     foundport.status = port['Status']
         #get descriptions
         for port in self.snmp_get_interface_description_bulk(ipaddr):
-            if port is not None:  # ignore vlan interfaces and non existant interfaces
+            if port is not None:  # ignore vlan interfaces and non existent interfaces
                 foundport = switchStruct.getPortById(port['Id'])
                 if foundport is not None:
                     foundport.description = port['Description']
         #get Vlans on ports
         for port in self.snmp_get_interface_vlan_bulk(ipaddr):
-            if port is not None:  # ignore vlan interfaces and non existant interfaces
+            if port is not None:  # ignore vlan interfaces and non existent interfaces
                 foundport = switchStruct.getPortById(port['Id'])
                 if foundport is not None:
                     foundport.datavlan = port['Vlan']
 
         for port in self.snmp_get_cdp_type_bulk(ipaddr):
-            if port is not None:  # ignore vlan interfaces and non existant interfaces
+            if port is not None:  # ignore vlan interfaces and non existent interfaces
                 foundport = switchStruct.getPortById(port['Id'])
                 if foundport is not None:
                     foundport.cdp = port['Cdp']
 
         for port in self.snmp_get_input_errors_bulk(ipaddr):
-            if port is not None:  # ignore vlan interfaces and non existant interfaces
+            if port is not None:  # ignore vlan interfaces and non existent interfaces
                 foundport = switchStruct.getPortById(port['Id'])
                 if foundport is not None:
                     foundport.inputerrors = port['Errors']
 
         for port in self.snmp_get_output_errors_bulk(ipaddr):
-            if port is not None:  # ignore vlan interfaces and non existant interfaces
+            if port is not None:  # ignore vlan interfaces and non existent interfaces
                 foundport = switchStruct.getPortById(port['Id'])
                 if foundport is not None:
                     foundport.outputerrors = port['Errors']
 
+        for port in self.snmp_get_input_counters_bulk(ipaddr):
+            if port is not None:  # ignore vlan interfaces and non existent interfaces
+                foundport = switchStruct.getPortById(port['Id'])
+                if foundport is not None:
+                    foundport.inputcounters = port['Counters']
+
+        for port in self.snmp_get_output_counters_bulk(ipaddr):
+            if port is not None:  # ignore vlan interfaces and non existent interfaces
+                foundport = switchStruct.getPortById(port['Id'])
+                if foundport is not None:
+                    foundport.outputcounters = port['Counters']
 
         for port in self.snmp_get_voice_vlan_bulk(ipaddr):
             if port is not None:  # ignore vlan interfaces and non existent interfaces
