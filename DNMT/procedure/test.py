@@ -37,7 +37,7 @@ class Test:
         start = time.time()
         test = self.subs.snmp_get_switch_data_full(self.cmdargs.ipaddr)
         end = time.time()
-        print("first time:{} seconds".format(end-start))
+        print("time:{} seconds".format(int((end-start)*100)/100))
         # test.printStack()
         # test.printSingleLine()
         if 'csv' in self.cmdargs and self.cmdargs.csv is not None:
@@ -167,7 +167,7 @@ class Test:
             print("##### {} -  Processing #####".format(ip))
             self.Activity_Tracking(ip)
             end = time.time()
-            print("##### {} -  Processing Complete, time:{} seconds #####".format(ip,((end-start)*100)/100))
+            print("##### {} -  Processing Complete, time:{} seconds #####".format(ip,int((end-start)*100)/100))
         # After all processes return, read in each pickle and create a single output file?
         self.Create_Readable_Activity_File()
 
