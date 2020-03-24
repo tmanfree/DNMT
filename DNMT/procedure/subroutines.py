@@ -122,6 +122,29 @@ class SubRoutines:
                 intId = oidId
         return intId
 
+        # Name: snmp_get_vendor_string
+        # Input:
+        #   ipaddr (string)
+        #      -The ipaddress/hostname to grab info from
+        # Return:
+        #  a string saying HP, Cisco or Unknown (Change this to an int to use a switch?)
+        # Summary:
+        #   grabs the vendor string and checks if HP or Cisco is in it, could parse for switch model?
+
+    def snmp_get_vendor_string(self, ipaddr):
+        oidstring = '1.3.6.1.2.1.1.1.0'
+        varBind = self.snmp_get(ipaddr, ObjectType(ObjectIdentity(oidstring)))
+        vendorString = varBind[0]._ObjectType__args[1]._value.decode("utf-8")
+        if (re.match("Cisco", vendorString)):
+            vendor = "Cisco"
+        elif (re.match("HP", vendorString)):
+            vendor = "HP"
+        else:
+            vendor = "Unknown"
+
+        return vendor
+
+
 
         # Name: snmp_get_crc_errors_by_id
         # Input:
@@ -191,7 +214,7 @@ class SubRoutines:
     #  interfaceDescriptions (a string of the interface description)
     # Summary:
     #   returns all interface ids
-    def snmp_get_interface_id_bulk(self, ipaddr):
+    def snmp_get_interface_id_bulk(self, ipaddr,vendor):
         intId = 0  # intitalize as 0 as not found
         varBinds = self.snmp_walk(ipaddr, ObjectType(ObjectIdentity(
             '1.3.6.1.2.1.31.1.1.1.1')))
@@ -203,18 +226,23 @@ class SubRoutines:
             oidTuple = varBind._ObjectType__args[0]._ObjectIdentity__oid._value
             oidId = oidTuple[len(oidTuple) - 1]
             # if (re.match(r"^\w{2}[1-9](/\d)?/\d+", portname)):
-            if(re.match(r"^\w{2}[0-9](/\d)?/\d+", portname )):
-                switchnum = self.regex_parser_varx(r"^\w{2}([0-9])(?:/(\d))?/(\d+)", portname)
-                if (len(switchnum) == 3): #verify that return isn't borked, should get 3 length tuple
-                    # if((switchnum[2] != 0) and (switchnum[1] != '')): # get rid of 0/0 interface
-                    if ((int(switchnum[2]) != 0) and (switchnum[1] != '')):  # get rid of 0/0 interface
-                        returnList.append(
-                            {'Switch': int(switchnum[0]), 'Module': int(switchnum[1]), 'Port': int(switchnum[2]),
-                             'PortName': portname,
-                                 'Id': oidId})
-                    elif ((int(switchnum[2]) != 0) and (switchnum[1] == '')):
-                        returnList.append({'Switch': 1, 'Module': int(switchnum[0]), 'Port': int(switchnum[2]),
-                                           'PortName': portname, 'Id': oidId})
+            if vendor == "Cisco":
+                if(re.match(r"^\w{2}[0-9](/\d)?/\d+", portname )):
+                    switchnum = self.regex_parser_varx(r"^\w{2}([0-9])(?:/(\d))?/(\d+)", portname)
+                    if (len(switchnum) == 3): #verify that return isn't borked, should get 3 length tuple
+                        # if((switchnum[2] != 0) and (switchnum[1] != '')): # get rid of 0/0 interface
+                        if ((int(switchnum[2]) != 0) and (switchnum[1] != '')):  # get rid of 0/0 interface
+                            returnList.append(
+                                {'Switch': int(switchnum[0]), 'Module': int(switchnum[1]), 'Port': int(switchnum[2]),
+                                 'PortName': portname,
+                                     'Id': oidId})
+                        elif ((int(switchnum[2]) != 0) and (switchnum[1] == '')):
+                            returnList.append({'Switch': 1, 'Module': int(switchnum[0]), 'Port': int(switchnum[2]),
+                                               'PortName': portname, 'Id': oidId})
+            elif vendor == "HP":
+                if (re.match(r"^(\d+)$", portname)):
+                    returnList.append({'Switch': 1, 'Module': 0, 'Port': int(portname),
+                                               'PortName': portname, 'Id': oidId})
 
 
                 # switchnum = self.regex_parser_varx(r"^\w{2}([1-9])((/\d))?/(\d+)", portname, 3)
@@ -226,28 +254,34 @@ class SubRoutines:
         # Input:
         #   ipaddr (string)
         #      -The ipaddress/hostname to grab info from
+        #   vendor (string)
+        #      -The vendor type, HP,Cisco,Unknown
         # Return:
         #  returnList (a list of switch IDs to get model number/serial number info)
         # Summary:
         #   returns all switch IDs
 
-    def snmp_get_switch_id_bulk(self, ipaddr):
+    def snmp_get_switch_id_bulk(self, ipaddr, vendor):
         intId = 0  # intitalize as 0 as not found
         varBinds = self.snmp_walk(ipaddr, ObjectType(ObjectIdentity(
             '1.3.6.1.2.1.47.1.1.1.1.7')))
         returnList = []
+        if vendor == "Cisco":
+            for varBind in varBinds:
+                varName = varBind._ObjectType__args[1]._value.decode("utf-8")
+                oidTuple = varBind._ObjectType__args[0]._ObjectIdentity__oid._value
+                oidId = oidTuple[len(oidTuple) - 1]
+                # if (re.match(r"^\w{2}[1-9](/\d)?/\d+", portname)):
 
-        for varBind in varBinds:
-            varName = varBind._ObjectType__args[1]._value.decode("utf-8")
-            oidTuple = varBind._ObjectType__args[0]._ObjectIdentity__oid._value
-            oidId = oidTuple[len(oidTuple) - 1]
-            # if (re.match(r"^\w{2}[1-9](/\d)?/\d+", portname)):
-            if (re.match(r"^Switch [0-9]$", varName)):
-                switchnum = self.regex_parser_var0(r"^Switch ([0-9])?", varName)
-                if switchnum is not None:
-                    returnList.append({'Switch': int(switchnum), 'Id': oidId})
-            elif ((re.match(r"^[0-9]$", varName)) and oidId == 1001):
-                returnList.append({'Switch': int(varName), 'Id': oidId})
+                if (re.match(r"^Switch [0-9]$", varName)):
+                    switchnum = self.regex_parser_var0(r"^Switch ([0-9])?", varName)
+                    if switchnum is not None:
+                        returnList.append({'Switch': int(switchnum), 'Id': oidId})
+                elif ((re.match(r"^[0-9]$", varName)) and oidId == 1001):
+                    returnList.append({'Switch': int(varName), 'Id': oidId})
+        elif vendor =="HP":
+            returnList.append({'Switch': 1, 'Id': 1}) #Currently defaulting to using id of 1
+
 
         return returnList
 
@@ -779,9 +813,13 @@ class SubRoutines:
 
 
     def snmp_get_switch_data_full(self, ipaddr):
-        test = self.snmp_get_switch_id_bulk(ipaddr)
-        switchStruct = StackStruct(ipaddr)
-        for switch in self.snmp_get_switch_id_bulk(ipaddr):
+        # test = self.snmp_get_switch_id_bulk(ipaddr)
+
+        vendor = self.snmp_get_vendor_string(ipaddr)
+
+
+        switchStruct = StackStruct(ipaddr,vendor)
+        for switch in self.snmp_get_switch_id_bulk(ipaddr,vendor):
             if (switchStruct.getSwitch(switch['Switch']) is None):
                 switchStruct.addSwitch(switch['Switch'])
             switchStruct.getSwitch(switch['Switch']).id = switch['Id']
@@ -794,7 +832,7 @@ class SubRoutines:
 
 
         #get interfaces and create them on the structure if they are not there
-        for port in self.snmp_get_interface_id_bulk(ipaddr):
+        for port in self.snmp_get_interface_id_bulk(ipaddr,vendor):
             if (switchStruct.getSwitch(port['Switch']) is None): #Comment out?
                 switchStruct.addSwitch(port['Switch'])  #Comment out?
             if (switchStruct.getSwitch(port['Switch']).getModule(port['Module']) is None):

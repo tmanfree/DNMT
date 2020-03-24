@@ -11,9 +11,10 @@ from pysnmp.proto import rfc1902
 
 
 class StackStruct:
-    def __init__(self,ipaddr):
+    def __init__(self,ipaddr,vendor):
         # initialize values
         self.ip = ipaddr
+        self.vendor = vendor
         self.switches = []
 
     def addSwitch(self,switchNum):
@@ -39,7 +40,7 @@ class StackStruct:
             switch.printSwitch()
 
     def printSingleLine(self):
-        print("IP,SwitchNum,Model,Serial,SoftwareVer,ModuleNum,PortNum,PortName,PortDesc,PoE,CDP,Status,DataVlan,VoiceVlan,Mode,IntID,InputErrors,OutputErrors,InputCounters,OutputCounters,LastTimeUpdated,DeltaInputCounters,DeltaOutputCounters")
+        print("IP,SwitchNum,Model,Serial,SoftwareVer,ModuleNum,PortNum,PortName,PortDesc,PoE,CDP,Status(1=Up),DataVlan,VoiceVlan,Mode,IntID,InputErrors,OutputErrors,InputCounters,OutputCounters,LastTimeUpdated,DeltaInputCounters,DeltaOutputCounters")
         for switch in self.switches:
             switch.printSingleLine(self.ip)
 
@@ -53,7 +54,7 @@ class StackStruct:
         with open(filename, 'w', encoding='utf-8') as filePointer:
 
             print(
-                "IP,SwitchNum,Model,Serial,SoftwareVer,ModuleNum,PortNum,PortName,PortDesc,PoE,CDP,Status,DataVlan,VoiceVlan,Mode,IntID,InputErrors,OutputErrors,InputCounters,OutputCounters,LastTimeUpdated,DeltaInputCounters,DeltaOutputCounters",
+                "IP,SwitchNum,Model,Serial,SoftwareVer,ModuleNum,PortNum,PortName,PortDesc,PoE,CDP,Status(1=Up),DataVlan,VoiceVlan,Mode,IntID,InputErrors,OutputErrors,InputCounters,OutputCounters,LastTimeUpdated,DeltaInputCounters,DeltaOutputCounters",
                 file=filePointer)
 
             for switch in self.switches:

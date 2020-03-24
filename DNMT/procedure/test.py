@@ -195,7 +195,7 @@ class Test:
 
 
     def Create_Readable_Activity_File(self):
-        TotalStatus = "IP,SwitchNum,Model,Serial,SoftwareVer,ModuleNum,PortNum,PortName,PortDesc,PoE,CDP,Status,DataVlan,VoiceVlan,Mode,IntID,InputErrors,OutputErrors,InputCounters,OutputCounters,LastTimeUpdated,DeltaInputCounters,DeltaOutputCounters\n"
+        TotalStatus = "IP,SwitchNum,Model,Serial,SoftwareVer,ModuleNum,PortNum,PortName,PortDesc,PoE,CDP,Status(1=Up),DataVlan,VoiceVlan,Mode,IntID,InputErrors,OutputErrors,InputCounters,OutputCounters,LastTimeUpdated,DeltaInputCounters,DeltaOutputCounters\n"
         for file in os.listdir(os.path.join(self.log_path,"activitycheck", "rawfiles")):
             if file.endswith("-statcheck"):
                 #process
