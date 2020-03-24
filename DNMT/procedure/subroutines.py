@@ -416,18 +416,48 @@ class SubRoutines:
     #  currentVlan (a string of the current vlan on a port)
     # Summary:
     #   grabs all interface vlan assignments
-    def snmp_get_interface_vlan_bulk(self, ipaddr):
-        oidstring = '1.3.6.1.4.1.9.9.68.1.2.2.1.2'
-        varBinds = self.snmp_walk(ipaddr, ObjectType(ObjectIdentity(oidstring)))
-        interfaceVlanList = []
+    def snmp_get_interface_vlan_bulk(self, ipaddr,vendor):
 
-        for varBind in varBinds:
-            interfaceVlan = varBind._ObjectType__args[1]._value
-            oidTuple = varBind._ObjectType__args[0]._ObjectIdentity__oid._value
-            intId = oidTuple[len(oidTuple) - 1]
-            interfaceVlanList.append({'Id':intId,'Vlan':interfaceVlan})
+        if vendor == "Cisco":
+            oidstring = '1.3.6.1.4.1.9.9.68.1.2.2.1.2'
+            varBinds = self.snmp_walk(ipaddr, ObjectType(ObjectIdentity(oidstring)))
+            interfaceVlanList = []
+
+            for varBind in varBinds:
+                interfaceVlan = varBind._ObjectType__args[1]._value
+                oidTuple = varBind._ObjectType__args[0]._ObjectIdentity__oid._value
+                intId = oidTuple[len(oidTuple) - 1]
+                interfaceVlanList.append({'Id':intId,'Vlan':interfaceVlan})
+        elif vendor == "HP":
+
+            oidstring = '1.3.6.1.2.1.17.7.1.4.3.1.4'
+            varBinds = self.snmp_walk(ipaddr, ObjectType(ObjectIdentity(oidstring)))
+            interfaceVlanList = []
+
+            for varBind in varBinds:
+                interfaceVlan = varBind._ObjectType__args[1]._value
+                oidTuple = varBind._ObjectType__args[0]._ObjectIdentity__oid._value
+                intId = oidTuple[len(oidTuple) - 1]
+
+                binaryArray = [self.access_bit(interfaceVlan,i) for i in range(len(interfaceVlan)*8)]
+
+                for idx, val in enumerate(binaryArray):
+                    if val ==1:
+                        interfaceVlanList.append({'Id': idx+1, 'Vlan': intId})
+
+
 
         return interfaceVlanList
+
+    def access_bit(self, data, num):
+        base = int(num // 8) # which byte
+        shift = int(num % 8) # which bit
+
+        return (data[base] & (128 >> shift)) >> 7-shift
+        # This will give the binary in opposite order 1-128 instead of 128->1
+        # if sys.byteorder == "little":
+        #     return (data[base] & (1 << shift)) >> shift
+
 
 
     # Name: snmp_get_interface_description
@@ -872,7 +902,7 @@ class SubRoutines:
                 if foundport is not None:
                     foundport.description = port['Description']
         #get Vlans on ports
-        for port in self.snmp_get_interface_vlan_bulk(ipaddr):
+        for port in self.snmp_get_interface_vlan_bulk(ipaddr,vendor):
             if port is not None:  # ignore vlan interfaces and non existent interfaces
                 foundport = switchStruct.getPortById(port['Id'])
                 if foundport is not None:
