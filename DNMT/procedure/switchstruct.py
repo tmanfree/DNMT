@@ -15,6 +15,7 @@ class StackStruct:
         # initialize values
         self.ip = ipaddr
         self.vendor = vendor
+        self.hostname = None
         self.switches = []
 
     def addSwitch(self,switchNum):
@@ -35,30 +36,30 @@ class StackStruct:
                     None)
 
     def printStack(self):
-        print("IP:{}".format(self.ip))
+        print("IP:{}\nVendor:{}\nHosntame:{}".format(self.ip,self.vendor,self.hostname))
         for switch in self.switches:
             switch.printSwitch()
 
     def printSingleLine(self):
-        print("IP,SwitchNum,Model,Serial,SoftwareVer,ModuleNum,PortNum,PortName,PortDesc,PoE,CDP,Status (1=Up),DataVlan,VoiceVlan,Mode,IntID,InputErrors,OutputErrors,InputCounters,OutputCounters,LastTimeUpdated,DeltaInputCounters,DeltaOutputCounters")
+        print("IP,Vendor,Hostname,SwitchNum,Model,Serial,SoftwareVer,ModuleNum,PortNum,PortName,PortDesc,PoE,CDP,Status (1=Up),DataVlan,VoiceVlan,Mode,IntID,InputErrors,OutputErrors,InputCounters,OutputCounters,LastTimeUpdated,DeltaInputCounters,DeltaOutputCounters")
         for switch in self.switches:
-            switch.printSingleLine(self.ip)
+            switch.printSingleLine(self.ip, self.vendor, self.hostname)
 
     def appendSingleLine(self):
         totalString = ""
         for switch in self.switches:
-            totalString += switch.appendSingleLine(self.ip)
+            totalString += switch.appendSingleLine(self.ip,self.vendor, self.hostname)
         return totalString
 
     def exportCSV(self,filename):
         with open(filename, 'w', encoding='utf-8') as filePointer:
 
             print(
-                "IP,SwitchNum,Model,Serial,SoftwareVer,ModuleNum,PortNum,PortName,PortDesc,PoE,CDP,Status (1=Up),DataVlan,VoiceVlan,Mode,IntID,InputErrors,OutputErrors,InputCounters,OutputCounters,LastTimeUpdated,DeltaInputCounters,DeltaOutputCounters",
+                "IP,Vendor,Hostname,SwitchNum,Model,Serial,SoftwareVer,ModuleNum,PortNum,PortName,PortDesc,PoE,CDP,Status (1=Up),DataVlan,VoiceVlan,Mode,IntID,InputErrors,OutputErrors,InputCounters,OutputCounters,LastTimeUpdated,DeltaInputCounters,DeltaOutputCounters",
                 file=filePointer)
 
             for switch in self.switches:
-                switch.exportCSV(self.ip,filePointer)
+                switch.exportCSV(self.ip,self.vendor, self.hostname,filePointer)
 
     # def csvStack(self):
     #     with open("test.csv", 'w', encoding='utf-8') as f:
@@ -92,20 +93,20 @@ class SwitchStruct:
                                                                           self.serialnumber,self.version))
             module.printModule()
 
-    def printSingleLine(self,ip):
+    def printSingleLine(self,ip,vendor, hostname):
         for module in self.modules:
             #print("{},{},{}".format(self.switchnumber,self.model,self.serialnumber), end = ",")
-            module.printSingleLine((ip,self.switchnumber,self.model,self.serialnumber,self.version))
+            module.printSingleLine((ip,vendor,hostname,self.switchnumber,self.model,self.serialnumber,self.version))
 
-    def appendSingleLine(self, ip):
+    def appendSingleLine(self, ip,vendor, hostname):
         totalString =""
         for module in self.modules:
-            totalString += module.appendSingleLine((ip, self.switchnumber, self.model, self.serialnumber, self.version))
+            totalString += module.appendSingleLine((ip,vendor,hostname,vendor,hostname, self.switchnumber, self.model, self.serialnumber, self.version))
         return totalString
 
-    def exportCSV(self,ip,filePointer):
+    def exportCSV(self,ip,vendor, hostname, filePointer):
         for module in self.modules:
-            module.exportCSV((ip,self.switchnumber,self.model,self.serialnumber,self.version),filePointer)
+            module.exportCSV((ip,vendor,hostname,self.switchnumber,self.model,self.serialnumber,self.version),filePointer)
 
 
 class ModuleStruct:

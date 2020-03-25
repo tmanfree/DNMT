@@ -147,7 +147,25 @@ class SubRoutines:
 
         return vendor
 
+        # Name: snmp_get_hostname_string
+        # Input:
+        #   ipaddr (string)
+        #      -The ipaddress/hostname to grab info from
+        # Return:
+        #  a string of the hostname
+        # Summary:
+        #   grabs the system name and returns it
 
+    def snmp_get_hostname(self, ipaddr):
+        # oidstring = '1.3.6.1.4.1.9.2.1.3.0'
+        oidstring = '1.3.6.1.2.1.1.5.0'
+        varBind = self.snmp_get(ipaddr, ObjectType(ObjectIdentity(oidstring)))
+        hostname=""
+        if varBind is not None:
+            hostname = varBind[0]._ObjectType__args[1]._value.decode("utf-8")
+
+
+        return hostname
 
         # Name: snmp_get_crc_errors_by_id
         # Input:
@@ -849,6 +867,7 @@ class SubRoutines:
         vendor = self.snmp_get_vendor_string(ipaddr)
         switchStruct = StackStruct(ipaddr, vendor)
         if vendor != "None Found":
+            switchStruct.hostname = self.snmp_get_hostname(ipaddr)
 
             for switch in self.snmp_get_switch_id_bulk(ipaddr,vendor):
                 if (switchStruct.getSwitch(switch['Switch']) is None):
