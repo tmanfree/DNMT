@@ -217,7 +217,7 @@ class Test:
                 #process
                 try:
                     # with open(file, "rb") as myNewFile:
-                    with open(os.path.join(self.log_path, "activitycheck","rawfiles", "{}-statcheck".ip), "rb") as myNewFile:
+                    with open(os.path.join(self.log_path, "activitycheck","rawfiles", "{}-statcheck".format(ip)), "rb") as myNewFile:
                         SwitchStatus = pickle.load(myNewFile)
                         TotalStatus += SwitchStatus.appendSingleLine()
                 except Exception as err:  # currently a catch all to stop linux from having a conniption when reloading
