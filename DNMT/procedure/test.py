@@ -156,6 +156,8 @@ class Test:
 
         if not os.path.exists(os.path.join(self.log_path, "activitycheck", "rawfiles")):
             os.makedirs(os.path.join(self.log_path, "activitycheck", "rawfiles"))
+        if not os.path.exists(os.path.join(self.log_path, "activitycheck", "processedfiles")):
+            os.makedirs(os.path.join(self.log_path, "activitycheck", "processedfiles"))
 
         if 'file' in self.cmdargs and self.cmdargs.file is not None:
             file = open(os.path.join(self.cmdargs.file), "r")
@@ -176,7 +178,8 @@ class Test:
                 end = time.time()
                 print("##### {} -  Processing Complete, time:{} seconds #####".format(ip,int((end-start)*100)/100))
         # After all processes return, read in each pickle and create a single output file?
-        self.Create_Readable_Activity_File()
+        status_filename = "{}-FullStatus.csv".format(datetime.date.today().strftime('%Y-%m-%d'))
+        self.Create_Readable_Activity_File(status_filename)
 
         #EMail finished file:
         try:
@@ -189,7 +192,7 @@ class Test:
             else:
                 msg["To"] = "mandzie@ualberta.ca"
             msg.set_content("Attached is the status document for {}",format(datetime.date.today().strftime('%Y-%m-%d')))
-            msg.add_attachment(open(os.path.join(self.log_path,"activitycheck","FullStatus.csv"), "r").read(), filename="status-{}.csv".format(datetime.date.today().strftime('%Y-%m-%d')))
+            msg.add_attachment(open(os.path.join(self.log_path,"activitycheck","processedfiles",status_filename), "r").read(), filename=status_filename)
 
             s = smtplib.SMTP('localhost')
             # s.login(USERNAME, PASSWORD)
@@ -205,7 +208,7 @@ class Test:
 
 
 
-    def Create_Readable_Activity_File(self):
+    def Create_Readable_Activity_File(self,status_filename):
         TotalStatus = "IP,SwitchNum,Model,Serial,SoftwareVer,ModuleNum,PortNum,PortName,PortDesc,PoE,CDP,Status(1=Up),DataVlan,VoiceVlan,Mode,IntID,InputErrors,OutputErrors,InputCounters,OutputCounters,LastTimeUpdated,DeltaInputCounters,DeltaOutputCounters\n"
         for file in os.listdir(os.path.join(self.log_path,"activitycheck", "rawfiles")):
             if file.endswith("-statcheck"):
@@ -217,7 +220,8 @@ class Test:
                         TotalStatus += SwitchStatus.appendSingleLine()
                 except Exception as err:  # currently a catch all to stop linux from having a conniption when reloading
                     print("FILE ERROR {}:{}".format(file, err.args[0]))
-        with open(os.path.join(self.log_path,"activitycheck","FullStatus.csv"), 'w', encoding='utf-8') as filePointer:
+        with open(os.path.join(self.log_path, "activitycheck", "processedfiles", status_filename), 'w',
+                  encoding='utf-8') as filePointer:
             print(TotalStatus, file=filePointer)
 
 
