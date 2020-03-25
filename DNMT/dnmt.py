@@ -129,6 +129,10 @@ def dnmt():
     bad_phone_parser.add_argument('file', metavar='file',help='The file with IPs to check')
     bad_phone_parser.add_argument('-s', '--skip', help="skip verification", default=False, action="store_true")
     activity_tracking_parser = test_parser.add_parser("Activity_Tracking", help="check if port status has changed")
+    activity_tracking_parser.add_argument('-f', '--file', help="specify iplist file to use if not using default")
+    activity_tracking_parser.add_argument('-e', '--email', help="specify which email to send file to")
+    activity_tracking_parser.add_argument('-t', '--test', help="Operate on existing statcheck files, no logins",
+                                          default=False, action="store_true")
     # activity_tracking_parser.add_argument('file', metavar='file', help='The file with IPs to check')
 
 

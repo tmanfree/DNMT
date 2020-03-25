@@ -157,17 +157,22 @@ class Test:
         if not os.path.exists(os.path.join(self.log_path, "activitycheck", "rawfiles")):
             os.makedirs(os.path.join(self.log_path, "activitycheck", "rawfiles"))
 
-        file = open(os.path.join(self.log_path, "activitycheck", "activitycheckIPlist"), "r")
+        if 'file' in self.cmdargs and self.cmdargs.file is not None:
+            file = open(os.path.join(self.cmdargs.file), "r")
+        else:
+            file = open(os.path.join(self.log_path, "activitycheck", "activitycheckIPlist"), "r")
         for ip in file:
             iplist.append(ip.rstrip())
         file.close()
+
         #TODO CHANGE to do them with individual processes
-        for ip in iplist:
-            start = time.time()
-            print("##### {} -  Processing #####".format(ip))
-            self.Activity_Tracking(ip)
-            end = time.time()
-            print("##### {} -  Processing Complete, time:{} seconds #####".format(ip,int((end-start)*100)/100))
+        if 'test' in self.cmdargs and self.cmdargs.test is None:
+            for ip in iplist:
+                start = time.time()
+                print("##### {} -  Processing #####".format(ip))
+                self.Activity_Tracking(ip)
+                end = time.time()
+                print("##### {} -  Processing Complete, time:{} seconds #####".format(ip,int((end-start)*100)/100))
         # After all processes return, read in each pickle and create a single output file?
         self.Create_Readable_Activity_File()
 
@@ -176,7 +181,10 @@ class Test:
             msg = EmailMessage()
             msg["From"] = "admin@localhost"
             msg["Subject"] = "updated activitycheck - {}".format(datetime.date.today().strftime('%Y-%m-%d'))
-            msg["To"] = "mandzie@ualberta.ca"
+            if 'email' in self.cmdargs and self.cmdargs.email is not None:
+                msg["To"] = self.cmdargs.email
+            else:
+                msg["To"] = "mandzie@ualberta.ca"
             msg.set_content("Attached is the status document for {}",format(datetime.date.today().strftime('%Y-%m-%d')))
             msg.add_attachment(open(os.path.join(self.log_path,"activitycheck","FullStatus.csv"), "r").read(), filename="status-{}.csv".format(datetime.date.today().strftime('%Y-%m-%d')))
 
