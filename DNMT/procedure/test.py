@@ -160,13 +160,13 @@ class Test:
         if 'file' in self.cmdargs and self.cmdargs.file is not None:
             file = open(os.path.join(self.cmdargs.file), "r")
         else:
-            file = open(os.path.join(self.log_path, "activitycheck", "activitycheckIPlist"), "r")
+            file = open(os.path.abspath(os.path.join(os.sep, 'usr', 'lib', 'capt', "activitycheckIPlist")), "r")
         for ip in file:
             iplist.append(ip.rstrip())
         file.close()
 
         #TODO CHANGE to do them with individual processes
-        if 'test' in self.cmdargs and self.cmdargs.test is None:
+        if 'check' in self.cmdargs and self.cmdargs.check is None:
             for ip in iplist:
                 start = time.time()
                 print("##### {} -  Processing #####".format(ip))
