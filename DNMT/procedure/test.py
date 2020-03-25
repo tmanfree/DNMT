@@ -158,7 +158,8 @@ class Test:
             os.makedirs(os.path.join(self.log_path, "activitycheck", "rawfiles"))
         if not os.path.exists(os.path.join(self.log_path, "activitycheck", "processedfiles")):
             os.makedirs(os.path.join(self.log_path, "activitycheck", "processedfiles"))
-
+        # Specifying a file only changes what IPs are updated, right now the status check grabs all existing files in
+        # the raw data folder
         if 'file' in self.cmdargs and self.cmdargs.file is not None:
             file = open(os.path.join(self.cmdargs.file), "r")
         else:
@@ -179,7 +180,7 @@ class Test:
                 print("##### {} -  Processing Complete, time:{} seconds #####".format(ip,int((end-start)*100)/100))
         # After all processes return, read in each pickle and create a single output file?
         status_filename = "{}-FullStatus.csv".format(datetime.date.today().strftime('%Y-%m-%d'))
-        self.Create_Readable_Activity_File(status_filename)
+        self.Create_Readable_Activity_File(status_filename,iplist)
 
         #EMail finished file:
         try:
@@ -208,18 +209,32 @@ class Test:
 
 
 
-    def Create_Readable_Activity_File(self,status_filename):
+    def Create_Readable_Activity_File(self,status_filename,iplist):
         TotalStatus = "IP,SwitchNum,Model,Serial,SoftwareVer,ModuleNum,PortNum,PortName,PortDesc,PoE,CDP,Status (1=Up),DataVlan,VoiceVlan,Mode,IntID,InputErrors,OutputErrors,InputCounters,OutputCounters,LastTimeUpdated,DeltaInputCounters,DeltaOutputCounters\n"
-        for file in os.listdir(os.path.join(self.log_path,"activitycheck", "rawfiles")):
-            if file.endswith("-statcheck"):
+        #Currently grabs all existing statcheck files, this could be changed to only act on the iplist provided
+        if 'limit' in self.cmdargs and self.cmdargs.limit is not None:
+            for ip in iplist:
                 #process
                 try:
                     # with open(file, "rb") as myNewFile:
-                    with open(os.path.join(self.log_path, "activitycheck","rawfiles", file), "rb") as myNewFile:
+                    with open(os.path.join(self.log_path, "activitycheck","rawfiles", "{}-statcheck".ip), "rb") as myNewFile:
                         SwitchStatus = pickle.load(myNewFile)
                         TotalStatus += SwitchStatus.appendSingleLine()
                 except Exception as err:  # currently a catch all to stop linux from having a conniption when reloading
-                    print("FILE ERROR {}:{}".format(file, err.args[0]))
+                    print("FILE ERROR {}-statcheck:{}".format(ip, err.args[0]))
+        else:
+            for file in os.listdir(os.path.join(self.log_path,"activitycheck", "rawfiles")):
+                if file.endswith("-statcheck"):
+                    #process
+                    try:
+                        # with open(file, "rb") as myNewFile:
+                        with open(os.path.join(self.log_path, "activitycheck","rawfiles", file), "rb") as myNewFile:
+                            SwitchStatus = pickle.load(myNewFile)
+                            TotalStatus += SwitchStatus.appendSingleLine()
+                    except Exception as err:  # currently a catch all to stop linux from having a conniption when reloading
+                        print("FILE ERROR {}:{}".format(file, err.args[0]))
+
+
         with open(os.path.join(self.log_path, "activitycheck", "processedfiles", status_filename), 'w',
                   encoding='utf-8') as filePointer:
             print(TotalStatus, file=filePointer)

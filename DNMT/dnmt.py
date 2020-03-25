@@ -131,6 +131,7 @@ def dnmt():
     activity_tracking_parser = test_parser.add_parser("Activity_Tracking", help="check if port status has changed")
     activity_tracking_parser.add_argument('-f', '--file', help="specify iplist file to use if not using default")
     activity_tracking_parser.add_argument('-e', '--email', help="specify which email to send file to")
+    activity_tracking_parser.add_argument('-l', '--limit', help="only put switches specified in iplist in summary file")
     activity_tracking_parser.add_argument('-c', '--check', help="Operate on existing statcheck files, no log ins",
                                           default=False, action="store_true")
     activity_tracking_parser.add_argument('-v', '--verbose', help="run in verbose mode", default=False, action="store_true")
