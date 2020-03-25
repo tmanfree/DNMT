@@ -213,6 +213,7 @@ class Test:
         TotalStatus = "IP,SwitchNum,Model,Serial,SoftwareVer,ModuleNum,PortNum,PortName,PortDesc,PoE,CDP,Status (1=Up),DataVlan,VoiceVlan,Mode,IntID,InputErrors,OutputErrors,InputCounters,OutputCounters,LastTimeUpdated,DeltaInputCounters,DeltaOutputCounters\n"
         #Currently grabs all existing statcheck files, this could be changed to only act on the iplist provided
         if 'limit' in self.cmdargs and self.cmdargs.limit is True:
+            self.subs.verbose_printer("##### Creating Limited Summary List #####")
             for ip in iplist:
                 #process
                 try:
@@ -223,6 +224,7 @@ class Test:
                 except Exception as err:  # currently a catch all to stop linux from having a conniption when reloading
                     print("FILE ERROR {}-statcheck:{}".format(ip, err.args[0]))
         else:
+            self.subs.verbose_printer("##### Creating Full Summary List #####")
             for file in os.listdir(os.path.join(self.log_path,"activitycheck", "rawfiles")):
                 if file.endswith("-statcheck"):
                     #process

@@ -134,11 +134,14 @@ class SubRoutines:
     def snmp_get_vendor_string(self, ipaddr):
         oidstring = '1.3.6.1.2.1.1.1.0'
         varBind = self.snmp_get(ipaddr, ObjectType(ObjectIdentity(oidstring)))
-        vendorString = varBind[0]._ObjectType__args[1]._value.decode("utf-8")
-        if (re.match("Cisco", vendorString)):
-            vendor = "Cisco"
-        elif (re.match("HP", vendorString)):
-            vendor = "HP"
+        if varBind is not None:
+            vendorString = varBind[0]._ObjectType__args[1]._value.decode("utf-8")
+            if (re.match("Cisco", vendorString)):
+                vendor = "Cisco"
+            elif (re.match("HP", vendorString)):
+                vendor = "HP"
+            else:
+                vendor = "Unknown"
         else:
             vendor = "Unknown"
 
@@ -417,11 +420,10 @@ class SubRoutines:
     # Summary:
     #   grabs all interface vlan assignments
     def snmp_get_interface_vlan_bulk(self, ipaddr,vendor):
-
+        interfaceVlanList = []
         if vendor == "Cisco":
             oidstring = '1.3.6.1.4.1.9.9.68.1.2.2.1.2'
             varBinds = self.snmp_walk(ipaddr, ObjectType(ObjectIdentity(oidstring)))
-            interfaceVlanList = []
 
             for varBind in varBinds:
                 interfaceVlan = varBind._ObjectType__args[1]._value
@@ -432,7 +434,6 @@ class SubRoutines:
 
             oidstring = '1.3.6.1.2.1.17.7.1.4.3.1.4'
             varBinds = self.snmp_walk(ipaddr, ObjectType(ObjectIdentity(oidstring)))
-            interfaceVlanList = []
 
             for varBind in varBinds:
                 interfaceVlan = varBind._ObjectType__args[1]._value
@@ -943,6 +944,10 @@ class SubRoutines:
                 foundport = switchStruct.getPortById(port['Id'])
                 if foundport is not None:
                     foundport.voicevlan = port['Vlan']
+
+        if len(switchStruct.switches) == 0:
+            # self.subs.verbose_printer("No information found for {}".format(ipaddr))
+            print("##### {} - No SwitchStruct information found (SNMP issue?) #####".format(ipaddr))
 
         return switchStruct
 
