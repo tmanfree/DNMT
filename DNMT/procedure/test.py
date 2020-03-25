@@ -212,7 +212,7 @@ class Test:
     def Create_Readable_Activity_File(self,status_filename,iplist):
         TotalStatus = "IP,SwitchNum,Model,Serial,SoftwareVer,ModuleNum,PortNum,PortName,PortDesc,PoE,CDP,Status (1=Up),DataVlan,VoiceVlan,Mode,IntID,InputErrors,OutputErrors,InputCounters,OutputCounters,LastTimeUpdated,DeltaInputCounters,DeltaOutputCounters\n"
         #Currently grabs all existing statcheck files, this could be changed to only act on the iplist provided
-        if 'limit' in self.cmdargs and self.cmdargs.limit is not None:
+        if 'limit' in self.cmdargs and self.cmdargs.limit is True:
             for ip in iplist:
                 #process
                 try:
