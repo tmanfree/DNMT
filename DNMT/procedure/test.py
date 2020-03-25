@@ -160,29 +160,38 @@ class Test:
             os.makedirs(os.path.join(self.log_path, "activitycheck", "processedfiles"))
         # Specifying a file only changes what IPs are updated, right now the status check grabs all existing files in
         # the raw data folder
-        if 'file' in self.cmdargs and self.cmdargs.file is not None:
-            file = open(os.path.join(self.cmdargs.file), "r")
-        else:
-            file = open(os.path.abspath(os.path.join(os.sep, 'usr', 'lib', 'capt', "activitycheckIPlist")), "r")
-        self.subs.verbose_printer("##### file opened:{} #####".format(file))
+        try:
+            if 'file' in self.cmdargs and self.cmdargs.file is not None:
+                file = open(os.path.join(self.cmdargs.file), "r")
+            else:
+                file = open(os.path.abspath(os.path.join(os.sep, 'usr', 'lib', 'capt', "activitycheckIPlist")), "r")
+            self.subs.verbose_printer("##### file opened:{} #####".format(file))
 
-        for ip in file:
-            iplist.append(ip.rstrip())
-        file.close()
+            for ip in file:
+                iplist.append(ip.rstrip())
+            file.close()
 
-        #TODO CHANGE to do them with individual processes
-        if 'check' in self.cmdargs and self.cmdargs.check is False:
-            for ip in iplist:
-                start = time.time()
-                print("##### {} -  Processing #####".format(ip))
-                self.Activity_Tracking(ip)
-                end = time.time()
-                print("##### {} -  Processing Complete, time:{} seconds #####".format(ip,int((end-start)*100)/100))
-        print("##### Total Processing Complete, Total Time:{} seconds #####".format( int((time.time() - total_start) * 100) / 100))
+            #TODO CHANGE to do them with individual processes
+            if 'check' in self.cmdargs and self.cmdargs.check is False:
+                for ip in iplist:
+                    try:
+                        start = time.time()
+                        print("##### {} -  Processing #####".format(ip))
+                        self.Activity_Tracking(ip)
+                        end = time.time()
+                        print("##### {} -  Processing Complete, time:{} seconds #####".format(ip,int((end-start)*100)/100))
+                    except Exception as err:
+                        print("ERROR PROCESSING FILE {}:{}".format(ip, err))
+            print("##### Total Processing Complete, Total Time:{} seconds #####".format( int((time.time() - total_start) * 100) / 100))
+        except FileNotFoundError:
+            print("##### ERROR iplist files not found #####")
 
         # After all processes return, read in each pickle and create a single output file?
         status_filename = "{}-FullStatus.csv".format(datetime.date.today().strftime('%Y-%m-%d'))
-        self.Create_Readable_Activity_File(status_filename,iplist)
+        try:
+            self.Create_Readable_Activity_File(status_filename,iplist)
+        except Exception as err:
+            print("##### ERROR creating Summary File #####")
 
         #EMail finished file:
         try:
@@ -206,8 +215,8 @@ class Test:
             # logger.info("successfully sent Email")
         except smtplib.SMTPException:
             print("Failed to send Email")
-        except Exception as e:
-            print(e)
+        except Exception as err:
+            print(err)
 
 
 
