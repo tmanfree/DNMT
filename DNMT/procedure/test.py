@@ -161,12 +161,14 @@ class Test:
             file = open(os.path.join(self.cmdargs.file), "r")
         else:
             file = open(os.path.abspath(os.path.join(os.sep, 'usr', 'lib', 'capt', "activitycheckIPlist")), "r")
+        self.subs.verbose_printer("##### file opened:{} #####".format(file))
+
         for ip in file:
             iplist.append(ip.rstrip())
         file.close()
 
         #TODO CHANGE to do them with individual processes
-        if 'check' in self.cmdargs and self.cmdargs.check is None:
+        if 'check' in self.cmdargs and self.cmdargs.check is False:
             for ip in iplist:
                 start = time.time()
                 print("##### {} -  Processing #####".format(ip))
@@ -178,6 +180,7 @@ class Test:
 
         #EMail finished file:
         try:
+            self.subs.verbose_printer("##### Emailing now #####")
             msg = EmailMessage()
             msg["From"] = "admin@localhost"
             msg["Subject"] = "updated activitycheck - {}".format(datetime.date.today().strftime('%Y-%m-%d'))

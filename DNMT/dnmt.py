@@ -133,6 +133,7 @@ def dnmt():
     activity_tracking_parser.add_argument('-e', '--email', help="specify which email to send file to")
     activity_tracking_parser.add_argument('-c', '--check', help="Operate on existing statcheck files, no log ins",
                                           default=False, action="store_true")
+    activity_tracking_parser.add_argument('-v', '--verbose', help="run in verbose mode", default=False, action="store_true")
     # activity_tracking_parser.add_argument('file', metavar='file', help='The file with IPs to check')
 
 
