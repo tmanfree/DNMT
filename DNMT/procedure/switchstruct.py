@@ -231,6 +231,14 @@ class PortStruct:
         print("port Output Errors:{}".format(self.outputerrors))
         print("port Input Counters:{}".format(self.inputcounters))
         print("port Output Counters:{}".format(self.outputcounters))
+        print("Last Update time:{}".format(self.lastupdate))
+        print("Delta last input Counters:{}".format(self.deltalastin))
+        print("Delta last output Counters:{}".format(self.deltalastout))
+        print("Max Historical Entries:{}".format(self.maxhistoricalentries))
+        print("Historical Input Errors:{}".format(self.historicalinputerrors))
+        print("Historical Output Errors:{}".format(self.historicaloutputerrors))
+        print("Historical Input Counters:{}".format(self.historicalinputcounters))
+        print("Historical Output Counters:{}".format(self.historicaloutputcounters))
 
     #Setters, in retrospect these variables can be accessed directly...
     def setPoE(self,PoE):

@@ -37,7 +37,7 @@ class Test:
         if 'load' in self.cmdargs and self.cmdargs.load is not None:
             try:
 
-                with open(os.path.join(self.log_path, "activitycheck", "rawfiles", "{}-statcheck".format(ipaddr)),
+                with open(self.cmdargs.load,
                           "rb") as myNewFile:
                     test = pickle.load(myNewFile)
 
