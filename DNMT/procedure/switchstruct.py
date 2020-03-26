@@ -163,9 +163,21 @@ class PortStruct:
         self.outputerrors = None
         self.inputcounters = None
         self.outputcounters = None
+
+        self.maxhistoricalentries = 60 #this could be modified to keep longer or shorter records on a port by port basis
+        self.historicalinputerrors = []
+        self.historicaloutputerrors = []
+        self.historicalinputcounters = []
+        self.historicaloutputcounters = []
+
         self.lastupdate = None #specific to activity tracking
         self.deltalastin = None #specific to activity tracking
         self.deltalastout = None #specific to activity tracking
+
+    def checkCounterExistance(self):
+        if len(self.inputcounters) == 0:
+            self.inputcounters
+            self.outputerrors[len(self.outputerrors)]
 
     def activityChanged(self,compareport):
         return (self.cdp != compareport.cdp or

@@ -34,10 +34,22 @@ class Test:
 
     def Switch_Check(self):
         #3560X with ten gig uplink doesn't show gi 1/1-2 only ten 1/1-2.
-        start = time.time()
-        test = self.subs.snmp_get_switch_data_full(self.cmdargs.ipaddr)
-        end = time.time()
-        print("time:{} seconds".format(int((end-start)*100)/100))
+        if 'load' in self.cmdargs and self.cmdargs.load is not None:
+            try:
+
+                with open(os.path.join(self.log_path, "activitycheck", "rawfiles", "{}-statcheck".format(ipaddr)),
+                          "rb") as myNewFile:
+                    test = pickle.load(myNewFile)
+
+            except FileNotFoundError:
+                print("##### {} -  No file found #####".format(self.cmdargs.load))
+            except Exception as err:  # currently a catch all to stop linux from having a conniption when reloading
+                print("FILE ERROR {}".format( err.args[0]))
+        else:
+            start = time.time()
+            test = self.subs.snmp_get_switch_data_full(self.cmdargs.ipaddr)
+            end = time.time()
+            print("time:{} seconds".format(int((end-start)*100)/100))
         # test.printStack()
         # test.printSingleLine()
         if 'csv' in self.cmdargs and self.cmdargs.csv is not None:
@@ -149,8 +161,6 @@ class Test:
         except Exception as err: #currently a catch all to stop linux from having a conniption when reloading
             print("NETMIKO ERROR {}:{}".format(ipaddr,err.args[0]))
 
-
-
     def Activity_Tracking_Begin(self):
         iplist = []
         total_start = time.time()
@@ -252,6 +262,19 @@ class Test:
                   encoding='utf-8') as filePointer:
             print(TotalStatus, file=filePointer)
 
+    def Activity_Tracking_Comparison(self, newval,historicalvals,maxvals):
+        if newval is not None:  # ensure there are new entries
+            if len(historicalvals) != 0:  # make sure there are existing historical entries
+                if newval != historicalvals[
+                    len(historicalvals)-1][1]:  # dont add duplicates
+                    if len(historicalvals) >= maxvals:
+                        historicalvals = historicalvals[1:]
+                    historicalvals.append(
+                        (int(datetime.datetime.now().strftime("%Y%m%d%H%M")), newval))
+            else:
+                historicalvals.append(
+                    (int(datetime.datetime.now().strftime("%Y%m%d%H%M")), newval))
+        return historicalvals
 
     def Activity_Tracking(self,ipaddr):
     # this function will:
@@ -288,6 +311,34 @@ class Test:
                             oldport.outputcounters = newport.outputcounters
                             oldport.lastupdate = datetime.date.today().strftime('%Y-%m-%d')
 
+                            oldport.historicalinputerrors = self.Activity_Tracking_Comparison(newport.inputerrors, oldport.historicalinputerrors, newport.maxhistoricalentries)
+                            oldport.historicaloutputerrors = self.Activity_Tracking_Comparison(newport.outputerrors, oldport.historicaloutputerrors, newport.maxhistoricalentries)
+                            oldport.historicalinputcounters = self.Activity_Tracking_Comparison(newport.inputcounters, oldport.historicalinputcounters, newport.maxhistoricalentries)
+                            oldport.historicaloutputcounters = self.Activity_Tracking_Comparison(newport.outputcounters, oldport.historicaloutputcounters, newport.maxhistoricalentries)
+                            # if newport.inputerrors is not None: #ensure there are new entries
+                            #     if len(oldport.historicalinputerrors) != 0: # make sure there are existing historical entries
+                            #         if newport.inputerrors != oldport.historicalinputerrors[len(oldport.historicalinputerrors)]: #dont add duplicates
+                            #             if len(oldport.historicalinputerrors) >= newport.maxhistoricalentries:
+                            #                 oldport.historicalinputerrors = oldport.historicalinputerrors[1:]
+                            #             oldport.historicalinputerrors.append(
+                            #                 (int(datetime.datetime.now().strftime("%Y%m%d%H%M")), newport.inputerrors))
+                            #
+                            # if newport.outputerrors is not None:
+                            #     if len(oldport.historicaloutputerrors) >= oldport.maxhistoricalentries:
+                            #         oldport.historicaloutputerrors = oldport.historicaloutputerrors[1:]
+                            #     oldport.historicaloutputerrors.append(
+                            #         (int(datetime.datetime.now().strftime("%Y%m%d%H%M")), newport.outputerrors))
+                            # if newport.inputcounters is not None:
+                            #     if len(oldport.historicalinputcounters) >= oldport.maxhistoricalentries:
+                            #         oldport.historicalinputcounters = oldport.historicalinputcounters[1:]
+                            #     oldport.historicalinputcounters.append(
+                            #         (int(datetime.datetime.now().strftime("%Y%m%d%H%M")), newport.inputcounters))
+                            # if newport.outputcounters is not None:
+                            #     if len(oldport.historicaloutputcounters) >= oldport.maxhistoricalentries:
+                            #         oldport.historicaloutputcounters = oldport.historicaloutputcounters[1:]
+                            #     oldport.historicaloutputcounters.append(
+                            #         (int(datetime.datetime.now().strftime("%Y%m%d%H%M")), newport.outputcounters))
+
 
             #TODO Compare the two files now
 
@@ -311,3 +362,4 @@ class Test:
         with open(os.path.join(self.log_path,"activitycheck", "rawfiles","{}-statcheck".format(ipaddr)), "wb") as myFile:
             pickle.dump(OldSwitchStatus, myFile)
 
+11111

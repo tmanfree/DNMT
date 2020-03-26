@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import random, re, socket,time,sys
-import subprocess,platform
+import subprocess,platform,datetime
 import netmiko
 from pysnmp.hlapi import *
 
@@ -915,48 +915,56 @@ class SubRoutines:
                     foundport = switchStruct.getPortById(port['Id'])
                     if foundport is not None:
                         foundport.status = port['Status']
-            #get descriptions
+            #Get descriptions
             for port in self.snmp_get_interface_description_bulk(ipaddr):
                 if port is not None:  # ignore vlan interfaces and non existent interfaces
                     foundport = switchStruct.getPortById(port['Id'])
                     if foundport is not None:
                         foundport.description = port['Description']
-            #get Vlans on ports
+            # Get Vlans on ports
             for port in self.snmp_get_interface_vlan_bulk(ipaddr,vendor):
                 if port is not None:  # ignore vlan interfaces and non existent interfaces
                     foundport = switchStruct.getPortById(port['Id'])
                     if foundport is not None:
                         foundport.datavlan = port['Vlan']
 
+           # Get CDP information for ports
             for port in self.snmp_get_cdp_type_bulk(ipaddr):
                 if port is not None:  # ignore vlan interfaces and non existent interfaces
                     foundport = switchStruct.getPortById(port['Id'])
                     if foundport is not None:
                         foundport.cdp = port['Cdp']
 
+            # Get input Errors for ports
             for port in self.snmp_get_input_errors_bulk(ipaddr):
                 if port is not None:  # ignore vlan interfaces and non existent interfaces
                     foundport = switchStruct.getPortById(port['Id'])
                     if foundport is not None:
                         foundport.inputerrors = port['Errors']
+                        foundport.historicalinputerrors.append((int(datetime.datetime.now().strftime("%Y%m%d%H%M")),port['Errors']))
 
+            # Get output Errors for ports
             for port in self.snmp_get_output_errors_bulk(ipaddr):
                 if port is not None:  # ignore vlan interfaces and non existent interfaces
                     foundport = switchStruct.getPortById(port['Id'])
                     if foundport is not None:
                         foundport.outputerrors = port['Errors']
+                        foundport.historicaloutputerrors.append((int(datetime.datetime.now().strftime("%Y%m%d%H%M")),port['Errors']))
 
+            # Get input Counters for ports
             for port in self.snmp_get_input_counters_bulk(ipaddr):
                 if port is not None:  # ignore vlan interfaces and non existent interfaces
                     foundport = switchStruct.getPortById(port['Id'])
                     if foundport is not None:
                         foundport.inputcounters = port['Counters']
+                        foundport.historicalinputcounters.append((int(datetime.datetime.now().strftime("%Y%m%d%H%M")),port['Counters']))
 
             for port in self.snmp_get_output_counters_bulk(ipaddr):
                 if port is not None:  # ignore vlan interfaces and non existent interfaces
                     foundport = switchStruct.getPortById(port['Id'])
                     if foundport is not None:
                         foundport.outputcounters = port['Counters']
+                        foundport.historicaloutputcounters.append((int(datetime.datetime.now().strftime("%Y%m%d%H%M")), port['Counters']))
 
             for port in self.snmp_get_voice_vlan_bulk(ipaddr):
                 if port is not None:  # ignore vlan interfaces and non existent interfaces
