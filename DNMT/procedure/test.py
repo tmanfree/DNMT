@@ -45,7 +45,7 @@ class Test:
                 print("##### {} -  No file found #####".format(self.cmdargs.load))
             except Exception as err:  # currently a catch all to stop linux from having a conniption when reloading
                 print("FILE ERROR {}".format( err.args[0]))
-        elif 'ipaddr' in self.cmdargs and self.cmdargs.load is not None:
+        elif 'ipaddr' in self.cmdargs and self.cmdargs.ipaddr is not None:
             start = time.time()
             test = self.subs.snmp_get_switch_data_full(self.cmdargs.ipaddr)
             end = time.time()
