@@ -9,6 +9,10 @@ import smtplib
 from email.message import EmailMessage
 import pickle
 
+import gzip,shutil,bz2 #compression imports
+
+
+
 
 
 #3rd party imports
@@ -36,10 +40,9 @@ class Test:
         #3560X with ten gig uplink doesn't show gi 1/1-2 only ten 1/1-2.
         if 'load' in self.cmdargs and self.cmdargs.load is not None:
             try:
-
-                with open(self.cmdargs.load,
-                          "rb") as myNewFile:
-                    test = pickle.load(myNewFile)
+                # LOADING Compressed files
+                with bz2.open(self.cmdargs.load, "rb") as f:
+                    test = pickle.load(f, encoding='utf8')
 
             except FileNotFoundError:
                 print("##### {} -  No file found #####".format(self.cmdargs.load))
@@ -204,8 +207,12 @@ class Test:
         try:
             self.Create_Readable_Activity_File(status_filename,iplist)
         except Exception as err:
-            print("##### ERROR creating Summary File #####")
+            print("##### ERROR creating Summary File: {} #####".format(err))
 
+        #Compress
+        with open(os.path.join(self.log_path, "activitycheck", "processedfiles", status_filename), 'rb') as f_in:
+            with gzip.open(os.path.join(self.log_path, "activitycheck", "processedfiles", "{}.gz".format(status_filename)), 'wb') as f_out:
+                shutil.copyfileobj(f_in, f_out)
         #EMail finished file:
         try:
             self.subs.verbose_printer("##### Emailing now #####")
@@ -217,7 +224,7 @@ class Test:
             else:
                 msg["To"] = "mandzie@ualberta.ca"
             msg.set_content("Attached is the status document for {}",format(datetime.date.today().strftime('%Y-%m-%d')))
-            msg.add_attachment(open(os.path.join(self.log_path,"activitycheck","processedfiles",status_filename), "r").read(), filename=status_filename)
+            msg.add_attachment(open(os.path.join(self.log_path,"activitycheck","processedfiles","{}.gz".format(status_filename)), "r").read(), filename="{}.gz".format(status_filename))
 
             s = smtplib.SMTP('localhost')
             # s.login(USERNAME, PASSWORD)
@@ -242,20 +249,23 @@ class Test:
                 #process
                 try:
                     # with open(file, "rb") as myNewFile:
-                    with open(os.path.join(self.log_path, "activitycheck","rawfiles", "{}-statcheck".format(ip)), "rb") as myNewFile:
-                        SwitchStatus = pickle.load(myNewFile)
+                    # LOADING Compressed files
+                    with bz2.open(
+                            os.path.join(self.log_path, "activitycheck", "rawfiles", "{}-statcheck.bz2".format(ip)),
+                            "rb") as f:
+                        SwitchStatus = pickle.load(f, encoding='utf8')
                         TotalStatus += SwitchStatus.appendSingleLine()
                 except Exception as err:  # currently a catch all to stop linux from having a conniption when reloading
                     print("FILE ERROR {}-statcheck:{}".format(ip, err.args[0]))
         else:
             self.subs.verbose_printer("##### Creating Full Summary List #####")
             for file in os.listdir(os.path.join(self.log_path,"activitycheck", "rawfiles")):
-                if file.endswith("-statcheck"):
+                if file.endswith("-statcheck.bz2"):
                     #process
                     try:
                         # with open(file, "rb") as myNewFile:
-                        with open(os.path.join(self.log_path, "activitycheck","rawfiles", file), "rb") as myNewFile:
-                            SwitchStatus = pickle.load(myNewFile)
+                        with bz2.open(os.path.join(self.log_path, "activitycheck","rawfiles", file), "rb") as f:
+                            SwitchStatus = pickle.load(f)
                             TotalStatus += SwitchStatus.appendSingleLine()
                     except Exception as err:  # currently a catch all to stop linux from having a conniption when reloading
                         print("FILE ERROR {}:{}".format(file, err.args[0]))
@@ -264,6 +274,17 @@ class Test:
         with open(os.path.join(self.log_path, "activitycheck", "processedfiles", status_filename), 'w',
                   encoding='utf-8') as filePointer:
             print(TotalStatus, file=filePointer)
+
+    #Directly pickling then compressing the data is adding characters to the start
+        # with bz2.BZ2File(os.path.join(self.log_path, "activitycheck", "processedfiles", "{}.bz2".format(status_filename)),
+        #                  'wb') as sfile:
+        #     pickle.dump(TotalStatus, sfile)
+        #
+        # with bz2.open(os.path.join(self.log_path, "activitycheck", "processedfiles", "test{}.bz2".format(status_filename)), "wb", encoding="utf-8") as f:
+        #     # Write compressed data to file
+        #     pickle.dump(TotalStatus,f)
+
+
 
     def Activity_Tracking_Comparison(self, newval,historicalvals,maxvals):
         if newval is not None:  # ensure there are new entries
@@ -295,7 +316,7 @@ class Test:
     #TODO Check if a previous static check exists, and load it if it does, otherwise create it and write it out
         try:
 
-            with open(os.path.join(self.log_path, "activitycheck", "rawfiles","{}-statcheck".format(ipaddr)), "rb") as myNewFile:
+            with bz2.open(os.path.join(self.log_path, "activitycheck", "rawfiles","{}-statcheck.bz2".format(ipaddr)), "rb") as myNewFile:
                 OldSwitchStatus = pickle.load(myNewFile)
 
             for tempswitch in OldSwitchStatus.switches:
@@ -361,8 +382,8 @@ class Test:
             print("FILE ERROR {}:{}".format(ipaddr,err.args[0]))
 
 
-    # WRITE IT OUT
-        with open(os.path.join(self.log_path,"activitycheck", "rawfiles","{}-statcheck".format(ipaddr)), "wb") as myFile:
-            pickle.dump(OldSwitchStatus, myFile)
+# Saving Compressed files
+        with bz2.BZ2File(os.path.join(self.log_path,"activitycheck", "rawfiles","{}-statcheck.bz2".format(ipaddr)), 'wb') as sfile:
+            pickle.dump(OldSwitchStatus, sfile)
 
-11111
+
