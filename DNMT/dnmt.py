@@ -116,7 +116,7 @@ def dnmt():
     #Tests Begin
     test_parser = subparsers.add_parser("test", help="various tests").add_subparsers(dest="test")
     switch_check_parser = test_parser.add_parser("Switch_Check", help="check switch info")
-    switch_check_parser.add_argument('ipaddr', metavar='IP', help='Switch Address interface is on')
+    switch_check_parser.add_argument('-i','--ipaddr', metavar='IP', help='Switch Address interface is on')
     switch_check_parser.add_argument('-c', '--csv', help="save to a specified csv file")
     switch_check_parser.add_argument('-v', '--verbose', help="run in verbose mode", default=False, action="store_true")
     switch_check_parser.add_argument('-l', '--load', help="load switchstruct from a specified file")

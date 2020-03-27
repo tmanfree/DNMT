@@ -45,11 +45,14 @@ class Test:
                 print("##### {} -  No file found #####".format(self.cmdargs.load))
             except Exception as err:  # currently a catch all to stop linux from having a conniption when reloading
                 print("FILE ERROR {}".format( err.args[0]))
-        else:
+        elif 'ipaddr' in self.cmdargs and self.cmdargs.load is not None:
             start = time.time()
             test = self.subs.snmp_get_switch_data_full(self.cmdargs.ipaddr)
             end = time.time()
             print("time:{} seconds".format(int((end-start)*100)/100))
+        else:
+            print("Invalid Syntax, need to specify an IP with -i or a file to check with -l")
+            sys.exit(1)
         # test.printStack()
         # test.printSingleLine()
         if 'csv' in self.cmdargs and self.cmdargs.csv is not None:
