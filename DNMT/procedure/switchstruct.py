@@ -101,7 +101,7 @@ class SwitchStruct:
     def appendSingleLine(self, ip,vendor, hostname):
         totalString =""
         for module in self.modules:
-            totalString += module.appendSingleLine((ip,vendor,hostname,vendor,hostname, self.switchnumber, self.model, self.serialnumber, self.version))
+            totalString += module.appendSingleLine((ip,vendor,hostname, self.switchnumber, self.model, self.serialnumber, self.version))
         return totalString
 
     def exportCSV(self,ip,vendor, hostname, filePointer):
