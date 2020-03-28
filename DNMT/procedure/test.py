@@ -42,7 +42,7 @@ class Test:
             try:
                 # LOADING Compressed files
                 with bz2.open(self.cmdargs.load, "rb") as f:
-                    test = pickle.load(f, encoding='utf8')
+                    test = pickle.load(f, encoding='utf-8')
 
             except FileNotFoundError:
                 print("##### {} -  No file found #####".format(self.cmdargs.load))
@@ -253,7 +253,7 @@ class Test:
                     with bz2.open(
                             os.path.join(self.log_path, "activitycheck", "rawfiles", "{}-statcheck.bz2".format(ip)),
                             "rb") as f:
-                        SwitchStatus = pickle.load(f, encoding='utf8')
+                        SwitchStatus = pickle.load(f, encoding='utf-8')
                         TotalStatus += SwitchStatus.appendSingleLine()
                 except Exception as err:  # currently a catch all to stop linux from having a conniption when reloading
                     print("FILE ERROR {}-statcheck:{}".format(ip, err.args[0]))
