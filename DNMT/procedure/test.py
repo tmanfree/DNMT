@@ -6,6 +6,9 @@ import subprocess,platform,os,time,datetime
 import getpass
 import difflib
 import smtplib
+import tempfile
+import zipfile
+from email import encoders
 from email.message import EmailMessage
 import pickle
 
@@ -221,6 +224,36 @@ class Test:
         #EMail finished file:
         try:
             self.subs.verbose_printer("##### Emailing now #####")
+
+            zf = tempfile.TemporaryFile(prefix='mail', suffix='.zip')
+            zip = zipfile.ZipFile(zf, 'w')
+            zip.write(os.path.join(self.log_path, "activitycheck", "processedfiles",status_filename))
+            zip.close()
+            zf.seek(0)
+
+            # Create the message
+            themsg = MIMEMultipart()
+            themsg["From"] = "admin@localhost"
+            themsg["Subject"] = "Still trying - {}".format(datetime.date.today().strftime('%Y-%m-%d'))
+            if 'email' in self.cmdargs and self.cmdargs.email is not None:
+                themsg["To"] = self.cmdargs.email
+            else:
+                themsg["To"] = "mandzie@ualberta.ca"
+            themsg.preamble = 'I am not using a MIME-aware mail reader.\n'
+            msg = MIMEBase('application', 'zip')
+            msg.set_payload(zf.read())
+            encoders.encode_base64(msg)
+            msg.add_header('Content-Disposition', 'attachment',
+                           filename=status_filename + '.zip')
+            themsg.attach(msg)
+            themsg = themsg.as_string()
+
+            # send the message
+            smtp = smtplib.SMTP()
+            smtp.connect()
+            smtp.sendmail(themsg['From'], themsg['To'], themsg)
+            smtp.close()
+
 
             msg = MIMEMultipart()
 
