@@ -224,7 +224,16 @@ class Test:
             else:
                 msg["To"] = "mandzie@ualberta.ca"
             msg.set_content("Attached is the status document for {}",format(datetime.date.today().strftime('%Y-%m-%d')))
-            msg.add_attachment(open(os.path.join(self.log_path,"activitycheck","processedfiles","{}.gz".format(status_filename)), "r").read(), filename="{}.gz".format(status_filename))
+
+            with gzip.open(os.path.join(self.log_path, "activitycheck", "processedfiles", "{}.gz".format(status_filename)), 'rb') as f:
+                msg.add_attachment(f.read(), filename="{}.gz".format(status_filename),maintype='multipart',
+                                 subtype="related")
+
+            # msg.add_attachment(
+            #     open(os.path.join(self.log_path, "activitycheck", "processedfiles", status_filename),
+            #          "r").read(), filename=status_filename)
+
+            msg.add_attachment(open(os.path.join(self.log_path,"activitycheck","processedfiles","{}.gz".format(status_filename)), "rb").read(), filename="{}.gz".format(status_filename))
 
             s = smtplib.SMTP('localhost')
             # s.login(USERNAME, PASSWORD)
@@ -237,7 +246,6 @@ class Test:
             print("Failed to send Email")
         except Exception as err:
             print(err)
-
 
 
     def Create_Readable_Activity_File(self,status_filename,iplist):
