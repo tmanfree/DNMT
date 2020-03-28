@@ -231,14 +231,17 @@ class Test:
             zip.close()
             zf.seek(0)
 
+            temp_from = "admin@localhost"
+            if 'email' in self.cmdargs and self.cmdargs.email is not None:
+               temp_to = self.cmdargs.email
+            else:
+                temp_to = "mandzie@ualberta.ca"
+
             # Create the message
             themsg = MIMEMultipart()
-            themsg["From"] = "admin@localhost"
+            themsg["From"] = temp_from
             themsg["Subject"] = "Still trying - {}".format(datetime.date.today().strftime('%Y-%m-%d'))
-            if 'email' in self.cmdargs and self.cmdargs.email is not None:
-                themsg["To"] = self.cmdargs.email
-            else:
-                themsg["To"] = "mandzie@ualberta.ca"
+            themsg["To"] = temp_to
             themsg.preamble = 'I am not using a MIME-aware mail reader.\n'
             msg = MIMEBase('application', 'zip')
             msg.set_payload(zf.read())
@@ -251,60 +254,50 @@ class Test:
             # send the message
             smtp = smtplib.SMTP()
             smtp.connect()
-            smtp.sendmail(themsg['From'], themsg['To'], themsg)
+            smtp.sendmail(temp_from, temp_to, themsg)
             smtp.close()
+            #
+            #
+            # msg = MIMEMultipart()
+            #
+            # message = "Test"
+            # msg.preamble = "I am not using a MIME-aware mail reader.\n"
+            #
+            # # password = "XXXXXXXX"
+            # msg["From"] = "admin@localhost"
+            # msg["Subject"] = "ziptest - {}".format(datetime.date.today().strftime('%Y-%m-%d'))
+            # if 'email' in self.cmdargs and self.cmdargs.email is not None:
+            #     msg["To"] = self.cmdargs.email
+            # else:
+            #     msg["To"] = "mandzie@ualberta.ca"
+            #
+            # f = gzip.open(os.path.join(self.log_path, "activitycheck", "processedfiles", "{}.gz".format(status_filename)), 'rb')
+            # msg.attach(MIMEText(message, 'plain'))
+            # attachment = MIMEApplication(f.read())
+            # attachment.add_header('Content-Disposition', 'attachment', filename="{}.gz".format(status_filename))
+            # msg.attach(attachment)
+            # smtp = smtplib.SMTP()
+            # smtp.connect()
+            # smtp.sendmail(msg['From'], msg['To'], msg.as_string())
+            # smtp.close()
+            #
+            #
+            # msg = EmailMessage()
+            # msg["From"] = "admin@localhost"
+            # msg["Subject"] = "updated activitycheck - {}".format(datetime.date.today().strftime('%Y-%m-%d'))
+            # if 'email' in self.cmdargs and self.cmdargs.email is not None:
+            #     msg["To"] = self.cmdargs.email
+            # else:
+            #     msg["To"] = "mandzie@ualberta.ca"
+            # msg.set_content("Attached is the status document for {}",format(datetime.date.today().strftime('%Y-%m-%d')))
+            #
+            # with gzip.open(os.path.join(self.log_path, "activitycheck", "processedfiles", "{}.gz".format(status_filename)), 'rb') as f:
+            #     msg.add_attachment(f.read(), filename="{}.gz".format(status_filename),maintype='multipart',
+            #                      subtype="related")
+            #
+            # s = smtplib.SMTP('localhost')
+            # s.send_message(msg)
 
-
-            msg = MIMEMultipart()
-
-            message = "Test"
-            msg.preamble = "I am not using a MIME-aware mail reader.\n"
-
-            # password = "XXXXXXXX"
-            msg["From"] = "admin@localhost"
-            msg["Subject"] = "ziptest - {}".format(datetime.date.today().strftime('%Y-%m-%d'))
-            if 'email' in self.cmdargs and self.cmdargs.email is not None:
-                msg["To"] = self.cmdargs.email
-            else:
-                msg["To"] = "mandzie@ualberta.ca"
-
-            f = gzip.open(os.path.join(self.log_path, "activitycheck", "processedfiles", "{}.gz".format(status_filename)), 'rb')
-            msg.attach(MIMEText(message, 'plain'))
-            attachment = MIMEApplication(f.read())
-            attachment.add_header('Content-Disposition', 'attachment', filename="{}.gz".format(status_filename))
-            msg.attach(attachment)
-            smtp = smtplib.SMTP()
-            smtp.connect()
-            smtp.sendmail(msg['From'], msg['To'], msg.as_string())
-            smtp.close()
-
-
-            msg = EmailMessage()
-            msg["From"] = "admin@localhost"
-            msg["Subject"] = "updated activitycheck - {}".format(datetime.date.today().strftime('%Y-%m-%d'))
-            if 'email' in self.cmdargs and self.cmdargs.email is not None:
-                msg["To"] = self.cmdargs.email
-            else:
-                msg["To"] = "mandzie@ualberta.ca"
-            msg.set_content("Attached is the status document for {}",format(datetime.date.today().strftime('%Y-%m-%d')))
-
-            with gzip.open(os.path.join(self.log_path, "activitycheck", "processedfiles", "{}.gz".format(status_filename)), 'rb') as f:
-                msg.add_attachment(f.read(), filename="{}.gz".format(status_filename),maintype='multipart',
-                                 subtype="related")
-
-            # msg.add_attachment(
-            #     open(os.path.join(self.log_path, "activitycheck", "processedfiles", status_filename),
-            #          "r").read(), filename=status_filename)
-
-            # msg.add_attachment(open(os.path.join(self.log_path,"activitycheck","processedfiles","{}.gz".format(status_filename)), "rb").read(), filename="{}.gz".format(status_filename))
-
-            s = smtplib.SMTP('localhost')
-            # s.login(USERNAME, PASSWORD)
-            s.send_message(msg)
-            # smtpObj = smtplib.SMTP("localhost")
-            # smtpObj.sendmail("admin@localhost", ["mandzie@ualberta.ca"], "Test",)
-            # # smtpObj.sendmail(config.email_from, [args.email], email_string )
-            # logger.info("successfully sent Email")
         except smtplib.SMTPException:
             print("Failed to send Email")
         except Exception as err:
