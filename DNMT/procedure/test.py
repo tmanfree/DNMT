@@ -233,7 +233,7 @@ class Test:
             #     open(os.path.join(self.log_path, "activitycheck", "processedfiles", status_filename),
             #          "r").read(), filename=status_filename)
 
-            msg.add_attachment(open(os.path.join(self.log_path,"activitycheck","processedfiles","{}.gz".format(status_filename)), "rb").read(), filename="{}.gz".format(status_filename))
+            # msg.add_attachment(open(os.path.join(self.log_path,"activitycheck","processedfiles","{}.gz".format(status_filename)), "rb").read(), filename="{}.gz".format(status_filename))
 
             s = smtplib.SMTP('localhost')
             # s.login(USERNAME, PASSWORD)
