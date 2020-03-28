@@ -16,6 +16,11 @@ import gzip,shutil,bz2 #compression imports
 
 
 #3rd party imports
+from email.mime.application import MIMEApplication
+from email.mime.base import MIMEBase
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+
 import netmiko
 from pathos.multiprocessing import ProcessingPool as Pool
 
@@ -216,6 +221,31 @@ class Test:
         #EMail finished file:
         try:
             self.subs.verbose_printer("##### Emailing now #####")
+
+            msg = MIMEMultipart()
+
+            message = "Test"
+            msg.preamble = "I am not using a MIME-aware mail reader.\n"
+
+            # password = "XXXXXXXX"
+            msg["From"] = "admin@localhost"
+            msg["Subject"] = "ziptest - {}".format(datetime.date.today().strftime('%Y-%m-%d'))
+            if 'email' in self.cmdargs and self.cmdargs.email is not None:
+                msg["To"] = self.cmdargs.email
+            else:
+                msg["To"] = "mandzie@ualberta.ca"
+
+            f = gzip.open(os.path.join(self.log_path, "activitycheck", "processedfiles", "{}.gz".format(status_filename)), 'rb')
+            msg.attach(MIMEText(message, 'plain'))
+            attachment = MIMEApplication(f.read())
+            attachment.add_header('Content-Disposition', 'attachment', filename="{}.gz".format(status_filename))
+            msg.attach(attachment)
+            smtp = smtplib.SMTP()
+            smtp.connect()
+            smtp.sendmail(msg['From'], msg['To'], msg.as_string())
+            smtp.close()
+
+
             msg = EmailMessage()
             msg["From"] = "admin@localhost"
             msg["Subject"] = "updated activitycheck - {}".format(datetime.date.today().strftime('%Y-%m-%d'))
