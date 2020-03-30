@@ -10,20 +10,19 @@ import tempfile
 import zipfile
 from email import encoders
 from email.message import EmailMessage
-import pickle
+import pickle,bz2 #imports for statchecks
 
-import gzip,shutil,bz2 #compression imports
+import zipfile #imports for summary filescompression imports
 
-import zipfile
+
 
 
 
 
 #3rd party imports
-from email.mime.application import MIMEApplication
 from email.mime.base import MIMEBase
 from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
+
 
 import netmiko
 from pathos.multiprocessing import ProcessingPool as Pool
@@ -196,17 +195,37 @@ class Test:
                 iplist.append(ip.rstrip())
             file.close()
 
+            # pool = Pool(len(iplist))  # 4 concurrent processes
+            # results = pool.map(self.single_search, iplist)
+
             #TODO CHANGE to do them with individual processes
             if 'check' in self.cmdargs and self.cmdargs.check is False:
-                for ip in iplist:
-                    try:
-                        start = time.time()
-                        print("##### {} -  Processing #####".format(ip))
-                        self.Activity_Tracking(ip)
-                        end = time.time()
-                        print("##### {} -  Processing Complete, time:{} seconds #####".format(ip,int((end-start)*100)/100))
-                    except Exception as err:
-                        print("ERROR PROCESSING FILE {}:{}".format(ip, err))
+                # pool = Pool(len(iplist))  # 4 concurrent processes
+                if 'check' in self.cmdargs and self.cmdargs.check is False:
+                    if 'numprocs' in self.cmdargs and self.cmdargs.numprocs is False:
+                        numprocs = 5
+                    else:
+                        if self.cmdargs.numprocs == "all":
+                            numprocs = len(iplist)
+                        else:
+                            try:
+                                numprocs = int(self.cmdargs.numprocs)
+                            except ValueError:
+                                self.subs.verbose_printer("numprocs is not a number, defaulting to 5!")
+                                numprocs = 5
+                            except Exception:
+                                numprocs = 5 #catch all if things go sideways
+                pool = Pool(numprocs)
+                pool.map(self.Activity_Tracking,iplist)
+                # for ip in iplist:
+                #     try:
+                #         # start = time.time()
+                #         # print("##### {} -  Processing #####".format(ip))
+                #         self.Activity_Tracking(ip)
+                #         # end = time.time()
+                #         # print("##### {} -  Processing Complete, time:{} seconds #####".format(ip,int((end-start)*100)/100))
+                #     except Exception as err:
+                #         print("ERROR PROCESSING FILE {}:{}".format(ip, err))
             print("##### Total Processing Complete, Total Time:{} seconds #####".format( int((time.time() - total_start) * 100) / 100))
         except FileNotFoundError:
             print("##### ERROR iplist files not found #####")
@@ -226,13 +245,6 @@ class Test:
         try:
             self.subs.verbose_printer("##### Emailing now #####")
 
-            # zf = tempfile.TemporaryFile(prefix='mail', suffix='.zip')
-            # zip = zipfile.ZipFile(zf, 'w')
-            # zip.write(os.path.join(self.log_path, "activitycheck", "processedfiles",status_filename))
-            # zip.close()
-            # zf.seek(0)
-
-            # zf = zipfile.ZipFile('zipfile_writestr.zip', 'r')
             zf = open(os.path.join(self.log_path, "activitycheck", "processedfiles", "{}.zip".format(status_filename)), 'rb')
 
 
@@ -261,151 +273,6 @@ class Test:
             smtp.connect()
             smtp.sendmail(temp_from, temp_to, themsg)
             smtp.close()
-
-
-        #             temp_from = "admin@localhost"
-#             if 'email' in self.cmdargs and self.cmdargs.email is not None:
-#                temp_to = self.cmdargs.email
-#             else:
-#                 temp_to = "mandzie@ualberta.ca"
-#
-#             # Create the message
-#             themsg = MIMEMultipart()
-#             themsg["From"] = temp_from
-#             themsg["Subject"] = "updated activitycheck - {}".format(datetime.date.today().strftime('%Y-%m-%d'))
-#             themsg["To"] = temp_to
-#             themsg.preamble = 'I am not using a MIME-aware mail reader.\n'
-#             msg = MIMEBase('application', 'bz2')
-#             zf = bz2.open(os.path.join(self.log_path, "activitycheck", "processedfiles", "{}.bz2".format(status_filename)),
-#                      'rb')
-#             msg.set_payload(zf.read())
-#             encoders.encode_base64(msg)
-#             msg.add_header('Content-Disposition', 'attachment',
-#                            filename=status_filename + '.bz2')
-#             themsg.attach(msg)
-#             themsg = themsg.as_string()
-#
-#             # send the message
-#             smtp = smtplib.SMTP()
-#             smtp.connect()
-#             smtp.sendmail(temp_from, temp_to, themsg)
-#             smtp.close()
-#
-# #NOTHING
-#             msg = EmailMessage()
-#             msg["From"] = "admin@localhost"
-#             msg["Subject"] = "updated activitycheck - {}".format(datetime.date.today().strftime('%Y-%m-%d'))
-#             if 'email' in self.cmdargs and self.cmdargs.email is not None:
-#                 msg["To"] = self.cmdargs.email
-#             else:
-#                 msg["To"] = "mandzie@ualberta.ca"
-#             msg.set_content("Attached is the status document for {}",format(datetime.date.today().strftime('%Y-%m-%d')))
-#
-#             with bz2.open(os.path.join(self.log_path, "activitycheck", "processedfiles", "{}.bz2".format(status_filename)), 'rb') as f:
-#                 msg.add_attachment(f.read(), filename="{}.bz2".format(status_filename),maintype='multipart',
-#                                  subtype="related")
-#
-#             s = smtplib.SMTP('localhost')
-#             s.send_message(msg)
-#
-#
-#
-#
-#             msg = MIMEMultipart()
-#
-#             message = "Test"
-#             msg.preamble = "I am not using a MIME-aware mail reader.\n"
-#
-#             # password = "XXXXXXXX"
-#             msg["From"] = "admin@localhost"
-#             msg["Subject"] = "ziptest - {}".format(datetime.date.today().strftime('%Y-%m-%d'))
-#             if 'email' in self.cmdargs and self.cmdargs.email is not None:
-#                 msg["To"] = self.cmdargs.email
-#             else:
-#                 msg["To"] = "mandzie@ualberta.ca"
-#
-#             f = bz2.open(os.path.join(self.log_path, "activitycheck", "processedfiles", "{}.bz2".format(status_filename)), 'rb')
-#             msg.attach(MIMEText(message, 'plain'))
-#             attachment = MIMEApplication(f.read())
-#             attachment.add_header('Content-Disposition', 'attachment', filename="{}.bz2".format(status_filename))
-#             msg.attach(attachment)
-#             smtp = smtplib.SMTP()
-#             smtp.connect()
-#             smtp.sendmail(msg['From'], msg['To'], msg.as_string())
-#             smtp.close()
-
-            # zf = tempfile.TemporaryFile(prefix='mail', suffix='.zip')
-            # zip = zipfile.ZipFile(zf, 'w')
-            # zip.write(os.path.join(self.log_path, "activitycheck", "processedfiles",status_filename))
-            # zip.close()
-            # zf.seek(0)
-            #
-            # temp_from = "admin@localhost"
-            # if 'email' in self.cmdargs and self.cmdargs.email is not None:
-            #    temp_to = self.cmdargs.email
-            # else:
-            #     temp_to = "mandzie@ualberta.ca"
-            #
-            # # Create the message
-            # themsg = MIMEMultipart()
-            # themsg["From"] = temp_from
-            # themsg["Subject"] = "updated activitycheck - {}".format(datetime.date.today().strftime('%Y-%m-%d'))
-            # themsg["To"] = temp_to
-            # themsg.preamble = 'I am not using a MIME-aware mail reader.\n'
-            # msg = MIMEBase('application', 'zip')
-            # msg.set_payload(zf.read())
-            # encoders.encode_base64(msg)
-            # msg.add_header('Content-Disposition', 'attachment',
-            #                filename=status_filename + '.zip')
-            # themsg.attach(msg)
-            # themsg = themsg.as_string()
-            #
-            # # send the message
-            # smtp = smtplib.SMTP()
-            # smtp.connect()
-            # smtp.sendmail(temp_from, temp_to, themsg)
-            # smtp.close()
-            #
-            #
-            # msg = MIMEMultipart()
-            #
-            # message = "Test"
-            # msg.preamble = "I am not using a MIME-aware mail reader.\n"
-            #
-            # # password = "XXXXXXXX"
-            # msg["From"] = "admin@localhost"
-            # msg["Subject"] = "ziptest - {}".format(datetime.date.today().strftime('%Y-%m-%d'))
-            # if 'email' in self.cmdargs and self.cmdargs.email is not None:
-            #     msg["To"] = self.cmdargs.email
-            # else:
-            #     msg["To"] = "mandzie@ualberta.ca"
-            #
-            # f = gzip.open(os.path.join(self.log_path, "activitycheck", "processedfiles", "{}.gz".format(status_filename)), 'rb')
-            # msg.attach(MIMEText(message, 'plain'))
-            # attachment = MIMEApplication(f.read())
-            # attachment.add_header('Content-Disposition', 'attachment', filename="{}.gz".format(status_filename))
-            # msg.attach(attachment)
-            # smtp = smtplib.SMTP()
-            # smtp.connect()
-            # smtp.sendmail(msg['From'], msg['To'], msg.as_string())
-            # smtp.close()
-            #
-            #
-            # msg = EmailMessage()
-            # msg["From"] = "admin@localhost"
-            # msg["Subject"] = "updated activitycheck - {}".format(datetime.date.today().strftime('%Y-%m-%d'))
-            # if 'email' in self.cmdargs and self.cmdargs.email is not None:
-            #     msg["To"] = self.cmdargs.email
-            # else:
-            #     msg["To"] = "mandzie@ualberta.ca"
-            # msg.set_content("Attached is the status document for {}",format(datetime.date.today().strftime('%Y-%m-%d')))
-            #
-            # with gzip.open(os.path.join(self.log_path, "activitycheck", "processedfiles", "{}.gz".format(status_filename)), 'rb') as f:
-            #     msg.add_attachment(f.read(), filename="{}.gz".format(status_filename),maintype='multipart',
-            #                      subtype="related")
-            #
-            # s = smtplib.SMTP('localhost')
-            # s.send_message(msg)
 
         except smtplib.SMTPException:
             print("Failed to send Email")
@@ -493,6 +360,8 @@ class Test:
     #
     # TODO
     #   -Determine where these log files should go
+        start = time.time()
+        self.subs.verbose_printer("##### {} -  Processing #####".format(ipaddr))
         NewSwitchStatus  = self.subs.snmp_get_switch_data_full(ipaddr)
 
     #TODO Check if a previous static check exists, and load it if it does, otherwise create it and write it out
@@ -568,4 +437,6 @@ class Test:
         with bz2.BZ2File(os.path.join(self.log_path,"activitycheck", "rawfiles","{}-statcheck.bz2".format(ipaddr)), 'wb') as sfile:
             pickle.dump(OldSwitchStatus, sfile)
 
+        end = time.time()
+        self.subs.verbose_printer("##### {} -  Processing Complete, time:{} seconds #####".format(ipaddr, int((end - start) * 100) / 100))
 
