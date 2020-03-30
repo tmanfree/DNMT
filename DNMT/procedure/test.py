@@ -287,19 +287,19 @@ class Test:
             if len(self.successful_switches) > 0:
                 body += "--- List of switch statuses SUCCESSFULLY updated ---\n"
                 for entry in self.successful_switches:
-                    body += entry
+                    body += "{}\n".format(entry)
             if len(self.failure_switches) > 0:
                 body += "--- List of switch statuses that FAILED to update ---\n"
                 for entry in self.failure_switches:
-                    body += entry
+                    body += "{}\n".format(entry)
             if len(self.successful_files) > 0:
                 body += "--- List of files SUCCESSFULLY added to summary file ---\n"
                 for entry in self.successful_files:
-                    body += entry
+                    body += "{}\n".format(entry)
             if len(self.failure_files) > 0:
                 body += "--- List of files FAILED to be added to summary file ---\n"
                 for entry in self.failure_files:
-                    body += entry
+                    body += "{}\n".format(entry)
 
             themsg.attach(MIMEText(body, 'plain'))
 
