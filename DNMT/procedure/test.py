@@ -244,6 +244,30 @@ class Test:
 
 
 
+
+            msg = MIMEMultipart()
+
+            message = "Test"
+            msg.preamble = "I am not using a MIME-aware mail reader.\n"
+
+            # password = "XXXXXXXX"
+            msg["From"] = "admin@localhost"
+            msg["Subject"] = "ziptest - {}".format(datetime.date.today().strftime('%Y-%m-%d'))
+            if 'email' in self.cmdargs and self.cmdargs.email is not None:
+                msg["To"] = self.cmdargs.email
+            else:
+                msg["To"] = "mandzie@ualberta.ca"
+
+            f = bz2.open(os.path.join(self.log_path, "activitycheck", "processedfiles", "{}.bz2".format(status_filename)), 'rb')
+            msg.attach(MIMEText(message, 'plain'))
+            attachment = MIMEApplication(f.read())
+            attachment.add_header('Content-Disposition', 'attachment', filename="{}.bz2".format(status_filename))
+            msg.attach(attachment)
+            smtp = smtplib.SMTP()
+            smtp.connect()
+            smtp.sendmail(msg['From'], msg['To'], msg.as_string())
+            smtp.close()
+
             # zf = tempfile.TemporaryFile(prefix='mail', suffix='.zip')
             # zip = zipfile.ZipFile(zf, 'w')
             # zip.write(os.path.join(self.log_path, "activitycheck", "processedfiles",status_filename))
