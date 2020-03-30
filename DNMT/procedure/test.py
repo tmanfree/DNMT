@@ -226,6 +226,35 @@ class Test:
         try:
             self.subs.verbose_printer("##### Emailing now #####")
 
+            temp_from = "admin@localhost"
+            if 'email' in self.cmdargs and self.cmdargs.email is not None:
+               temp_to = self.cmdargs.email
+            else:
+                temp_to = "mandzie@ualberta.ca"
+
+            # Create the message
+            themsg = MIMEMultipart()
+            themsg["From"] = temp_from
+            themsg["Subject"] = "updated activitycheck - {}".format(datetime.date.today().strftime('%Y-%m-%d'))
+            themsg["To"] = temp_to
+            themsg.preamble = 'I am not using a MIME-aware mail reader.\n'
+            msg = MIMEBase('application', 'bz2')
+            zf = bz2.open(os.path.join(self.log_path, "activitycheck", "processedfiles", "{}.bz2".format(status_filename)),
+                     'rb')
+            msg.set_payload(zf.read())
+            encoders.encode_base64(msg)
+            msg.add_header('Content-Disposition', 'attachment',
+                           filename=status_filename + '.bz2')
+            themsg.attach(msg)
+            themsg = themsg.as_string()
+
+            # send the message
+            smtp = smtplib.SMTP()
+            smtp.connect()
+            smtp.sendmail(temp_from, temp_to, themsg)
+            smtp.close()
+
+#NOTHING
             msg = EmailMessage()
             msg["From"] = "admin@localhost"
             msg["Subject"] = "updated activitycheck - {}".format(datetime.date.today().strftime('%Y-%m-%d'))
