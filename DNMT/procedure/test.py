@@ -260,8 +260,8 @@ class Test:
             themsg["From"] = temp_from
             themsg["Subject"] = "updated activitycheck - {}".format(datetime.date.today().strftime('%Y-%m-%d'))
             themsg["To"] = temp_to
-            themsg["Body"]="Processing completed in {} seconds\n{} switches SUCCESSFULLY processed\n{} switches FAILED during processing\n ".format(
-                 int((time.time() - total_start) * 100) / 100, len(self.successful_switches),len(self.failure_switches) )
+            # themsg["Body"]="Processing completed in {} seconds\n{} switches SUCCESSFULLY processed\n{} switches FAILED during processing\n ".format(
+            #      int((time.time() - total_start) * 100) / 100, len(self.successful_switches),len(self.failure_switches) )
 
 
             themsg.preamble = 'I am not using a MIME-aware mail reader.\n'
@@ -275,9 +275,9 @@ class Test:
             themsg.attach(msg)
 
             # TODO add failed collections to be printed in the body of the email
-            # body = "Processing completed in {} seconds\n{} switches SUCCESSFULLY processed\n{} switches FAILED during processing\n ".format(
-            #     int((time.time() - total_start) * 100) / 100, len(self.), )
-            # themsg.attach(MIMEText(body, 'plain'))
+            body = "Processing completed in {} seconds\n{} switches SUCCESSFULLY processed\n{} switches FAILED during processing\n ".format(
+                int((time.time() - total_start) * 100) / 100, len(self.successful_switches),len(self.failure_switches))
+            themsg.attach(MIMEText(body, 'plain'))
 
             themsg = themsg.as_string()
 
