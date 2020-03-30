@@ -201,7 +201,7 @@ class Test:
             #TODO CHANGE to do them with individual processes
             if 'check' in self.cmdargs and self.cmdargs.check is False:
                 # pool = Pool(len(iplist))  # 4 concurrent processes
-                if 'check' in self.cmdargs and self.cmdargs.check is False:
+                if 'parallel' in self.cmdargs and self.cmdargs.parallel is True:
                     if 'numprocs' in self.cmdargs and self.cmdargs.numprocs is False:
                         numprocs = 5
                     else:
@@ -215,20 +215,20 @@ class Test:
                                 numprocs = 5
                             except Exception:
                                 numprocs = 5 #catch all if things go sideways
-                pool = Pool(numprocs)
-                pool.map(self.Activity_Tracking,iplist)
-                # for ip in iplist:
-                #     try:
-                #         # start = time.time()
-                #         # print("##### {} -  Processing #####".format(ip))
-                #         self.Activity_Tracking(ip)
-                #         # end = time.time()
-                #         # print("##### {} -  Processing Complete, time:{} seconds #####".format(ip,int((end-start)*100)/100))
-                #     except Exception as err:
-                #         print("ERROR PROCESSING FILE {}:{}".format(ip, err))
+                    pool = Pool(numprocs)
+                    pool.map(self.Activity_Tracking,iplist)
+
+                else:
+                    for ip in iplist:
+                        try:
+                            self.Activity_Tracking(ip)
+                        except Exception as err:
+                            print("ERROR PROCESSING FILE {}:{}".format(ip, err))
             print("##### Total Processing Complete, Total Time:{} seconds #####".format( int((time.time() - total_start) * 100) / 100))
         except FileNotFoundError:
             print("##### ERROR iplist files not found #####")
+        except Exception as err:
+            print ("##### ERROR with processing:{} #####".format(err))
 
         # After all processes return, read in each pickle and create a single output file?
         status_filename = "{}-FullStatus.csv".format(datetime.date.today().strftime('%Y-%m-%d'))
