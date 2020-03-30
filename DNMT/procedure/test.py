@@ -408,7 +408,7 @@ class Test:
     #TODO Check if a previous static check exists, and load it if it does, otherwise create it and write it out
         try:
             if len(NewSwitchStatus.switches) == 0:
-                raise ValueError('No Data in switchstruct for IP:{}'.format(ipaddr))
+                raise ValueError('##### {} ERROR - No Data in switchstruct #####'.format(ipaddr))
 
             with bz2.open(os.path.join(self.log_path, "activitycheck", "rawfiles","{}-statcheck.bz2".format(ipaddr)), "rb") as myNewFile:
                 OldSwitchStatus = pickle.load(myNewFile)
@@ -458,12 +458,10 @@ class Test:
                 pickle.dump(OldSwitchStatus, sfile)
         except ValueError as err:
             print(err)
-        except Exception as err: #currently a catch all to stop linux from having a conniption when reloading
-            print("FILE ERROR {}:{}".format(ipaddr,err.args[0]))
             self.failure_switches.append(ipaddr)
-
-
-
+        except Exception as err: #currently a catch all to stop linux from having a conniption when reloading
+            print("##### {} FILE ERROR:{} #####".format(ipaddr,err.args[0]))
+            self.failure_switches.append(ipaddr)
 
         end = time.time()
         self.subs.verbose_printer("##### {} -  Processing Complete, time:{} seconds #####".format(ipaddr, int((end - start) * 100) / 100))

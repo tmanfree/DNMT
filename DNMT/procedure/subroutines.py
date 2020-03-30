@@ -612,8 +612,8 @@ class SubRoutines:
         for varBind in varBinds:
             switchNumber = varBind._ObjectType__args[0]._ObjectIdentity__oid._value[len(varBind._ObjectType__args[0]._ObjectIdentity__oid._value)-2]
             oidTuple = varBind._ObjectType__args[0]._ObjectIdentity__oid._value
-            vlanId = oidTuple[len(oidTuple) - 1]
-            intList.append({'Switch':switchNumber,'Port': vlanId, "Power": varBind._ObjectType__args[1]._value})
+            portId = oidTuple[len(oidTuple) - 1]
+            intList.append({'Switch':switchNumber,'Port': portId, "Power": varBind._ObjectType__args[1]._value})
 
         return intList
 
@@ -903,7 +903,10 @@ class SubRoutines:
                 if port is not None:
                     #This doesnt use the interfaceId, the first return should be the base-t result in the event of gi & te
                     #such as 3650 uplink module being 1/0/1 on ten and gi
-                    switchStruct.getSwitch(port['Switch']).getModule(0).getPort(port['Port']).poe = port['Power']
+                    if "WS-C3560-8PC" in switchStruct.getSwitch(port['Switch']).model: # fix for WS-C3560-8PC switches being offset by 1 for poe (poe 2 is port 1, etc)
+                        switchStruct.getSwitch(port['Switch']).getModule(0).getPort(port['Port']-1).poe = port['Power']
+                    else:
+                        switchStruct.getSwitch(port['Switch']).getModule(0).getPort(port['Port']).poe = port['Power']
                 else:
                     port['Power'] = "N/A" #TODO update this to align with not found verbage
                 #hard set using module 0^
