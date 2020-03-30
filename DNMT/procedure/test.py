@@ -14,6 +14,7 @@ import pickle
 
 import gzip,shutil,bz2 #compression imports
 
+import zipfile
 
 
 
@@ -218,44 +219,62 @@ class Test:
             print("##### ERROR creating Summary File: {} #####".format(err))
 
         #Compress
-        with open(os.path.join(self.log_path, "activitycheck", "processedfiles", status_filename), 'rb') as f_in:
-            with gzip.open(os.path.join(self.log_path, "activitycheck", "processedfiles", "{}.gz".format(status_filename)), 'wb') as f_out:
-                shutil.copyfileobj(f_in, f_out)
+        # with open(os.path.join(self.log_path, "activitycheck", "processedfiles", status_filename), 'rb') as f_in:
+        #     with gzip.open(os.path.join(self.log_path, "activitycheck", "processedfiles", "{}.gz".format(status_filename)), 'wb') as f_out:
+        #         shutil.copyfileobj(f_in, f_out)
         #EMail finished file:
         try:
             self.subs.verbose_printer("##### Emailing now #####")
 
-            zf = tempfile.TemporaryFile(prefix='mail', suffix='.zip')
-            zip = zipfile.ZipFile(zf, 'w')
-            zip.write(os.path.join(self.log_path, "activitycheck", "processedfiles",status_filename))
-            zip.close()
-            zf.seek(0)
-
-            temp_from = "admin@localhost"
+            msg = EmailMessage()
+            msg["From"] = "admin@localhost"
+            msg["Subject"] = "updated activitycheck - {}".format(datetime.date.today().strftime('%Y-%m-%d'))
             if 'email' in self.cmdargs and self.cmdargs.email is not None:
-               temp_to = self.cmdargs.email
+                msg["To"] = self.cmdargs.email
             else:
-                temp_to = "mandzie@ualberta.ca"
+                msg["To"] = "mandzie@ualberta.ca"
+            msg.set_content("Attached is the status document for {}",format(datetime.date.today().strftime('%Y-%m-%d')))
 
-            # Create the message
-            themsg = MIMEMultipart()
-            themsg["From"] = temp_from
-            themsg["Subject"] = "Still trying - {}".format(datetime.date.today().strftime('%Y-%m-%d'))
-            themsg["To"] = temp_to
-            themsg.preamble = 'I am not using a MIME-aware mail reader.\n'
-            msg = MIMEBase('application', 'zip')
-            msg.set_payload(zf.read())
-            encoders.encode_base64(msg)
-            msg.add_header('Content-Disposition', 'attachment',
-                           filename=status_filename + '.zip')
-            themsg.attach(msg)
-            themsg = themsg.as_string()
+            with bz2.open(os.path.join(self.log_path, "activitycheck", "processedfiles", "{}.bz2".format(status_filename)), 'rb') as f:
+                msg.add_attachment(f.read(), filename="{}.bz2".format(status_filename),maintype='multipart',
+                                 subtype="related")
 
-            # send the message
-            smtp = smtplib.SMTP()
-            smtp.connect()
-            smtp.sendmail(temp_from, temp_to, themsg)
-            smtp.close()
+            s = smtplib.SMTP('localhost')
+            s.send_message(msg)
+
+
+
+            # zf = tempfile.TemporaryFile(prefix='mail', suffix='.zip')
+            # zip = zipfile.ZipFile(zf, 'w')
+            # zip.write(os.path.join(self.log_path, "activitycheck", "processedfiles",status_filename))
+            # zip.close()
+            # zf.seek(0)
+            #
+            # temp_from = "admin@localhost"
+            # if 'email' in self.cmdargs and self.cmdargs.email is not None:
+            #    temp_to = self.cmdargs.email
+            # else:
+            #     temp_to = "mandzie@ualberta.ca"
+            #
+            # # Create the message
+            # themsg = MIMEMultipart()
+            # themsg["From"] = temp_from
+            # themsg["Subject"] = "updated activitycheck - {}".format(datetime.date.today().strftime('%Y-%m-%d'))
+            # themsg["To"] = temp_to
+            # themsg.preamble = 'I am not using a MIME-aware mail reader.\n'
+            # msg = MIMEBase('application', 'zip')
+            # msg.set_payload(zf.read())
+            # encoders.encode_base64(msg)
+            # msg.add_header('Content-Disposition', 'attachment',
+            #                filename=status_filename + '.zip')
+            # themsg.attach(msg)
+            # themsg = themsg.as_string()
+            #
+            # # send the message
+            # smtp = smtplib.SMTP()
+            # smtp.connect()
+            # smtp.sendmail(temp_from, temp_to, themsg)
+            # smtp.close()
             #
             #
             # msg = MIMEMultipart()
@@ -335,18 +354,18 @@ class Test:
                         print("FILE ERROR {}:{}".format(file, err.args[0]))
 
 
-        with open(os.path.join(self.log_path, "activitycheck", "processedfiles", status_filename), 'w',
-                  encoding='utf-8') as filePointer:
-            print(TotalStatus, file=filePointer)
+        # with open(os.path.join(self.log_path, "activitycheck", "processedfiles", status_filename), 'w',
+        #           encoding='utf-8') as filePointer:
+        #     print(TotalStatus, file=filePointer)
 
-    #Directly pickling then compressing the data is adding characters to the start
-        # with bz2.BZ2File(os.path.join(self.log_path, "activitycheck", "processedfiles", "{}.bz2".format(status_filename)),
-        #                  'wb') as sfile:
-        #     pickle.dump(TotalStatus, sfile)
-        #
-        # with bz2.open(os.path.join(self.log_path, "activitycheck", "processedfiles", "test{}.bz2".format(status_filename)), "wb", encoding="utf-8") as f:
-        #     # Write compressed data to file
-        #     pickle.dump(TotalStatus,f)
+
+        # with gzip.GzipFile(os.path.join(self.log_path, "activitycheck", "processedfiles", "{}.gz".format(status_filename)), 'wb') as f:
+        #     f.write(TotalStatus.encode("utf-8")
+
+
+        with bz2.BZ2File(os.path.join(self.log_path, "activitycheck", "processedfiles", "{}.bz2".format(status_filename)),
+                         'wb') as sfile:
+            sfile.write(TotalStatus.encode("utf-8"))
 
 
 
