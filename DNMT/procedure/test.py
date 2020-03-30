@@ -407,6 +407,8 @@ class Test:
 
     #TODO Check if a previous static check exists, and load it if it does, otherwise create it and write it out
         try:
+            if len(NewSwitchStatus.switches) == 0:
+                raise ValueError('No Data in switchstruct for IP:{}'.format(ipaddr))
 
             with bz2.open(os.path.join(self.log_path, "activitycheck", "rawfiles","{}-statcheck.bz2".format(ipaddr)), "rb") as myNewFile:
                 OldSwitchStatus = pickle.load(myNewFile)
@@ -434,6 +436,10 @@ class Test:
 
             #TODO Compare the two files now
             self.successful_switches.append(ipaddr)
+            with bz2.BZ2File(
+                    os.path.join(self.log_path, "activitycheck", "rawfiles", "{}-statcheck.bz2".format(ipaddr)),
+                    'wb') as sfile:
+                pickle.dump(OldSwitchStatus, sfile)
 
         except FileNotFoundError:
             print("##### {} -  No previous status file found, one will be created #####".format(ipaddr))
@@ -446,16 +452,18 @@ class Test:
                         tempport.deltalastin = 0
                         tempport.deltalastout = 0
             self.successful_switches.append(ipaddr)
-
-
+            with bz2.BZ2File(
+                    os.path.join(self.log_path, "activitycheck", "rawfiles", "{}-statcheck.bz2".format(ipaddr)),
+                    'wb') as sfile:
+                pickle.dump(OldSwitchStatus, sfile)
+        except ValueError as err:
+            print(err)
         except Exception as err: #currently a catch all to stop linux from having a conniption when reloading
             print("FILE ERROR {}:{}".format(ipaddr,err.args[0]))
             self.failure_switches.append(ipaddr)
 
 
-# Saving Compressed files
-        with bz2.BZ2File(os.path.join(self.log_path,"activitycheck", "rawfiles","{}-statcheck.bz2".format(ipaddr)), 'wb') as sfile:
-            pickle.dump(OldSwitchStatus, sfile)
+
 
         end = time.time()
         self.subs.verbose_printer("##### {} -  Processing Complete, time:{} seconds #####".format(ipaddr, int((end - start) * 100) / 100))
