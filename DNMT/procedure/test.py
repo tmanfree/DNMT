@@ -22,7 +22,7 @@ import zipfile #imports for summary filescompression imports
 #3rd party imports
 from email.mime.base import MIMEBase
 from email.mime.multipart import MIMEMultipart
-
+from email.mime.text import MIMEText
 
 import netmiko
 from pathos.multiprocessing import ProcessingPool as Pool
@@ -40,6 +40,8 @@ class Test:
         self.config = config
         self.subs = SubRoutines(cmdargs, config)
         self.log_path = os.path.abspath(os.path.join(os.sep, 'var', 'log', 'dnmt'))
+        self.successful_switches = [] #used for activity tracking
+        self.failure_switches = [] #used for activity tracking
        # self.config.logpath = os.path.join(os.path.expanduser(self.config.logpath), "logs", "UpgradeCheck",
         #                                   datetime.date.today().strftime('%Y%m%d'))
 
@@ -217,14 +219,13 @@ class Test:
                                 numprocs = 5 #catch all if things go sideways
                     pool = Pool(numprocs)
                     pool.map(self.Activity_Tracking,iplist)
-
                 else:
                     for ip in iplist:
                         try:
                             self.Activity_Tracking(ip)
                         except Exception as err:
                             print("ERROR PROCESSING FILE {}:{}".format(ip, err))
-            print("##### Total Processing Complete, Total Time:{} seconds #####".format( int((time.time() - total_start) * 100) / 100))
+            self.subs.verbose_printer("##### Total Processing Complete, Total Time:{} seconds #####".format( int((time.time() - total_start) * 100) / 100))
         except FileNotFoundError:
             print("##### ERROR iplist files not found #####")
         except Exception as err:
@@ -259,13 +260,25 @@ class Test:
             themsg["From"] = temp_from
             themsg["Subject"] = "updated activitycheck - {}".format(datetime.date.today().strftime('%Y-%m-%d'))
             themsg["To"] = temp_to
+            themsg["Body"]="Processing completed in {} seconds\n{} switches SUCCESSFULLY processed\n{} switches FAILED during processing\n ".format(
+                 int((time.time() - total_start) * 100) / 100, len(self.successful_switches),len(self.failure_switches) )
+
+
             themsg.preamble = 'I am not using a MIME-aware mail reader.\n'
             msg = MIMEBase('application', 'zip')
             msg.set_payload(zf.read())
             encoders.encode_base64(msg)
             msg.add_header('Content-Disposition', 'attachment',
                            filename=status_filename + '.zip')
+
+
             themsg.attach(msg)
+
+            # TODO add failed collections to be printed in the body of the email
+            # body = "Processing completed in {} seconds\n{} switches SUCCESSFULLY processed\n{} switches FAILED during processing\n ".format(
+            #     int((time.time() - total_start) * 100) / 100, len(self.), )
+            # themsg.attach(MIMEText(body, 'plain'))
+
             themsg = themsg.as_string()
 
             # send the message
@@ -390,32 +403,9 @@ class Test:
                             oldport.historicaloutputerrors = self.Activity_Tracking_Comparison(newport.outputerrors, oldport.historicaloutputerrors, newport.maxhistoricalentries)
                             oldport.historicalinputcounters = self.Activity_Tracking_Comparison(newport.inputcounters, oldport.historicalinputcounters, newport.maxhistoricalentries)
                             oldport.historicaloutputcounters = self.Activity_Tracking_Comparison(newport.outputcounters, oldport.historicaloutputcounters, newport.maxhistoricalentries)
-                            # if newport.inputerrors is not None: #ensure there are new entries
-                            #     if len(oldport.historicalinputerrors) != 0: # make sure there are existing historical entries
-                            #         if newport.inputerrors != oldport.historicalinputerrors[len(oldport.historicalinputerrors)]: #dont add duplicates
-                            #             if len(oldport.historicalinputerrors) >= newport.maxhistoricalentries:
-                            #                 oldport.historicalinputerrors = oldport.historicalinputerrors[1:]
-                            #             oldport.historicalinputerrors.append(
-                            #                 (int(datetime.datetime.now().strftime("%Y%m%d%H%M")), newport.inputerrors))
-                            #
-                            # if newport.outputerrors is not None:
-                            #     if len(oldport.historicaloutputerrors) >= oldport.maxhistoricalentries:
-                            #         oldport.historicaloutputerrors = oldport.historicaloutputerrors[1:]
-                            #     oldport.historicaloutputerrors.append(
-                            #         (int(datetime.datetime.now().strftime("%Y%m%d%H%M")), newport.outputerrors))
-                            # if newport.inputcounters is not None:
-                            #     if len(oldport.historicalinputcounters) >= oldport.maxhistoricalentries:
-                            #         oldport.historicalinputcounters = oldport.historicalinputcounters[1:]
-                            #     oldport.historicalinputcounters.append(
-                            #         (int(datetime.datetime.now().strftime("%Y%m%d%H%M")), newport.inputcounters))
-                            # if newport.outputcounters is not None:
-                            #     if len(oldport.historicaloutputcounters) >= oldport.maxhistoricalentries:
-                            #         oldport.historicaloutputcounters = oldport.historicaloutputcounters[1:]
-                            #     oldport.historicaloutputcounters.append(
-                            #         (int(datetime.datetime.now().strftime("%Y%m%d%H%M")), newport.outputcounters))
-
 
             #TODO Compare the two files now
+            self.successful_switches.append(ipaddr)
 
         except FileNotFoundError:
             print("##### {} -  No previous status file found, one will be created #####".format(ipaddr))
@@ -427,10 +417,12 @@ class Test:
                         tempport.lastupdate = datetime.date.today().strftime('%Y-%m-%d')
                         tempport.deltalastin = 0
                         tempport.deltalastout = 0
+            self.successful_switches.append(ipaddr)
 
 
         except Exception as err: #currently a catch all to stop linux from having a conniption when reloading
             print("FILE ERROR {}:{}".format(ipaddr,err.args[0]))
+            self.failure_switches.append(ipaddr)
 
 
 # Saving Compressed files
