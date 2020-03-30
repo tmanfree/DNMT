@@ -42,6 +42,8 @@ class Test:
         self.log_path = os.path.abspath(os.path.join(os.sep, 'var', 'log', 'dnmt'))
         self.successful_switches = [] #used for activity tracking
         self.failure_switches = [] #used for activity tracking
+        self.successful_files = []#used for activity tracking
+        self.failure_files = [] #used for activity tracking
        # self.config.logpath = os.path.join(os.path.expanduser(self.config.logpath), "logs", "UpgradeCheck",
         #                                   datetime.date.today().strftime('%Y%m%d'))
 
@@ -274,9 +276,31 @@ class Test:
 
             themsg.attach(msg)
 
-            # TODO add failed collections to be printed in the body of the email
-            body = "Processing completed in {} seconds\n{} switches SUCCESSFULLY processed\n{} switches FAILED during processing\n ".format(
-                int((time.time() - total_start) * 100) / 100, len(self.successful_switches),len(self.failure_switches))
+            #create the body of the email
+            body = "Processing completed in {} seconds\n".format(int((time.time() - total_start) * 100) / 100)
+            body += "{} switch state files SUCCESSFULLY updated\n".format(len(self.successful_switches))
+            body += "{} switch state files FAILED to update\n" .format(len(self.failure_switches))
+            body += "{} switch states SUCCESSFULLY added to the summary file\n".format(len(self.successful_files))
+            body += "{} switch states FAILED to add to the summary file\n".format( len(self.failure_files))
+            body += "\n--------------------------------------------------------------------------------------\n\n"
+
+            if len(self.successful_switches) > 0:
+                body += "--- List of switch statuses SUCCESSFULLY updated ---\n"
+                for entry in self.successful_switches:
+                    body += entry
+            if len(self.failure_switches) > 0:
+                body += "--- List of switch statuses that FAILED to update ---\n"
+                for entry in self.failure_switches:
+                    body += entry
+            if len(self.successful_files) > 0:
+                body += "--- List of files SUCCESSFULLY added to summary file ---\n"
+                for entry in self.successful_files:
+                    body += entry
+            if len(self.failure_files) > 0:
+                body += "--- List of files FAILED to be added to summary file ---\n"
+                for entry in self.failure_files:
+                    body += entry
+
             themsg.attach(MIMEText(body, 'plain'))
 
             themsg = themsg.as_string()
@@ -308,8 +332,10 @@ class Test:
                             "rb") as f:
                         SwitchStatus = pickle.load(f, encoding='utf-8')
                         TotalStatus += SwitchStatus.appendSingleLine()
+                        self.successful_files.append("{}-statcheck.bz2".format(ip))
                 except Exception as err:  # currently a catch all to stop linux from having a conniption when reloading
                     print("FILE ERROR {}-statcheck:{}".format(ip, err.args[0]))
+                    self.failure_files.append("{}-statcheck.bz2".format(ip))
         else:
             self.subs.verbose_printer("##### Creating Full Summary List #####")
             for file in os.listdir(os.path.join(self.log_path,"activitycheck", "rawfiles")):
@@ -320,8 +346,10 @@ class Test:
                         with bz2.open(os.path.join(self.log_path, "activitycheck","rawfiles", file), "rb") as f:
                             SwitchStatus = pickle.load(f)
                             TotalStatus += SwitchStatus.appendSingleLine()
+                        self.successful_files.append(file)
                     except Exception as err:  # currently a catch all to stop linux from having a conniption when reloading
                         print("FILE ERROR {}:{}".format(file, err.args[0]))
+                        self.failure_files.append(file)
 
 
         # with open(os.path.join(self.log_path, "activitycheck", "processedfiles", status_filename), 'w',
