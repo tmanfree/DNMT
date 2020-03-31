@@ -298,7 +298,7 @@ class SubRoutines:
                     switchnum = self.regex_parser_var0(r"^Switch ([0-9])?", varName)
                     if switchnum is not None:
                         returnList.append({'Switch': int(switchnum), 'Id': oidId})
-                elif ((re.match(r"^[0-9]$", varName)) and oidId == 1001):
+                elif ((re.match(r"^[0-9]$", varName)) and oidId in [1001,2001,3001,4001,5001,6001,7001,8001,9001]): #Added Fix for 3750X format
                     returnList.append({'Switch': int(varName), 'Id': oidId})
         elif vendor =="HP":
             returnList.append({'Switch': 1, 'Id': 1}) #Currently defaulting to using id of 1
@@ -901,15 +901,23 @@ class SubRoutines:
             #go through power return
             for port in self.snmp_get_port_poe_alloc_bulk(ipaddr):
                 if port is not None:
+                    print(port)
+                    if port['Switch'] == 2:
+                        print("test")
                     #This doesnt use the interfaceId, the first return should be the base-t result in the event of gi & te
                     #such as 3650 uplink module being 1/0/1 on ten and gi
                     if "WS-C3560-8PC" in switchStruct.getSwitch(port['Switch']).model: # fix for WS-C3560-8PC switches being offset by 1 for poe (poe 2 is port 1, etc)
                         switchStruct.getSwitch(port['Switch']).getModule(0).getPort(port['Port']-1).poe = port['Power']
                     else:
+                        test = switchStruct.getSwitch(port['Switch'])
+                        test2 = test.getModule(0)
+                        test3 = test2.getPort(port['Port'])
+
                         switchStruct.getSwitch(port['Switch']).getModule(0).getPort(port['Port']).poe = port['Power']
                 else:
                     port['Power'] = "N/A" #TODO update this to align with not found verbage
                 #hard set using module 0^
+
 
             #go through interface returns (includes vlans, so need to map id to port)
             #get port status (2 is up, 1 is down)
