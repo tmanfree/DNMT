@@ -220,11 +220,20 @@ class Test:
                             except Exception:
                                 numprocs = 5 #catch all if things go sideways
                     pool = Pool(numprocs)
-                    pool.map(self.Activity_Tracking,iplist)
+                    results = pool.map(self.Activity_Tracking,iplist)
+                    for result in results:
+                        if result[0]:
+                            self.successful_switches.append(result[1])
+                        else:
+                            self.failure_switches.append(result[1])
                 else:
                     for ip in iplist:
                         try:
-                            self.Activity_Tracking(ip)
+                            result = self.Activity_Tracking(ip)
+                            if result[0]:
+                                self.successful_switches.append(result[1])
+                            else:
+                                self.failure_switches.append(result[1])
                         except Exception as err:
                             print("ERROR PROCESSING FILE {}:{}".format(ip, err))
             self.subs.verbose_printer("##### Total Processing Complete, Total Time:{} seconds #####".format( int((time.time() - total_start) * 100) / 100))
@@ -435,12 +444,13 @@ class Test:
                             oldport.historicaloutputcounters = self.Activity_Tracking_Comparison(newport.outputcounters, oldport.historicaloutputcounters, newport.maxhistoricalentries)
 
             #TODO Compare the two files now
-            self.successful_switches.append(ipaddr)
             with bz2.BZ2File(
                     os.path.join(self.log_path, "activitycheck", "rawfiles", "{}-statcheck.bz2".format(ipaddr)),
                     'wb') as sfile:
                 pickle.dump(OldSwitchStatus, sfile)
 
+            # self.successful_switches.append(ipaddr)
+            returnval = (True, ipaddr)
         except FileNotFoundError:
             print("##### {} -  No previous status file found, one will be created #####".format(ipaddr))
             OldSwitchStatus = NewSwitchStatus
@@ -451,18 +461,22 @@ class Test:
                         tempport.lastupdate = datetime.date.today().strftime('%Y-%m-%d')
                         tempport.deltalastin = 0
                         tempport.deltalastout = 0
-            self.successful_switches.append(ipaddr)
+            # self.successful_switches.append(ipaddr)
+            returnval = (True, ipaddr)
             with bz2.BZ2File(
                     os.path.join(self.log_path, "activitycheck", "rawfiles", "{}-statcheck.bz2".format(ipaddr)),
                     'wb') as sfile:
                 pickle.dump(OldSwitchStatus, sfile)
         except ValueError as err:
             print(err)
-            self.failure_switches.append(ipaddr)
+            # self.failure_switches.append(ipaddr)
+            returnval = (False,ipaddr)
         except Exception as err: #currently a catch all to stop linux from having a conniption when reloading
             print("##### {} FILE ERROR:{} #####".format(ipaddr,err.args[0]))
-            self.failure_switches.append(ipaddr)
+            # self.failure_switches.append(ipaddr)
+            returnval = (False, ipaddr)
 
         end = time.time()
         self.subs.verbose_printer("##### {} -  Processing Complete, time:{} seconds #####".format(ipaddr, int((end - start) * 100) / 100))
 
+        return returnval
