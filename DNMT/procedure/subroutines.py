@@ -138,7 +138,7 @@ class SubRoutines:
             vendorString = varBind[0]._ObjectType__args[1]._value.decode("utf-8")
             if (re.match("Cisco", vendorString)):
                 vendor = "Cisco"
-            elif (re.match("HP", vendorString)):
+            elif (re.match("HP", vendorString) or re.match("ProCurve", vendorString) ):
                 vendor = "HP"
             else:
                 vendor = "Unknown"
