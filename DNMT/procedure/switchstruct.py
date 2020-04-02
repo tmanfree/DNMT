@@ -189,13 +189,14 @@ class PortStruct:
                 self.outputcounters != compareport.outputcounters)
 
     def appendSingleLine (self,passedTup):
-        return "{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{}\n".format(
+        return "{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{}\n".format(
             str(passedTup).translate({ord(i): None for i in '()\''}),
             self.portnumber, self.portname, self.description, self.poe,
             self.cdp, self.status, self.datavlan, self.voicevlan,
             self.portmode, self.intID, self.inputerrors, self.outputerrors,
             self.inputcounters, self.outputcounters,
-            self.lastupdate, self.deltalastin, self.deltalastout)
+            self.lastupdate, self.deltalastin, self.deltalastout,self.historicalinputerrors,self.historicaloutputerrors,
+            self.historicalinputcounters,self.historicaloutputcounters)
 
     def printSingleLine(self,passedTup):
         print("{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{}".format(str(passedTup).translate({ord(i): None for i in '()\''}),
