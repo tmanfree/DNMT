@@ -249,7 +249,7 @@ class SubRoutines:
             oidTuple = varBind._ObjectType__args[0]._ObjectIdentity__oid._value
             oidId = oidTuple[len(oidTuple) - 1]
             # if (re.match(r"^\w{2}[1-9](/\d)?/\d+", portname)):
-            if vendor == "Cisco":
+            if vendor == "Cisco" or vendor == "Dell":
                 if(re.match(r"^\w{2}[0-9](/\d)?/\d+", portname )):
                     switchnum = self.regex_parser_varx(r"^\w{2}([0-9])(?:/(\d))?/(\d+)", portname)
                     if (len(switchnum) == 3): #verify that return isn't borked, should get 3 length tuple
@@ -304,6 +304,17 @@ class SubRoutines:
                     returnList.append({'Switch': int(varName), 'Id': oidId})
         elif vendor =="HP":
             returnList.append({'Switch': 1, 'Id': 1}) #Currently defaulting to using id of 1
+        elif vendor == "Dell":
+            for varBind in varBinds:
+                varName = varBind._ObjectType__args[1]._value.decode("utf-8")
+                oidTuple = varBind._ObjectType__args[0]._ObjectIdentity__oid._value
+                oidId = oidTuple[len(oidTuple) - 1]
+                # if (re.match(r"^\w{2}[1-9](/\d)?/\d+", portname)):
+
+                if (re.match(r"^Unit [0-9]$", varName)):
+                    switchnum = self.regex_parser_var0(r"^Unit ([0-9])?", varName)
+                    if switchnum is not None:
+                        returnList.append({'Switch': int(switchnum), 'Id': oidId})
 
 
         return returnList
@@ -450,7 +461,7 @@ class SubRoutines:
                 oidTuple = varBind._ObjectType__args[0]._ObjectIdentity__oid._value
                 intId = oidTuple[len(oidTuple) - 1]
                 interfaceVlanList.append({'Id':intId,'Vlan':interfaceVlan})
-        elif vendor == "HP":
+        elif vendor == "HP" or vendor == "Dell":
 
             oidstring = '1.3.6.1.2.1.17.7.1.4.3.1.4'
             varBinds = self.snmp_walk(ipaddr, ObjectType(ObjectIdentity(oidstring)))
@@ -900,7 +911,7 @@ class SubRoutines:
                 switchStruct.getPortById(port['Id']).portnumber = int(port['Port'])
 
 
-            #go through power return
+            #go through power return Not working for Dell
             for port in self.snmp_get_port_poe_alloc_bulk(ipaddr):
                 if port is not None:
                     #This doesnt use the interfaceId, the first return should be the base-t result in the event of gi & te
