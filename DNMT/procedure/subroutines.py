@@ -140,6 +140,8 @@ class SubRoutines:
                 vendor = "Cisco"
             elif (re.match("HP", vendorString) or re.match("ProCurve", vendorString) ):
                 vendor = "HP"
+            elif (re.match("Dell", vendorString)):
+                vendor="Dell"
             else:
                 vendor = "Unknown"
         else:

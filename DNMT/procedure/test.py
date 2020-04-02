@@ -410,73 +410,82 @@ class Test:
     #
     # TODO
     #   -Determine where these log files should go
-        start = time.time()
-        self.subs.verbose_printer("##### {} -  Processing #####".format(ipaddr))
-        NewSwitchStatus  = self.subs.snmp_get_switch_data_full(ipaddr)
-
-    #TODO Check if a previous static check exists, and load it if it does, otherwise create it and write it out
+        #Wrapping everything in a try catch for multiprocessing purposes
         try:
-            if len(NewSwitchStatus.switches) == 0:
-                raise ValueError('##### {} ERROR - No Data in switchstruct #####'.format(ipaddr))
+            start = time.time()
+            self.subs.verbose_printer("##### {} -  Processing #####".format(ipaddr))
+            NewSwitchStatus  = self.subs.snmp_get_switch_data_full(ipaddr)
 
-            with bz2.open(os.path.join(self.log_path, "activitycheck", "rawfiles","{}-statcheck.bz2".format(ipaddr)), "rb") as myNewFile:
-                OldSwitchStatus = pickle.load(myNewFile)
+        #TODO Check if a previous static check exists, and load it if it does, otherwise create it and write it out
+            try:
+                if len(NewSwitchStatus.switches) == 0:
+                    raise ValueError('##### {} ERROR - No Data in switchstruct #####'.format(ipaddr))
 
-            for tempswitch in OldSwitchStatus.switches:
-                for tempmodule in tempswitch.modules:
-                    for oldport in tempmodule.ports:
-                        newport = NewSwitchStatus.getPortById(oldport.intID)
-                        if oldport.activityChanged(newport):
-                            oldport.deltalastin = newport.inputcounters - oldport.inputcounters
-                            oldport.deltalastout = newport.outputcounters - oldport.outputcounters
-                            oldport.cdp = newport.cdp
-                            oldport.poe = newport.poe
-                            oldport.status = newport.status
-                            oldport.inputerrors = newport.inputerrors
-                            oldport.outputerrors = newport.outputerrors
-                            oldport.inputcounters = newport.inputcounters
-                            oldport.outputcounters = newport.outputcounters
-                            oldport.lastupdate = datetime.date.today().strftime('%Y-%m-%d')
+                with bz2.open(os.path.join(self.log_path, "activitycheck", "rawfiles","{}-statcheck.bz2".format(ipaddr)), "rb") as myNewFile:
+                    OldSwitchStatus = pickle.load(myNewFile)
 
-                            oldport.historicalinputerrors = self.Activity_Tracking_Comparison(newport.inputerrors, oldport.historicalinputerrors, newport.maxhistoricalentries)
-                            oldport.historicaloutputerrors = self.Activity_Tracking_Comparison(newport.outputerrors, oldport.historicaloutputerrors, newport.maxhistoricalentries)
-                            oldport.historicalinputcounters = self.Activity_Tracking_Comparison(newport.inputcounters, oldport.historicalinputcounters, newport.maxhistoricalentries)
-                            oldport.historicaloutputcounters = self.Activity_Tracking_Comparison(newport.outputcounters, oldport.historicaloutputcounters, newport.maxhistoricalentries)
+                for tempswitch in OldSwitchStatus.switches:
+                    for tempmodule in tempswitch.modules:
+                        for oldport in tempmodule.ports:
+                            newport = NewSwitchStatus.getPortById(oldport.intID)
+                            if oldport.activityChanged(newport):
+                                oldport.deltalastin = newport.inputcounters - oldport.inputcounters
+                                oldport.deltalastout = newport.outputcounters - oldport.outputcounters
+                                oldport.cdp = newport.cdp
+                                oldport.poe = newport.poe
+                                oldport.status = newport.status
+                                oldport.inputerrors = newport.inputerrors
+                                oldport.outputerrors = newport.outputerrors
+                                oldport.inputcounters = newport.inputcounters
+                                oldport.outputcounters = newport.outputcounters
+                                oldport.lastupdate = datetime.date.today().strftime('%Y-%m-%d')
 
-            #TODO Compare the two files now
-            with bz2.BZ2File(
-                    os.path.join(self.log_path, "activitycheck", "rawfiles", "{}-statcheck.bz2".format(ipaddr)),
-                    'wb') as sfile:
-                pickle.dump(OldSwitchStatus, sfile)
+                                oldport.historicalinputerrors = self.Activity_Tracking_Comparison(newport.inputerrors, oldport.historicalinputerrors, newport.maxhistoricalentries)
+                                oldport.historicaloutputerrors = self.Activity_Tracking_Comparison(newport.outputerrors, oldport.historicaloutputerrors, newport.maxhistoricalentries)
+                                oldport.historicalinputcounters = self.Activity_Tracking_Comparison(newport.inputcounters, oldport.historicalinputcounters, newport.maxhistoricalentries)
+                                oldport.historicaloutputcounters = self.Activity_Tracking_Comparison(newport.outputcounters, oldport.historicaloutputcounters, newport.maxhistoricalentries)
 
-            # self.successful_switches.append(ipaddr)
-            returnval = (True, ipaddr)
-        except FileNotFoundError:
-            print("##### {} -  No previous status file found, one will be created #####".format(ipaddr))
-            OldSwitchStatus = NewSwitchStatus
+                #TODO Compare the two files now
+                with bz2.BZ2File(
+                        os.path.join(self.log_path, "activitycheck", "rawfiles", "{}-statcheck.bz2".format(ipaddr)),
+                        'wb') as sfile:
+                    pickle.dump(OldSwitchStatus, sfile)
 
-            for tempswitch in OldSwitchStatus.switches:
-                for tempmodule in tempswitch.modules:
-                    for tempport in tempmodule.ports:
-                        tempport.lastupdate = datetime.date.today().strftime('%Y-%m-%d')
-                        tempport.deltalastin = 0
-                        tempport.deltalastout = 0
-            # self.successful_switches.append(ipaddr)
-            returnval = (True, ipaddr)
-            with bz2.BZ2File(
-                    os.path.join(self.log_path, "activitycheck", "rawfiles", "{}-statcheck.bz2".format(ipaddr)),
-                    'wb') as sfile:
-                pickle.dump(OldSwitchStatus, sfile)
-        except ValueError as err:
-            print(err)
+                # self.successful_switches.append(ipaddr)
+                returnval = (True, ipaddr)
+            except FileNotFoundError:
+                print("##### {} -  No previous status file found, one will be created #####".format(ipaddr))
+                OldSwitchStatus = NewSwitchStatus
+
+                for tempswitch in OldSwitchStatus.switches:
+                    for tempmodule in tempswitch.modules:
+                        for tempport in tempmodule.ports:
+                            tempport.lastupdate = datetime.date.today().strftime('%Y-%m-%d')
+                            tempport.deltalastin = 0
+                            tempport.deltalastout = 0
+                # self.successful_switches.append(ipaddr)
+                returnval = (True, ipaddr)
+                with bz2.BZ2File(
+                        os.path.join(self.log_path, "activitycheck", "rawfiles", "{}-statcheck.bz2".format(ipaddr)),
+                        'wb') as sfile:
+                    pickle.dump(OldSwitchStatus, sfile)
+            except ValueError as err:
+                print(err)
+                # self.failure_switches.append(ipaddr)
+                returnval = (False,ipaddr)
+            except Exception as err: #currently a catch all to stop linux from having a conniption when reloading
+                print("##### {} FILE ERROR:{} #####".format(ipaddr,err.args[0]))
+                # self.failure_switches.append(ipaddr)
+                returnval = (False, ipaddr)
+
+            end = time.time()
+            self.subs.verbose_printer("##### {} -  Processing Complete, time:{} seconds #####".format(ipaddr, int((end - start) * 100) / 100))
+
+            return returnval
+        except Exception as err: #catch all exception
+            print("##### {} UNKNOWN ERROR:{} #####".format(ipaddr, err.args[0]))
             # self.failure_switches.append(ipaddr)
-            returnval = (False,ipaddr)
-        except Exception as err: #currently a catch all to stop linux from having a conniption when reloading
-            print("##### {} FILE ERROR:{} #####".format(ipaddr,err.args[0]))
-            # self.failure_switches.append(ipaddr)
-            returnval = (False, ipaddr)
-
-        end = time.time()
-        self.subs.verbose_printer("##### {} -  Processing Complete, time:{} seconds #####".format(ipaddr, int((end - start) * 100) / 100))
-
-        return returnval
+            end = time.time()
+            self.subs.verbose_printer(
+                "##### {} -  Processing aborted/failure, time:{} seconds #####".format(ipaddr, int((end - start) * 100) / 100))
+            return (False,ipaddr)
