@@ -16,6 +16,8 @@ from DNMT.procedure.lefty import Lefty
 from DNMT.procedure.check import Check
 from DNMT.procedure import config
 from DNMT.procedure.hostnamer import HostNamer
+
+from DNMT.procedure.statuschecks import StatusChecks
 # from DNMT.procedure.SnmpFuncs import SnmpFuncs
 # from DNMT.procedure.functions import Functions
 from DNMT.procedure.tools import Tools
@@ -110,16 +112,34 @@ def dnmt():
     batch_check_parser.add_argument('-d', '--delay', help="specify minutes to delay reload (If Applying)")
     batch_check_parser.add_argument('-u', '--updateinterval', help="specify the check interval in seconds after reload (If Applying)"
                                                                    "Default is 30")
+    #Status Checking parsers
+    status_checks_parser = subparsers.add_parser("StatusChecks", help="functions regarding checking the status of switches").add_subparsers(dest="statuschecks")
+    activity_tracking_parser = status_checks_parser.add_parser("Activity_Tracking", help="check if port status has changed")
+    activity_tracking_parser.add_argument('-f', '--file', help="specify iplist file to use if not using default")
+    activity_tracking_parser.add_argument('-e', '--email', help="specify which email to send file to")
+    activity_tracking_parser.add_argument('-n', '--numprocs', help="specify how many concurrent processes")
+    activity_tracking_parser.add_argument('-p', '--parallel', help="run grab processes in parallel", default=False,
+                                          action="store_true")
+    activity_tracking_parser.add_argument('-l', '--limit', help="only put switches specified in iplist in summary file",
+                                          default=False, action="store_true")
+    activity_tracking_parser.add_argument('-c', '--check', help="Operate on existing statcheck files, no log ins",
+                                          default=False, action="store_true")
+    activity_tracking_parser.add_argument('-v', '--verbose', help="run in verbose mode", default=False,
+                                          action="store_true")
 
-
-
-    #Tests Begin
-    test_parser = subparsers.add_parser("test", help="various tests").add_subparsers(dest="test")
-    switch_check_parser = test_parser.add_parser("Switch_Check", help="check switch info")
-    switch_check_parser.add_argument('-i','--ipaddr', metavar='IP', help='Switch Address interface is on')
+    switch_check_parser = status_checks_parser.add_parser("Switch_Check", help="check switch info")
+    switch_check_parser.add_argument('-i', '--ipaddr', metavar='IP', help='Switch Address interface is on')
     switch_check_parser.add_argument('-c', '--csv', help="save to a specified csv file")
     switch_check_parser.add_argument('-v', '--verbose', help="run in verbose mode", default=False, action="store_true")
     switch_check_parser.add_argument('-l', '--load', help="load switchstruct from a specified file")
+
+    #Tests Begin
+    test_parser = subparsers.add_parser("test", help="various tests").add_subparsers(dest="test")
+    # switch_check_parser = test_parser.add_parser("Switch_Check", help="check switch info")
+    # switch_check_parser.add_argument('-i','--ipaddr', metavar='IP', help='Switch Address interface is on')
+    # switch_check_parser.add_argument('-c', '--csv', help="save to a specified csv file")
+    # switch_check_parser.add_argument('-v', '--verbose', help="run in verbose mode", default=False, action="store_true")
+    # switch_check_parser.add_argument('-l', '--load', help="load switchstruct from a specified file")
     command_blaster_parser = test_parser.add_parser("Command_Blaster", help="send some non-enabled commands")
     command_blaster_parser.add_argument('ipaddrfile', help='text file with switch addresses to run commands on')
     command_blaster_parser.add_argument('commandfile', help='text file with commands to run')
@@ -130,16 +150,16 @@ def dnmt():
     bad_phone_parser = test_parser.add_parser("BadPhone", help="look for bad phones")
     bad_phone_parser.add_argument('file', metavar='file',help='The file with IPs to check')
     bad_phone_parser.add_argument('-s', '--skip', help="skip verification", default=False, action="store_true")
-    activity_tracking_parser = test_parser.add_parser("Activity_Tracking", help="check if port status has changed")
-    activity_tracking_parser.add_argument('-f', '--file', help="specify iplist file to use if not using default")
-    activity_tracking_parser.add_argument('-e', '--email', help="specify which email to send file to")
-    activity_tracking_parser.add_argument('-n', '--numprocs', help="specify how many concurrent processes")
-    activity_tracking_parser.add_argument('-p', '--parallel', help="run grab processes in parallel", default=False, action="store_true")
-    activity_tracking_parser.add_argument('-l', '--limit', help="only put switches specified in iplist in summary file", default=False, action="store_true")
-    activity_tracking_parser.add_argument('-c', '--check', help="Operate on existing statcheck files, no log ins",
-                                          default=False, action="store_true")
-    activity_tracking_parser.add_argument('-v', '--verbose', help="run in verbose mode", default=False, action="store_true")
-    # activity_tracking_parser.add_argument('file', metavar='file', help='The file with IPs to check')
+    # activity_tracking_parser = test_parser.add_parser("Activity_Tracking", help="check if port status has changed")
+    # activity_tracking_parser.add_argument('-f', '--file', help="specify iplist file to use if not using default")
+    # activity_tracking_parser.add_argument('-e', '--email', help="specify which email to send file to")
+    # activity_tracking_parser.add_argument('-n', '--numprocs', help="specify how many concurrent processes")
+    # activity_tracking_parser.add_argument('-p', '--parallel', help="run grab processes in parallel", default=False, action="store_true")
+    # activity_tracking_parser.add_argument('-l', '--limit', help="only put switches specified in iplist in summary file", default=False, action="store_true")
+    # activity_tracking_parser.add_argument('-c', '--check', help="Operate on existing statcheck files, no log ins",
+    #                                       default=False, action="store_true")
+    # activity_tracking_parser.add_argument('-v', '--verbose', help="run in verbose mode", default=False, action="store_true")
+
 
 
 
@@ -173,6 +193,7 @@ def dnmt():
     macsearcher = Lefty(cmdargs,config)
     hostnamer = HostNamer(cmdargs,config)
     upgradeCheck = Check(cmdargs, config)
+    statusChecks = StatusChecks(cmdargs,config)
     tools = Tools(cmdargs, config)
     # functions = Functions(cmdargs,config)
     # snmpFuncs = SnmpFuncs(cmdargs,config)
@@ -209,17 +230,21 @@ def dnmt():
                 sys.exit(errcode)
         elif cmdargs.tools == 'Port_Change':
             tools.Change_Port_Vlan()
+    elif cmdargs.maincommand == 'StatusChecks':
+        if cmdargs.statuschecks == "Activity_Tracking":
+            statusChecks.Activity_Tracking_Begin()
+        elif cmdargs.statuschecks == "Switch_Check":
+            statusChecks.Switch_Check()
     elif cmdargs.maincommand == 'test':
-        if cmdargs.test == 'Switch_Check':
-            test.Switch_Check()
-        elif cmdargs.test == 'Command_Blaster':
+        # if cmdargs.test == 'Switch_Check':
+        #     test.Switch_Check()
+        if cmdargs.test == 'Command_Blaster':
             test.Command_Blaster_Begin()
         elif cmdargs.test == 'Error_Counter':
             test.Error_Check()
         elif cmdargs.test == 'BadPhone':
             test.BadPhoneBegin()
-        elif cmdargs.test == 'Activity_Tracking':
-            test.Activity_Tracking_Begin()
+
 
 
 

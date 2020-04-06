@@ -615,6 +615,7 @@ class SubRoutines:
         #   intList (list of ports)
         # Summary:
         #   Returns a list of poe allocation in the format {Switch:X,Port:X,"Power:X"}
+        # OID NOT VALID FOR DELL
     def snmp_get_port_poe_alloc_bulk(self, ipaddr):
 
         oidstring = '1.3.6.1.4.1.9.9.402.1.2.1.7'
