@@ -950,6 +950,7 @@ class SubRoutines:
                 if port is not None:
                     #This doesnt use the interfaceId, the first return should be the base-t result in the event of gi & te
                     #such as 3650 uplink module being 1/0/1 on ten and gi
+                    self.verbose_printer("#####{} poe processing port {}".format(ipaddr,port))
                     poe_offset = 0
                     if "WS-C3560-8PC" in switchStruct.getSwitch(port['Switch']).model: # fix for WS-C3560-8PC switches being offset by 1 for poe (poe 2 is port 1, etc)
                         poe_offset = 1
