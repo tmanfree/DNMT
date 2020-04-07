@@ -42,10 +42,11 @@ class SubRoutines:
             #success
             return True
 
+#TODO CURRENTLY USING RW, UPDATE TO RO
     def snmp_get(self,  ipaddr, *args):
         errorIndication, errorStatus, errorIndex, varBinds = next(
             getCmd(SnmpEngine(),
-                   CommunityData(self.config.rw),
+                   CommunityData(self.config.ro),
                    UdpTransportTarget((ipaddr, 161)),
                    ContextData(),
                    *args)
