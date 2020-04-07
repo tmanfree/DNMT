@@ -292,6 +292,7 @@ class StatusChecks:
                                 oldport.cdp = newport.cdp
                                 oldport.poe = newport.poe
                                 oldport.status = newport.status
+                                oldport.portmode = newport.portmode
                                 oldport.inputerrors = newport.inputerrors
                                 oldport.outputerrors = newport.outputerrors
                                 oldport.inputcounters = newport.inputcounters

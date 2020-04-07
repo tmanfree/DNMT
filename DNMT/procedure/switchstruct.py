@@ -183,6 +183,7 @@ class PortStruct:
         return (self.cdp != compareport.cdp or
                 self.poe != compareport.poe or
                 self.status != compareport.status or
+                self.portmode != compareport.portmode or
                 self.inputerrors != compareport.inputerrors or
                 self.outputerrors != compareport.outputerrors or
                 self.inputcounters != compareport.inputcounters or
