@@ -227,18 +227,10 @@ class StatusChecks:
                         self.failure_files.append(file)
 
 
-        # with open(os.path.join(self.log_path, "activitycheck", "processedfiles", status_filename), 'w',
-        #           encoding='utf-8') as filePointer:
-        #     print(TotalStatus, file=filePointer)
-
-
-        # with gzip.GzipFile(os.path.join(self.log_path, "activitycheck", "processedfiles", "{}.gz".format(status_filename)), 'wb') as f:
-        #     f.write(TotalStatus.encode("utf-8")
-
-
-        with bz2.BZ2File(os.path.join(self.log_path, "activitycheck", "processedfiles", "{}.bz2".format(status_filename)),
-                         'wb') as sfile:
-            sfile.write(TotalStatus.encode("utf-8"))
+        ## Works, but emailing is a pain
+        # with bz2.BZ2File(os.path.join(self.log_path, "activitycheck", "processedfiles", "{}.bz2".format(status_filename)),
+        #                  'wb') as sfile:
+        #     sfile.write(TotalStatus.encode("utf-8"))
 
         zf = zipfile.ZipFile(os.path.join(self.log_path, "activitycheck", "processedfiles", "{}.zip".format(status_filename)),
                              mode='w',
