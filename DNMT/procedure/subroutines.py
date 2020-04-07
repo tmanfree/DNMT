@@ -42,7 +42,6 @@ class SubRoutines:
             #success
             return True
 
-#TODO CURRENTLY USING RW, UPDATE TO RO
     def snmp_get(self,  ipaddr, *args):
         errorIndication, errorStatus, errorIndex, varBinds = next(
             getCmd(SnmpEngine(),
@@ -143,6 +142,8 @@ class SubRoutines:
                 vendor = "HP"
             elif (re.match("Dell", vendorString)):
                 vendor="Dell"
+            elif (re.match("Neyland", vendorString)): # Ancient arts dells
+                vendor = "Ancient Dell"
             else:
                 vendor = "Unknown"
         else:
@@ -266,7 +267,12 @@ class SubRoutines:
             elif vendor == "HP":
                 if (re.match(r"^(\d+)$", portname)):
                     returnList.append({'Switch': 1, 'Module': 0, 'Port': int(portname),
-                                               'PortName': portname, 'Id': oidId})
+                                           'PortName': portname, 'Id': oidId})
+            elif vendor == "Ancient Dell":
+                if (re.match(r"^g(\d+)$", portname)):
+                    interface = self.regex_parser_var0(r"^g(\d+)$", portname)
+                    returnList.append({'Switch': 1, 'Module': 0, 'Port': int(interface),
+                                       'PortName': portname, 'Id': oidId})
 
 
                 # switchnum = self.regex_parser_varx(r"^\w{2}([1-9])((/\d))?/(\d+)", portname, 3)
@@ -303,7 +309,7 @@ class SubRoutines:
                         returnList.append({'Switch': int(switchnum), 'Id': oidId})
                 elif ((re.match(r"^[0-9]$", varName)) and oidId in [1001,2001,3001,4001,5001,6001,7001,8001,9001]): #Added Fix for 3750X format
                     returnList.append({'Switch': int(varName), 'Id': oidId})
-        elif vendor =="HP":
+        elif vendor =="HP" or vendor == "Ancient Dell":
             returnList.append({'Switch': 1, 'Id': 1}) #Currently defaulting to using id of 1
         elif vendor == "Dell":
             for varBind in varBinds:
@@ -462,7 +468,7 @@ class SubRoutines:
                 oidTuple = varBind._ObjectType__args[0]._ObjectIdentity__oid._value
                 intId = oidTuple[len(oidTuple) - 1]
                 interfaceVlanList.append({'Id':intId,'Vlan':interfaceVlan})
-        elif vendor == "HP" or vendor == "Dell":
+        elif vendor == "HP" or vendor == "Dell" or vendor == "Ancient Dell":
 
             oidstring = '1.3.6.1.2.1.17.7.1.4.3.1.4'
             varBinds = self.snmp_walk(ipaddr, ObjectType(ObjectIdentity(oidstring)))
@@ -680,6 +686,32 @@ class SubRoutines:
             # intList.append({'Switch': switchNumber, 'Port': vlanId, "Power": varBind._ObjectType__args[1]._value})
 
         return interfaceDescriptionList
+
+        # Name: snmp_get_interface_trunking_bulk
+        # Input:
+        #   ipaddr (string)
+        #      -The ipaddress/hostname to grab info from
+        # Return:
+        #  interfaceTrunkingList (a list of strings of the interface trunk modes)
+        # Summary:
+        #   grabs the description of all physical interfaces
+    def snmp_get_interface_trunking_bulk(self, ipaddr, vendor):
+        interfaceTrunkingList = []
+        if vendor == "Cisco":
+            oidstring = '1.3.6.1.4.1.9.9.46.1.6.1.1.14'
+            varBinds = self.snmp_walk(ipaddr, ObjectType(ObjectIdentity(oidstring)))
+
+
+            for varBind in varBinds:
+                # TrunkMode = varBind._ObjectType__args[1]._value.decode("utf-8")
+                # if '/' in interfaceDescription:
+                oidTuple = varBind._ObjectType__args[0]._ObjectIdentity__oid._value
+                intId = oidTuple[len(oidTuple) - 1]
+                interfaceTrunkingList.append({'Id': intId, 'TrunkMode': varBind._ObjectType__args[1]._value})
+
+                # intList.append({'Switch': switchNumber, 'Port': vlanId, "Power": varBind._ObjectType__args[1]._value})
+
+        return interfaceTrunkingList
 
         # Name: snmp_get_cdp_type_bulk
         # Input:
@@ -936,6 +968,12 @@ class SubRoutines:
                     foundport = switchStruct.getPortById(port['Id'])
                     if foundport is not None:
                         foundport.status = port['Status']
+            #get trunk mode
+            for port in self.snmp_get_interface_trunking_bulk(ipaddr,vendor):
+                if port is not None: #ignore vlan interfaces and non existent interfaces
+                    foundport = switchStruct.getPortById(port['Id'])
+                    if foundport is not None:
+                        foundport.portmode = port['TrunkMode']
             #Get descriptions
             for port in self.snmp_get_interface_description_bulk(ipaddr):
                 if port is not None:  # ignore vlan interfaces and non existent interfaces
