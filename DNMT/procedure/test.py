@@ -148,3 +148,47 @@ class Test:
             print(err.args[0])
         except Exception as err: #currently a catch all to stop linux from having a conniption when reloading
             print("NETMIKO ERROR {}:{}".format(ipaddr,err.args[0]))
+
+
+
+
+    def dell_snmp_Begin(self):
+
+
+        #Iterate through addresses List
+        file = open(self.cmdargs.file, "r")
+        for ip in file:
+            self.DellSnmpAdd(ip.rstrip())
+        file.close()
+
+    def DellSnmpAdd(self,ipaddr):
+        try:
+            # test = self.subs.snmp_get_mac_table_bulk(self.cmdargs.ipaddr)
+            # test1 = self.subs.snmp_get_switch_data_full(self.cmdargs.ipaddr)
+            print(self.cmdargs.snmpstring)
+            net_connect = self.subs.create_connection_vendor(ipaddr,"dell_force10_ssh")
+            if net_connect:
+                net_connect.enable()
+                result = net_connect.send_command('show run | include snmp')
+                print("#####{} SNMP before #####\n{}".format(ipaddr,result))
+                config_command = ["snmp-server community ncgwWR0C ro"]
+                result = net_connect.send_config_set(config_command)
+                print("#####{} Progress #####\n{}".format(ipaddr,result))
+                result = net_connect.send_command('show run | include snmp')
+                print("#####{} SNMP after #####\n{}".format(ipaddr,result))
+                output = net_connect.send_command_timing('write')
+                if "y/n" in output:
+                    output += net_connect.send_command_timing("y", strip_prompt=False, strip_command=False)
+                    print("#####{} Save Progress #####\n{}".format(ipaddr,output))
+
+
+            net_connect.disconnect()
+                # netmiko connection error handling
+        except netmiko.ssh_exception.NetMikoAuthenticationException as err:
+            self.subs.verbose_printer(err.args[0], "Netmiko Authentication Failure")
+        except netmiko.ssh_exception.NetMikoTimeoutException as err:
+            self.subs.verbose_printer(err.args[0], "Netmiko Timeout Failure")
+        except ValueError as err:
+            print(err.args[0])
+        except Exception as err: #currently a catch all to stop linux from having a conniption when reloading
+            print("NETMIKO ERROR {}:{}".format(ipaddr,err.args[0]))

@@ -309,6 +309,10 @@ class SubRoutines:
                         returnList.append({'Switch': int(switchnum), 'Id': oidId})
                 elif ((re.match(r"^[0-9]$", varName)) and oidId in [1001,2001,3001,4001,5001,6001,7001,8001,9001]): #Added Fix for 3750X format
                     returnList.append({'Switch': int(varName), 'Id': oidId})
+                elif ((re.match("r^Linecard(slot \n)"))): #4500 catch
+                    switchnum = self.regex_parser_var0(r"^Linecard\(slot ([0-9])\)?", varName)
+                    if switchnum is not None:
+                        returnList.append({'Switch': int(switchnum), 'Id': oidId})
         elif vendor =="HP" or vendor == "Ancient Dell":
             returnList.append({'Switch': 1, 'Id': 1}) #Currently defaulting to using id of 1
         elif vendor == "Dell":
@@ -1069,6 +1073,38 @@ class SubRoutines:
         }
         # SSH Connection
         net_connect = netmiko.ConnectHandler(**cisco_sw)
+        return net_connect
+
+    #TODO, replace above one with this one below
+
+    # Name: create_connection_vendor
+    # Input:
+    #   ipaddr (string)
+    #      -The ipaddress/hostname to connect to
+    #   vendor (string)
+    #      -The device type:
+    #       example(cisco_ios,
+    # Return:
+    #   net_connect (connection handler)
+    # Summary:
+    #   Sets up a connection to the provided ip address. Currently setup to connect to cisco switches
+    def create_connection_vendor(self, ipaddr, vendor):
+        if 'verbose' in self.cmdargs and self.cmdargs.verbose:
+            print('------- CONNECTING to switch {}-------'.format(ipaddr))
+
+        # Switch Parameters
+        net_sw = {
+            'device_type': vendor,
+            # 'ip': self.cmdargs.ipaddr,
+            'ip': ipaddr,
+            'username': self.config.username,
+            'password': self.config.password,
+            'secret': self.config.enable_pw,
+            'port': 22,
+            'verbose': False,
+        }
+        # SSH Connection
+        net_connect = netmiko.ConnectHandler(**net_sw)
         return net_connect
     ####################
     ##GENERAL COMMANDS##
