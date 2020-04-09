@@ -309,10 +309,10 @@ class SubRoutines:
                         returnList.append({'Switch': int(switchnum), 'Id': oidId})
                 elif ((re.match(r"^[0-9]$", varName)) and oidId in [1001,2001,3001,4001,5001,6001,7001,8001,9001]): #Added Fix for 3750X format
                     returnList.append({'Switch': int(varName), 'Id': oidId})
-                elif ((re.match("r^Linecard(slot \n)",varName))): #4500 catch
-                    switchnum = self.regex_parser_var0(r"^Linecard\(slot ([0-9])\)?", varName)
-                    if switchnum is not None:
-                        returnList.append({'Switch': int(switchnum), 'Id': oidId})
+                # elif (re.match("Linecard\(slot \d\)",varName)): #4500 creates a switches for each slot, and a module too
+                #     switchnum = self.regex_parser_var0(r"^Linecard\(slot ([0-9])\)?", varName)
+                #     if switchnum is not None:
+                #         returnList.append({'Switch': int(switchnum), 'Id': oidId})
         elif vendor =="HP" or vendor == "Ancient Dell":
             returnList.append({'Switch': 1, 'Id': 1}) #Currently defaulting to using id of 1
         elif vendor == "Dell":
