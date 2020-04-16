@@ -246,10 +246,9 @@ class StatusChecks:
     def Activity_Tracking_Comparison(self, newval,historicalvals,maxvals):
         if newval is not None:  # ensure there are new entries
             if len(historicalvals) != 0:  # make sure there are existing historical entries
-                if newval != historicalvals[
-                    len(historicalvals)-1][1]:  # dont add duplicates
+                if newval != historicalvals[len(historicalvals)-1][1]:  # dont add duplicates
                     if len(historicalvals) >= maxvals:
-                        historicalvals = historicalvals[1:]
+                        historicalvals = historicalvals[(len(historicalvals) - maxvals)+1:]   #currently cuts one off
                     historicalvals.append(
                         (int(datetime.datetime.now().strftime("%Y%m%d%H%M")), newval))
             else:
@@ -299,10 +298,17 @@ class StatusChecks:
                                 oldport.outputcounters = newport.outputcounters
                                 oldport.lastupdate = datetime.date.today().strftime('%Y-%m-%d')
 
-                                oldport.historicalinputerrors = self.Activity_Tracking_Comparison(newport.inputerrors, oldport.historicalinputerrors, newport.maxhistoricalentries)
-                                oldport.historicaloutputerrors = self.Activity_Tracking_Comparison(newport.outputerrors, oldport.historicaloutputerrors, newport.maxhistoricalentries)
-                                oldport.historicalinputcounters = self.Activity_Tracking_Comparison(newport.inputcounters, oldport.historicalinputcounters, newport.maxhistoricalentries)
-                                oldport.historicaloutputcounters = self.Activity_Tracking_Comparison(newport.outputcounters, oldport.historicaloutputcounters, newport.maxhistoricalentries)
+                                if 'maxentries' in self.cmdargs and self.cmdargs.maxentries is not None:
+                                    if self.cmdargs.maxentries.isdigit():
+                                        oldport.maxhistoricalentries = int(self.cmdargs.maxentries)
+                                    else:
+                                        self.subs.verbose_printer("max entries cmdarg is not a number")
+
+
+                                oldport.historicalinputerrors = self.Activity_Tracking_Comparison(newport.inputerrors, oldport.historicalinputerrors, oldport.maxhistoricalentries)
+                                oldport.historicaloutputerrors = self.Activity_Tracking_Comparison(newport.outputerrors, oldport.historicaloutputerrors, oldport.maxhistoricalentries)
+                                oldport.historicalinputcounters = self.Activity_Tracking_Comparison(newport.inputcounters, oldport.historicalinputcounters, oldport.maxhistoricalentries)
+                                oldport.historicaloutputcounters = self.Activity_Tracking_Comparison(newport.outputcounters, oldport.historicaloutputcounters, oldport.maxhistoricalentries)
 
                 #TODO Compare the two files now
                 with bz2.BZ2File(
