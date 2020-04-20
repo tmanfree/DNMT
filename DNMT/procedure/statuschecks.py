@@ -52,6 +52,9 @@ class StatusChecks:
         #Remove oldest files (listed first on windows
         filelist = os.listdir(os.path.join(self.log_path, "activitycheck", "processedfiles"))
         if len(filelist) > 0 and len(filelist) > maxfiles:
+            self.subs.verbose_printer("##### unsorted list:{} #####".format(filelist))
+            testlist = sorted(filelist)
+            self.subs.verbose_printer("##### sorted list:{} #####".format(testlist))
             filestoremove = sorted(filelist[0:(len(filelist)-maxfiles)])
             self.subs.verbose_printer("total files:{}\nremoving files:{}".format(len(filelist),len(filestoremove)))
             for file in filestoremove:
