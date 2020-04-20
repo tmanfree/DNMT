@@ -230,7 +230,10 @@ def dnmt():
         elif cmdargs.statuschecks == "Switch_Check":
             statusChecks.Switch_Check()
         elif cmdargs.statuschecks == "maintenance":
-            statusChecks.Maintenance()
+            try:
+                statusChecks.Maintenance(int(cmdargs.maxfiles))
+            except ValueError:
+                print("maxfiles is not a number, exiting")
     elif cmdargs.maincommand == 'test':
         if cmdargs.test == 'Command_Blaster':
             test.Command_Blaster_Begin()

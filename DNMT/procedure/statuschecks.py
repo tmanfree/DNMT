@@ -45,31 +45,29 @@ class StatusChecks:
         self.successful_files = []#used for activity tracking
         self.failure_files = []  # used for activity tracking
 
-    def Maintenance(self):
+    def Maintenance(self,maxfiles):
         #
         self.subs.verbose_printer("##### Cleaning up files #####")
 
         #Remove oldest files (listed first on windows
-        try:
-            filelist = os.listdir(os.path.join(self.log_path, "activitycheck", "processedfiles"))
-            if len(filelist) > 0 and len(filelist) > int(self.cmdargs.maxfiles):
-                filestoremove = filelist[0:(len(filelist)-int(self.cmdargs.maxfiles))]
-                self.subs.verbose_printer("total files:{}\nremoving files:{}".format(len(filelist),len(filestoremove)))
-                for file in filestoremove:
-                    if file.endswith("-FullStatus.csv.zip"):
-                        # process
-                        try:
-                            self.subs.verbose_printer("##### File to remove:{} #####".format(file))
-                            if 'test' in self.cmdargs and self.cmdargs.test is False :
-                                self.subs.verbose_printer("##### Removing file:{} #####".format(file))
-                                os.remove(os.path.join(self.log_path, "activitycheck", "processedfiles",file))
-                        except Exception as err:  # currently a catch all to stop linux from having a conniption when reloading
-                            print("FILE ERROR {}:{}".format(file, err.args[0]))
-                            self.failure_files.append(file)
-            else:
-                self.subs.verbose_printer("total files:{} are less than max value:{}".format(len(filelist), int(self.cmdargs.maxentries)))
-        except ValueError:
-            self.subs.verbose_printer("maxfiles is not a number, exiting")
+        filelist = os.listdir(os.path.join(self.log_path, "activitycheck", "processedfiles"))
+        if len(filelist) > 0 and len(filelist) > maxfiles:
+            filestoremove = filelist[0:(len(filelist)-maxfiles)]
+            self.subs.verbose_printer("total files:{}\nremoving files:{}".format(len(filelist),len(filestoremove)))
+            for file in filestoremove:
+                if file.endswith("-FullStatus.csv.zip"):
+                    # process
+                    try:
+                        self.subs.verbose_printer("##### File to remove:{} #####".format(file))
+                        if 'test' in self.cmdargs and self.cmdargs.test is False :
+                            self.subs.verbose_printer("##### Removing file:{} #####".format(file))
+                            os.remove(os.path.join(self.log_path, "activitycheck", "processedfiles",file))
+                    except Exception as err:  # currently a catch all to stop linux from having a conniption when reloading
+                        print("FILE ERROR {}:{}".format(file, err.args[0]))
+                        self.failure_files.append(file)
+        else:
+            self.subs.verbose_printer("total files:{} are less than max value:{}".format(len(filelist), maxfiles))
+
     def Activity_Tracking_Begin(self):
         iplist = []
         total_start = time.time()
