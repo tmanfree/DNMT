@@ -114,6 +114,11 @@ def dnmt():
                                                                    "Default is 30")
     #Status Checking parsers
     status_checks_parser = subparsers.add_parser("StatusChecks", help="functions regarding checking the status of switches").add_subparsers(dest="statuschecks")
+    maintenance_parser = status_checks_parser.add_parser("maintenance",help="perform maintenance (clean up)")
+    maintenance_parser.add_argument('maxfiles', help="Max number of statuscheck files to keep")
+    maintenance_parser.add_argument('-v', '--verbose', help="run in verbose mode", default=False,
+                                          action="store_true")
+    maintenance_parser.add_argument('-t', '--test', help="don't delete anything, just test", default=False, action="store_true")
     activity_tracking_parser = status_checks_parser.add_parser("Activity_Tracking", help="check if port status has changed")
     activity_tracking_parser.add_argument('-f', '--file', help="specify iplist file to use if not using default")
     activity_tracking_parser.add_argument('-e', '--email', help="specify which email to send file to")
@@ -224,6 +229,8 @@ def dnmt():
             statusChecks.Activity_Tracking_Begin()
         elif cmdargs.statuschecks == "Switch_Check":
             statusChecks.Switch_Check()
+        elif cmdargs.statuschecks == "maintenance":
+            statusChecks.Maintenance()
     elif cmdargs.maincommand == 'test':
         if cmdargs.test == 'Command_Blaster':
             test.Command_Blaster_Begin()
