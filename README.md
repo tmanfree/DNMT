@@ -31,6 +31,10 @@ safe to do so.
 * **Port Vlan Change** - *dnmt.py tools Port_Change IP Interface*. This will provide an interactive prompt to
 change the vlan on an interface.
 
+* **Switch Check** - *dnmt.py StatusChecks Switch_Check*. Grab a variety of switch status data through snmp.
+
+* **Activity Tracking** - *dnmt.py StatusChecks Activity_Tracking*. grab switch struct data and compare it to existing data.
+
 * **Test Commands** - *dnmt.py test {command}*. A variety of commands that are added/removed as required
 
 ## Requirements
@@ -200,6 +204,51 @@ Example Commands:
     dnmt.py tools Port_Change A.A.A.A 1/0/1
 
 This will provide an interactive prompt to change the vlan on port 1/0/1 of switch A.A.A.A
+
+###Switch_Check
+**Description:** This will poll a series of snmp OIDs to gather information on the state of a switch. The program
+will then output it to the screen, or to a csv file if specified.
+
+ **Input Required:**
+ * *-i IP* The IP address of the switch to gather status information from
+ * -or-
+ * *-l FILE* File to load a switch structure from a file
+
+ **Optional Flags**
+* *-v, --verbose*  run in verbose mode
+* *-c, --CSV*     create a CSV file of status
+
+Example Commands:
+
+    dnmt.py StatusChecks Switch_Check -i A.A.A.A -c CSV.csv
+
+This will grab switch status information from switch A.A.A.A and output to a file called CSV.csv
+
+###Activity_Tracking
+**Description:** This will gather switch status and compare it against any pre existing ones. After comparing, it will
+create a summary file and email it
+
+ **Input Required:**
+ * *NONE* - By default, it will check /usr/lib/capt/activitycheckIPlist to get a list of IPs to process. 
+ 
+ **Optional Flags**
+
+*  *-f , --file* specify iplist file to use if not using default
+*  *-e, --email* specify which email to send file to
+*  *-n, --numprocs* specify how many concurrent processes
+*  *-p, --parallel*        run grab processes in parallel
+*  *-l, --limit*           only put switches specified in iplist in summary file
+*  *-c, --check*           Operate on existing statcheck files, no log ins
+*  *-m, --maxentries* modify max number of historical entries to keep for ports
+*  *-v, --verbose*         run in verbose mode                        
+
+Example Commands:
+
+    dnmt.py StatusChecks Activity_Tracking -l -e test@email.com
+
+This will operate on all ips listed in /usr/lib/capt/activitycheckIPlist, compare against all existing 
+ statcheck files, create a summary file using only the ips listed in activitycheckIPlist then email to test@email.com 
+
 
 ###Test Commands
 Commands that are being tested out before moving into permanence

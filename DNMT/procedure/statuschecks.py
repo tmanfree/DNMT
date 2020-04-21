@@ -156,7 +156,7 @@ class StatusChecks:
             if 'email' in self.cmdargs and self.cmdargs.email is not None:
                temp_to = self.cmdargs.email
             else:
-                temp_to = "mandzie@ualberta.ca"
+                temp_to = "admin@localhost" #placeholder
 
             # Create the message
             themsg = MIMEMultipart()
