@@ -181,6 +181,10 @@ class PortStruct:
 
     def activityChanged(self,compareport):
         return (self.cdp != compareport.cdp or
+                self.description != compareport.description or
+                self.cdp != compareport.cdp or
+                self.datavlan != compareport.datavlan or
+                self.voicevlan != compareport.voicevlan or
                 self.poe != compareport.poe or
                 self.status != compareport.status or
                 self.portmode != compareport.portmode or
