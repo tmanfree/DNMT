@@ -53,13 +53,32 @@ def dnmt():
     # direct_parser = subparsers.add_parser("direct", help= "Non Interactive Commands").add_subparsers(dest="direct")
 
     #parser commands for MAC Search
-    macsearch_parser = subparsers.add_parser("MACSearch", help= "Search for a mac address beginning on a specified switch")
-    macsearch_parser.add_argument('ipaddr', metavar='IP',
+    macsearch_parser = subparsers.add_parser("MACSearch", help= "Search for a mac address beginning on a specified switch").add_subparsers(dest="macsearch")
+    single_mac_check_parser = macsearch_parser.add_parser("single", help="Search for a single MAC address")
+    single_mac_check_parser.add_argument('mac', help='The MAC address to look for')
+    single_mac_check_parser.add_argument('ipaddr', metavar='IP',
                         help='The IP to start looking for the mac address at')
-    macsearch_parser.add_argument('-m', '--mac', metavar='macaddr', help="A single mac address to search for")
-    macsearch_parser.add_argument('-b', '--batchfile',metavar = 'BATCHFILE',help="File with mac address for batch mode")
-    macsearch_parser.add_argument('-v', '--verbose', help="run in verbose mode", default=False, action="store_true")
-    macsearch_parser.add_argument('-c', '--csv', help="save to a specified csv file" )
+    single_mac_check_parser.add_argument('-v', '--verbose', help="run in verbose mode", default=False, action="store_true")
+    single_mac_check_parser.add_argument('-c', '--csv', help="save to a specified csv file" )
+
+    batch_mac_check_parser = macsearch_parser.add_parser("batch", help="A single mac address to search for")
+    batch_mac_check_parser.add_argument('batchfile', help='File with mac address for batch mode')
+    batch_mac_check_parser.add_argument('ipaddr', metavar='IP',
+                                         help='The IP to start looking for the mac address at')
+    batch_mac_check_parser.add_argument('-v', '--verbose', help="run in verbose mode", default=False,
+                                         action="store_true")
+    batch_mac_check_parser.add_argument('-c', '--csv', help="save to a specified csv file")
+
+    test_mac_check_parser = macsearch_parser.add_parser("test", help="test using snmpSearch for a single MAC address")
+    test_mac_check_parser.add_argument('mac', help='The MAC address to look for')
+    test_mac_check_parser.add_argument('ipaddr', metavar='IP',
+                                         help='The IP to start looking for the mac address at')
+    test_mac_check_parser.add_argument('-v', '--verbose', help="run in verbose mode", default=False,
+                                         action="store_true")
+    test_mac_check_parser.add_argument('-c', '--csv', help="save to a specified csv file")
+    # macsearch_parser.add_argument('-m', '--mac', metavar='macaddr', help="A single mac address to search for")
+    # macsearch_parser.add_argument('-b', '--batchfile',metavar = 'BATCHFILE',help="File with mac address for batch mode")
+
 
     #parser commands for hostname updater
     hostnameupdate_parser = subparsers.add_parser("HostnameUpdate", help= "Check switch hostnames with their DNS names & update")
@@ -198,7 +217,10 @@ def dnmt():
     #create the loop for interactive prompt
 
     if cmdargs.maincommand == "MACSearch":
-        macsearcher.begin_search()
+        if cmdargs.macsearch == 'single' or cmdargs.macsearch == 'batchfile':
+            macsearcher.begin_search()
+        elif cmdargs.macsearch =='test':
+            macsearcher.begin_snmp_search()
     elif cmdargs.maincommand == "HostnameUpdate":
         hostnamer.hostname_update()
     # elif args.direct == "SNMPTest":

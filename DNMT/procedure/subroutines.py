@@ -118,8 +118,9 @@ class SubRoutines:
         for varBind in varBinds:
             oidTuple = varBind._ObjectType__args[0]._ObjectIdentity__oid._value
             oidId = oidTuple[len(oidTuple) - 1]
-            if (varBind._ObjectType__args[1]._value.decode("utf-8").endswith(interface)):
+            if (varBind._ObjectType__args[1]._value.decode("utf-8").endswith(interface)) or (varBind._ObjectType__args[1]._value.decode("utf-8") == interface):
                 intId = oidId
+                break;
         return intId
 
         # Name: snmp_get_vendor_string
@@ -279,6 +280,54 @@ class SubRoutines:
                 # if(re.match(r"^\w{2}[1-9](/\d)?/\d+", portname )):
 
         return returnList
+
+    # Name: snmp_get_mac_int_bulk
+    # Input:
+    #   ipaddr (string)
+    #      -The ipaddress/hostname to grab info from
+    # Return:
+    #  MacList (a list of the interfaces that mac addresses are on that are  on the switch)
+    # Summary:
+    #   Returns the ports that mac addresses are on, according to their ID
+    def snmp_get_mac_int_bulk(self, ipaddr):
+        MacList = []
+        #1.3.6.1.2.1.17.4.3.1.2  will give the port the ID is on X.X.X.X.X.X = Port (Integer)
+        #1.3.6.1.2.1.17.4.3.1.1 will give the mac address as payload, the string IDs as 6 oid string X.X.X.X.X.X = MAC (HEX STRING E8 6A .....)
+        oidstring = '1.3.6.1.2.1.17.4.3.1.2'
+        varBinds = self.snmp_walk(ipaddr, ObjectType(ObjectIdentity(oidstring)))
+
+        for varBind in varBinds:
+            interfaceVlan = varBind._ObjectType__args[1]._value
+
+            oidTuple = varBind._ObjectType__args[0]._ObjectIdentity__oid._value
+            intId = '.'.join(map(str, oidTuple[11:]))
+            MacList.append({'Id': intId, 'Port':interfaceVlan})
+        return MacList
+
+
+    # Name: snmp_get_mac_id_bulk
+    # Input:
+    #   ipaddr (string)
+    #      -The ipaddress/hostname to grab info from
+    # Return:
+    #  MacList (a list of the macs that are  on the switch)
+    # Summary:
+    #   grabs all mac addresses in the table assignments
+    def snmp_get_mac_id_bulk(self, ipaddr):
+        MacList = []
+        #1.3.6.1.2.1.17.4.3.1.2  will give the port the ID is on X.X.X.X.X.X = Port (Integer)
+        #1.3.6.1.2.1.17.4.3.1.1 will give the mac address as payload, the string IDs as 6 oid string X.X.X.X.X.X = MAC (HEX STRING E8 6A .....)
+        oidstring = '1.3.6.1.2.1.17.4.3.1.1'
+        varBinds = self.snmp_walk(ipaddr, ObjectType(ObjectIdentity(oidstring)))
+
+        for varBind in varBinds:
+            interfaceVlan = varBind._ObjectType__args[1]._value
+
+            oidTuple = varBind._ObjectType__args[0]._ObjectIdentity__oid._value
+            intId = '.'.join(map(str, oidTuple[11:]))
+            MacList.append({'Id': intId, 'Mac': self.normalize_mac(interfaceVlan.hex())})
+        return MacList
+
 
         # Name: snmp_get_switch_id_bulk
         # Input:
@@ -442,11 +491,21 @@ class SubRoutines:
     #  currentVlan (a string of the current vlan on a port)
     # Summary:
     #   grabs the assigned vlan of an interface
-    def snmp_get_interface_vlan(self, ipaddr, intId):
-        oidstring = '1.3.6.1.4.1.9.9.68.1.2.2.1.2.{}'.format(intId)
-        # find the current vlan assignment for the port
-        varBind = self.snmp_get(ipaddr, ObjectType(ObjectIdentity(oidstring)))
-        currentVlan = varBind[0]._ObjectType__args[1]._value
+    def snmp_get_interface_vlan(self, ipaddr, intId, vendor):
+
+        if vendor == "HP":
+            currentVlan = None
+            for port in self.snmp_get_interface_vlan_bulk(ipaddr,vendor):
+                if port is not None:  # ignore vlan interfaces and non existent interfaces
+                    if port["Id"] == intId:
+                        currentVlan = port['Vlan']
+                        break
+
+        else:
+            oidstring = '1.3.6.1.4.1.9.9.68.1.2.2.1.2.{}'.format(intId)
+            # find the current vlan assignment for the port
+            varBind = self.snmp_get(ipaddr, ObjectType(ObjectIdentity(oidstring)))
+            currentVlan = varBind[0]._ObjectType__args[1]._value
 
         return currentVlan
 
@@ -550,9 +609,64 @@ class SubRoutines:
     #   none
     # Summary:
     #   Sets the specified interface to the specified vlan
-    def snmp_set_interface_vlan(self, ipaddr, intId, vlan):
-        oidstring = '1.3.6.1.4.1.9.9.68.1.2.2.1.2.{}'.format(intId)
-        self.snmp_set(ipaddr, ObjectType(ObjectIdentity(oidstring), rfc1902.Integer(vlan)))
+    def snmp_set_interface_vlan(self, ipaddr, intId, newvlan, oldvlan, vendor):
+        if vendor == "Cisco:":
+            oidstring = '1.3.6.1.4.1.9.9.68.1.2.2.1.2.{}'.format(intId)
+            self.snmp_set(ipaddr, ObjectType(ObjectIdentity(oidstring), rfc1902.Integer(newvlan)))
+        # else:
+        #     # oidstring = "1.3.6.1.2.1.17.7.1.4.5.1.1.{}".format(intId)
+        #     # self.snmp_set(ipaddr, ObjectType(ObjectIdentity(oidstring), rfc1902.Integer(newvlan)))
+        #
+        #     oidstring = '1.3.6.1.2.1.17.7.1.4.3.1.4'  #doesn't work
+        #     varBinds = self.snmp_walk(ipaddr, ObjectType(ObjectIdentity(oidstring)))
+        #
+        #     oldvlanbefore = None
+        #     newvlanbefore = None
+        #
+        #     for varBind in varBinds:
+        #         interfaceVlan = varBind._ObjectType__args[1]._value
+        #         oidTuple = varBind._ObjectType__args[0]._ObjectIdentity__oid._value
+        #         vlanId = oidTuple[len(oidTuple) - 1]
+        #
+        #         temp = interfaceVlan[intId]
+        #         print("Before vlan:{}".format(vlanId))
+        #         for i in range (len(interfaceVlan)*8):
+        #             base = int(i // 8)  # which byte
+        #             shift = int(i % 8)  # which bit
+        #             print("i={} : {}".format(i,((interfaceVlan[base] & (128 >> shift)) >> 7 - shift) ))
+        #
+        #         if vlanId == newvlan:
+        #             test = int.from_bytes(interfaceVlan,sys.byteorder) #sys.byteorder
+        #             testp5 = test + intId
+        #             # test = int(interfaceVlan,16) + intId
+        #             test2 = int.to_bytes(testp5,len(interfaceVlan),byteorder=sys.byteorder)
+        #
+        #             # test = bin(int(interfaceVlan) + intId)
+        #             print("added After vlan:{}".format(vlanId))
+        #             for i in range(len(test2) * 8):
+        #                 base = int(i // 8)  # which byte
+        #                 shift = int(i % 8)  # which bit
+        #                 print("i={} : {}".format(i, ((test2[base] & (128 >> shift)) >> 7 - shift)))
+        #         elif vlanId == oldvlan:
+        #             test = bin(int(interfaceVlan) - intId)
+        #             print("removed After vlan:{}".format(vlanId))
+        #             for i in range(len(test) * 8):
+        #                 base = int(i // 8)  # which byte
+        #                 shift = int(i % 8)  # which bit
+        #                 print("i={} : {}".format(i, ((interfaceVlan[base] & (128 >> shift)) >> 7 - shift)))
+        #
+        #
+        #         if vlanId == oldvlan:
+        #             oldvlanbefore = [self.access_bit(interfaceVlan,i) for i in range(len(interfaceVlan)*8)]
+        #         elif vlanId == newvlan:
+        #             newvlanbefore = [self.access_bit(interfaceVlan,i) for i in range(len(interfaceVlan)*8)]
+        #
+        #
+        #         # 0000 0000
+        #
+        #     for idx, val in enumerate(oldvlanbefore):
+        #         if val ==1:
+        #             print("test")#interfaceVlanList.append({'Id': idx+1, 'Vlan': vlanId})
 
     # Name: snmp_reset_interface
     # Input:
@@ -579,9 +693,14 @@ class SubRoutines:
     # Summary:
     #   Grabs list of vlans from 1.3.6.1.4.1.9.9.46.1.3.1.1.4.1
     #   currently ignores vlan 1002 - 1005 as they are defaults on cisco
-    def snmp_get_vlan_database(self, ipaddr):
+    def snmp_get_vlan_database(self, ipaddr, vendor):
 
-        oidstring = '1.3.6.1.4.1.9.9.46.1.3.1.1.4.{}'.format('1')
+        if vendor =="HP":
+            oidstring = '1.3.6.1.2.1.17.7.1.4.3.1.1'
+        else: #vendor == "Cisco":
+            oidstring = '1.3.6.1.4.1.9.9.46.1.3.1.1.4.{}'.format('1')
+
+
         varBinds = self.snmp_walk(ipaddr, ObjectType(ObjectIdentity(oidstring)))
         vlansToIgnore = [1002, 1003, 1004, 1005]  # declare what vlans we will ignore.
         vlanList = []  # intitalize a blank list
@@ -882,11 +1001,11 @@ class SubRoutines:
         #  mac_address_list
         # Summary:
         #   grabs the a list of mac addresses on the switch. Time intensive procedure.
-    def snmp_get_mac_table_bulk(self, ipaddr):
+    def snmp_get_mac_table_bulk(self, ipaddr, vendor):
 
         oidstring = '1.3.6.1.2.1.17.4.3.1'
         macList=[]
-        vlanList = self.snmp_get_vlan_database(ipaddr)
+        vlanList = self.snmp_get_vlan_database(ipaddr,vendor)
 
         for vlan in vlanList:
             #Return should always be a factor of 3. X=MAC, X+1=Port, X+2=status
@@ -1109,6 +1228,26 @@ class SubRoutines:
     ####################
     ##GENERAL COMMANDS##
     ####################
+
+    # Name: normalize_mac
+    # Input:
+    #   address
+    #      -This variable will be modified to follow mac format
+    # Summary:
+    #  normalize mac will modify provided mac address to the following standard AAAA.BBBB.CCCC.DDDD
+    def normalize_mac(self, address):
+        tmp3 = address.rstrip().lower().translate({ord(":"): "", ord("-"): "", ord(" "): "", ord("."): ""})
+        if len(tmp3) % 4 == 0:
+            return '.'.join(a + b + c + d for a, b, c, d in
+                            zip(tmp3[::4], tmp3[1::4], tmp3[2::4], tmp3[3::4]))  # insert a period every four chars
+        else:
+            if len(tmp3) < 4:
+                return tmp3
+            else:
+                print("Please enter a mac address in a group of 4")
+                sys.exit()
+
+
     # Name: verbose_printer
     # Input:
     #   cmdargs (holder for cmdargs. This may be replaced by having global vars in it)

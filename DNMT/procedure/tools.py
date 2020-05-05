@@ -165,7 +165,8 @@ class Tools:
     def Change_Port_Vlan(self):
       #TODO update to have batch file act on csv with format <IP,interface,vlan,desc> desc optional?
       # have csv in format of <KEY=VAL,KEY=VAL,KEY=VAL, need IP,interface as first two EX <A.A.A.A,Gi1/0/1,DESC=blah>
-        vlanList = self.subs.snmp_get_vlan_database(self.cmdargs.ipaddr)
+        vendor = self.subs.snmp_get_vendor_string(self.cmdargs.ipaddr)
+        vlanList = self.subs.snmp_get_vlan_database(self.cmdargs.ipaddr,vendor)
 
 
         for vlan in vlanList:
@@ -178,7 +179,11 @@ class Tools:
 
         fullInterface = self.subs.snmp_get_full_interface(self.cmdargs.ipaddr, intId)
         intDescription = self.subs.snmp_get_interface_description(self.cmdargs.ipaddr, intId)
-        currentVlan = self.subs.snmp_get_interface_vlan(self.cmdargs.ipaddr, intId)
+        currentVlan = self.subs.snmp_get_interface_vlan(self.cmdargs.ipaddr, intId,vendor)
+
+        #TEST
+        self.subs.snmp_set_interface_vlan(self.cmdargs.ipaddr, intId, 2101,int(currentVlan), vendor)
+
 
         #enter vlan id to change to
         bLoop = True  # TODO make this more efficient
@@ -198,10 +203,10 @@ class Tools:
             sys.exit(1)
 
         #set new vlan
-        self.subs.snmp_set_interface_vlan(self.cmdargs.ipaddr, intId, vlanResponse)
+        self.subs.snmp_set_interface_vlan(self.cmdargs.ipaddr, intId, int(vlanResponse), int(currentVlan), vendor)
 
         #check what vlan is now
-        newVlan = self.subs.snmp_get_interface_vlan(self.cmdargs.ipaddr, intId)
+        newVlan = self.subs.snmp_get_interface_vlan(self.cmdargs.ipaddr, intId, vendor)
 
         if int(newVlan) == int(vlanResponse): #
             print("Vlan updated to Vlan {}".format(newVlan))

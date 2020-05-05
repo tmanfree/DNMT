@@ -38,6 +38,8 @@ class Lefty:
 
 
     def begin_search(self):
+
+
         if 'batchfile' in self.cmdargs and self.cmdargs.batchfile:
             maclist = []
             file = open(self.cmdargs.batchfile, "r")
@@ -143,11 +145,6 @@ class Lefty:
             #if 'verbose' in self.cmdargs and self.cmdargs.verbose:
             print(err.args[0])
 
-
-
-
-
-
     def print_complete(self):
         self.subs.verbose_printer("Job Complete")
         [print("%s\nPort info:%s" % (entry['location'], entry['info'])) for entry in self.log_array]
@@ -156,6 +153,39 @@ class Lefty:
             with open(self.cmdargs.csv, 'w', encoding='utf-8') as f:
                 print("MAC,Switch_IP,Port,Info", file=f)
                 [print("%s" % (entry['csv']), file=f) for entry in self.log_array]
+
+
+    def HP_snmp_search(self,ipaddr,maclist):
+        vendor = self.subs.snmp_get_vendor_string(ipaddr)
+        newmaclist = []
+        if vendor == 'HP':
+            foundmaclist = self.subs.snmp_get_mac_id_bulk(ipaddr)
+            foundmacintlist = self.subs.snmp_get_mac_int_bulk(ipaddr)
+
+            for foundmac in foundmaclist:
+                for searchmac in maclist:
+                    if foundmac['Mac'] == searchmac:
+                        for macint in foundmacintlist:
+                            if macint['Id'] == foundmac["Id"]:
+                                newmaclist.append({"Mac":foundmac['Mac'],"Port":macint["Port"],"Status":"Complete Match"})
+
+            print(newmaclist)
+
+
+    def begin_snmp_search(self):
+
+        if 'batchfile' in self.cmdargs and self.cmdargs.batchfile:
+            maclist = []
+            file = open(self.cmdargs.batchfile, "r")
+            for mac in file:
+                maclist.append(self.normalize_mac(mac))
+            file.close()
+        elif 'mac' in self.cmdargs and self.cmdargs.mac:
+            maclist = [self.normalize_mac(self.cmdargs.mac)]
+        self.HP_snmp_search(self.cmdargs.ipaddr,maclist)
+        self.print_complete()
+
+
 
     #if being run by itself
 if __name__ == "__main__":
