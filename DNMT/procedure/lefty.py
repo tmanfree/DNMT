@@ -155,15 +155,31 @@ class Lefty:
                 [print("%s" % (entry['csv']), file=f) for entry in self.log_array]
 
 
+    def begin_snmp_search(self):
+
+        if 'batchfile' in self.cmdargs and self.cmdargs.batchfile:
+            maclist = []
+            file = open(self.cmdargs.batchfile, "r")
+            for mac in file:
+                maclist.append(self.normalize_mac(mac))
+            file.close()
+        elif 'mac' in self.cmdargs and self.cmdargs.mac:
+            maclist = [self.normalize_mac(self.cmdargs.mac)]
+        self.HP_snmp_search(self.cmdargs.ipaddr,maclist)
+        self.print_complete()
+
+
     def HP_snmp_search(self,ipaddr,maclist):
-        # vendor = self.subs.snmp_get_vendor_string(ipaddr)
+        vendor = self.subs.snmp_get_vendor_string(ipaddr)
+        if vendor == "HP":
+            foundmaclist = self.subs.snmp_get_mac_id_bulk(ipaddr)
+            foundmacintlist = self.subs.snmp_get_mac_int_bulk(ipaddr)
 
-        foundmaclist = self.subs.snmp_get_mac_id_bulk(ipaddr)
-        foundmacintlist = self.subs.snmp_get_mac_int_bulk(ipaddr)
-
-        for searchmac in maclist:
-            # finishedmaclist =self.Mac_Check(searchmac,foundmaclist,foundmacintlist,finishedmaclist)
-            self.Mac_Check(searchmac, foundmaclist, foundmacintlist)
+            for searchmac in maclist:
+                # finishedmaclist =self.Mac_Check(searchmac,foundmaclist,foundmacintlist,finishedmaclist)
+                self.Mac_Check(searchmac, foundmaclist, foundmacintlist)
+        else:
+            print("Currently only works reliably with HP switches")
 
 
     def Mac_Check(self,searchmac,foundmaclist, foundmacintlist):
@@ -208,18 +224,6 @@ class Lefty:
         return
 
 
-    def begin_snmp_search(self):
-
-        if 'batchfile' in self.cmdargs and self.cmdargs.batchfile:
-            maclist = []
-            file = open(self.cmdargs.batchfile, "r")
-            for mac in file:
-                maclist.append(self.normalize_mac(mac))
-            file.close()
-        elif 'mac' in self.cmdargs and self.cmdargs.mac:
-            maclist = [self.normalize_mac(self.cmdargs.mac)]
-        self.HP_snmp_search(self.cmdargs.ipaddr,maclist)
-        self.print_complete()
 
 
 
