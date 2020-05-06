@@ -156,16 +156,14 @@ class Lefty:
 
 
     def HP_snmp_search(self,ipaddr,maclist):
-        vendor = self.subs.snmp_get_vendor_string(ipaddr)
-        finishedmaclist = []
-        if vendor == 'HP':
-            foundmaclist = self.subs.snmp_get_mac_id_bulk(ipaddr)
-            foundmacintlist = self.subs.snmp_get_mac_int_bulk(ipaddr)
+        # vendor = self.subs.snmp_get_vendor_string(ipaddr)
 
-            for searchmac in maclist:
-                # finishedmaclist =self.Mac_Check(searchmac,foundmaclist,foundmacintlist,finishedmaclist)
-                self.Mac_Check(searchmac, foundmaclist, foundmacintlist)
-            return finishedmaclist
+        foundmaclist = self.subs.snmp_get_mac_id_bulk(ipaddr)
+        foundmacintlist = self.subs.snmp_get_mac_int_bulk(ipaddr)
+
+        for searchmac in maclist:
+            # finishedmaclist =self.Mac_Check(searchmac,foundmaclist,foundmacintlist,finishedmaclist)
+            self.Mac_Check(searchmac, foundmaclist, foundmacintlist)
 
 
     def Mac_Check(self,searchmac,foundmaclist, foundmacintlist):
