@@ -172,26 +172,28 @@ class Lefty:
             if foundmac['Mac'] == searchmac:  # Complete Match
                 for macint in foundmacintlist:
                     if macint['Id'] == foundmac["Id"]:
+                        fullint = self.subs.snmp_get_full_interface(self.cmdargs.ipaddr,macint['Port'])
                         # finishedmaclist.append({"Mac": foundmac['Mac'], "Port": macint["Port"], "Status": "Complete Match"})
                         self.log_array.append({'location': "MAC:{}, Switch:{}, "
                                                            "Port:{}".format(foundmac['Mac'], self.cmdargs.ipaddr,
-                                                                            macint['Port']),
+                                                                            fullint),
                                                'info': "Complete Match", 'csv': "{},"
                                                                          "{},{},{}".format(foundmac['Mac'],
                                                                                            self.cmdargs.ipaddr,
-                                                                                           macint['Port'], "Complete Match")})
+                                                                                           fullint, "Complete Match")})
                         return
             elif searchmac in foundmac['Mac']:
                 for macint in foundmacintlist:
                     if macint['Id'] == foundmac["Id"]:
+                        fullint = self.subs.snmp_get_full_interface(self.cmdargs.ipaddr, macint['Port'])
                         # finishedmaclist.append({"Mac": foundmac['Mac'], "Port": macint["Port"], "Status": "Partial Match"})
                         self.log_array.append({'location': "MAC:{}, Switch:{}, "
                                                            "Port:{}".format(foundmac['Mac'], self.cmdargs.ipaddr,
-                                                                            macint['Port']),
+                                                                            fullint),
                                                'info': "Partial Match", 'csv': "{},"
                                                                                 "{},{},{}".format(foundmac['Mac'],
                                                                                                   self.cmdargs.ipaddr,
-                                                                                                  macint['Port'],
+                                                                                                  fullint,
                                                                                                   "Partial Match")})
                         partialmatches += 1
         if partialmatches == 0:
