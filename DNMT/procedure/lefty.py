@@ -157,19 +157,55 @@ class Lefty:
 
     def HP_snmp_search(self,ipaddr,maclist):
         vendor = self.subs.snmp_get_vendor_string(ipaddr)
-        newmaclist = []
+        finishedmaclist = []
         if vendor == 'HP':
             foundmaclist = self.subs.snmp_get_mac_id_bulk(ipaddr)
             foundmacintlist = self.subs.snmp_get_mac_int_bulk(ipaddr)
 
-            for foundmac in foundmaclist:
-                for searchmac in maclist:
-                    if foundmac['Mac'] == searchmac:
-                        for macint in foundmacintlist:
-                            if macint['Id'] == foundmac["Id"]:
-                                newmaclist.append({"Mac":foundmac['Mac'],"Port":macint["Port"],"Status":"Complete Match"})
+            for searchmac in maclist:
+                # finishedmaclist =self.Mac_Check(searchmac,foundmaclist,foundmacintlist,finishedmaclist)
+                self.Mac_Check(searchmac, foundmaclist, foundmacintlist)
+            return finishedmaclist
 
-            print(newmaclist)
+
+    def Mac_Check(self,searchmac,foundmaclist, foundmacintlist):
+        partialmatches = 0
+        for foundmac in foundmaclist:
+            if foundmac['Mac'] == searchmac:  # Complete Match
+                for macint in foundmacintlist:
+                    if macint['Id'] == foundmac["Id"]:
+                        # finishedmaclist.append({"Mac": foundmac['Mac'], "Port": macint["Port"], "Status": "Complete Match"})
+                        self.log_array.append({'location': "MAC:{}, Switch:{}, "
+                                                           "Port:{}".format(foundmac['Mac'], self.cmdargs.ipaddr,
+                                                                            macint['Port']),
+                                               'info': "Complete Match", 'csv': "{},"
+                                                                         "{},{},{}".format(foundmac['Mac'],
+                                                                                           self.cmdargs.ipaddr,
+                                                                                           macint['Port'], "Complete Match")})
+                        return
+            elif searchmac in foundmac['Mac']:
+                for macint in foundmacintlist:
+                    if macint['Id'] == foundmac["Id"]:
+                        # finishedmaclist.append({"Mac": foundmac['Mac'], "Port": macint["Port"], "Status": "Partial Match"})
+                        self.log_array.append({'location': "MAC:{}, Switch:{}, "
+                                                           "Port:{}".format(foundmac['Mac'], self.cmdargs.ipaddr,
+                                                                            macint['Port']),
+                                               'info': "Partial Match", 'csv': "{},"
+                                                                                "{},{},{}".format(foundmac['Mac'],
+                                                                                                  self.cmdargs.ipaddr,
+                                                                                                  macint['Port'],
+                                                                                                  "Partial Match")})
+                        partialmatches += 1
+        if partialmatches == 0:
+            self.log_array.append({'location': "MAC:{}, Switch:{}, "
+                                               "Port:{}".format(foundmac['Mac'], self.cmdargs.ipaddr,
+                                                                "NA"),
+                                   'info': "MAC not found", 'csv': "{},"
+                                                                    "{},{},{}".format(foundmac['Mac'],
+                                                                                      self.cmdargs.ipaddr,
+                                                                                      "NA",
+                                                                                      "MAC not found")})
+        return
 
 
     def begin_snmp_search(self):
