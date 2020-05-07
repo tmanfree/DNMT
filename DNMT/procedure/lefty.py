@@ -2,6 +2,9 @@
 #Howdy Neighbour!
 
 #from netmiko import ConnectHandler
+import socket
+import dns.resolver
+import dns.zone
 import netmiko
 import re
 import sys
@@ -156,6 +159,36 @@ class Lefty:
 
 
     def begin_snmp_search(self):
+        ipaddrlist = []
+        if re.match("(\d{1,3}\.){3}\d{1,3}", self.cmdargs.ipaddr): #if a ipv4 address
+            ipaddrlist.append(self.cmdargs.ipaddr)
+        elif re.match("\S+\.ualberta\.ca",self.cmdargs.ipaddr): # if a hostname
+            ipaddrlist.append(socket.gethostbyname(self.cmdargs.ipaddr))
+        elif re.match("^\S+\s\S+$",self.cmdargs.ipaddr): #a general area for example "coh-tr domain.ca"
+
+            #############STARTEDIT
+            try:
+                searchstring = self.cmdargs.ipaddr.split(' ')
+                #Grab the name server first
+                soa_answer = dns.resolver.query(searchstring[1], 'SOA')
+                master_answer = dns.resolver.query(soa_answer[0].mname,'A')
+                # could skip previous 2 lines by presetting Name server address
+                z = dns.zone.from_xfr(dns.query.xfr(master_answer[0].address,searchstring[1]))
+                names = z.nodes.keys()
+                # names.sort()
+
+                for n in names:
+                    if re.match(searchstring[0], str(n)):
+                        ipaddrlist.append(socket.gethostbyname((str(n)+"."+searchstring[1])))
+            except socket.error as e:
+                print('Failed to perform zone transfer:', e)
+            except dns.exception.FormError as e:
+                print('Failed to perform zone transfer:', e)
+            except Exception as err:
+                print(err)
+            ############DONEEDIT
+
+
 
         if 'batchfile' in self.cmdargs and self.cmdargs.batchfile:
             maclist = []
@@ -165,7 +198,9 @@ class Lefty:
             file.close()
         elif 'mac' in self.cmdargs and self.cmdargs.mac:
             maclist = [self.normalize_mac(self.cmdargs.mac)]
-        self.HP_snmp_search(self.cmdargs.ipaddr,maclist)
+
+        for ipaddr in ipaddrlist:
+            self.HP_snmp_search(ipaddr,maclist)
         self.print_complete()
 
 
@@ -177,48 +212,48 @@ class Lefty:
 
             for searchmac in maclist:
                 # finishedmaclist =self.Mac_Check(searchmac,foundmaclist,foundmacintlist,finishedmaclist)
-                self.Mac_Check(searchmac, foundmaclist, foundmacintlist)
+                self.Mac_Check(ipaddr, searchmac, foundmaclist, foundmacintlist)
         else:
             print("Currently only works reliably with HP switches")
 
 
-    def Mac_Check(self,searchmac,foundmaclist, foundmacintlist):
+    def Mac_Check(self,ipaddr, searchmac,foundmaclist, foundmacintlist):
         partialmatches = 0
         for foundmac in foundmaclist:
             if foundmac['Mac'] == searchmac:  # Complete Match
                 for macint in foundmacintlist:
                     if macint['Id'] == foundmac["Id"]:
-                        fullint = self.subs.snmp_get_full_interface(self.cmdargs.ipaddr,macint['Port'])
+                        fullint = self.subs.snmp_get_full_interface(ipaddr,macint['Port'])
                         # finishedmaclist.append({"Mac": foundmac['Mac'], "Port": macint["Port"], "Status": "Complete Match"})
                         self.log_array.append({'location': "MAC:{}, Switch:{}, "
-                                                           "Port:{}".format(foundmac['Mac'], self.cmdargs.ipaddr,
+                                                           "Port:{}".format(foundmac['Mac'], ipaddr,
                                                                             fullint),
                                                'info': "Complete Match", 'csv': "{},"
                                                                          "{},{},{}".format(foundmac['Mac'],
-                                                                                           self.cmdargs.ipaddr,
+                                                                                           ipaddr,
                                                                                            fullint, "Complete Match")})
                         return
             elif searchmac in foundmac['Mac']:
                 for macint in foundmacintlist:
                     if macint['Id'] == foundmac["Id"]:
-                        fullint = self.subs.snmp_get_full_interface(self.cmdargs.ipaddr, macint['Port'])
+                        fullint = self.subs.snmp_get_full_interface(ipaddr, macint['Port'])
                         # finishedmaclist.append({"Mac": foundmac['Mac'], "Port": macint["Port"], "Status": "Partial Match"})
                         self.log_array.append({'location': "MAC:{}, Switch:{}, "
-                                                           "Port:{}".format(foundmac['Mac'], self.cmdargs.ipaddr,
+                                                           "Port:{}".format(foundmac['Mac'], ipaddr,
                                                                             fullint),
                                                'info': "Partial Match", 'csv': "{},"
                                                                                 "{},{},{}".format(foundmac['Mac'],
-                                                                                                  self.cmdargs.ipaddr,
+                                                                                                  ipaddr,
                                                                                                   fullint,
                                                                                                   "Partial Match")})
                         partialmatches += 1
         if partialmatches == 0:
             self.log_array.append({'location': "MAC:{}, Switch:{}, "
-                                               "Port:{}".format(foundmac['Mac'], self.cmdargs.ipaddr,
+                                               "Port:{}".format(foundmac['Mac'], ipaddr,
                                                                 "NA"),
                                    'info': "MAC not found", 'csv': "{},"
                                                                     "{},{},{}".format(foundmac['Mac'],
-                                                                                      self.cmdargs.ipaddr,
+                                                                                      ipaddr,
                                                                                       "NA",
                                                                                       "MAC not found")})
         return

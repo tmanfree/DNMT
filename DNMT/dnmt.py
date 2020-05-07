@@ -69,7 +69,10 @@ def dnmt():
                                          action="store_true")
     batch_mac_check_parser.add_argument('-c', '--csv', help="save to a specified csv file")
 
-    test_mac_check_parser = macsearch_parser.add_parser("test", help="test using snmpSearch for a single MAC address")
+    general_macsearch_parser = macsearch_parser.add_parser("general",
+                                             help="Search for a mac addresses on HP switches").add_subparsers(
+        dest="general")
+    test_mac_check_parser = general_macsearch_parser.add_parser("single", help="use snmpSearch for a single MAC address")
     test_mac_check_parser.add_argument('mac', help='The MAC address to look for')
     test_mac_check_parser.add_argument('ipaddr', metavar='IP',
                                          help='The IP to start looking for the mac address at')
@@ -77,7 +80,7 @@ def dnmt():
                                          action="store_true")
     test_mac_check_parser.add_argument('-c', '--csv', help="save to a specified csv file")
 
-    test_batch_mac_check_parser = macsearch_parser.add_parser("testbatch", help="test using snmpSearch for a batch of MAC addresses")
+    test_batch_mac_check_parser = general_macsearch_parser.add_parser("batch", help="use snmpSearch for a batch of MAC addresses")
     test_batch_mac_check_parser.add_argument('batchfile', help='File with mac address for batch mode')
     test_batch_mac_check_parser.add_argument('ipaddr', metavar='IP',
                                          help='The IP to start looking for the mac address at')
@@ -227,7 +230,7 @@ def dnmt():
     if cmdargs.maincommand == "MACSearch":
         if cmdargs.macsearch == 'single' or cmdargs.macsearch == 'batchfile':
             macsearcher.begin_search()
-        elif cmdargs.macsearch =='test' or cmdargs.macsearch == 'testbatch':
+        elif cmdargs.macsearch =='general':
             macsearcher.begin_snmp_search()
     elif cmdargs.maincommand == "HostnameUpdate":
         hostnamer.hostname_update()
