@@ -252,7 +252,7 @@ class Tools:
                     IP = socket.gethostbyname(FQDN)
 
                     if 'advanced' in self.cmdargs and self.cmdargs.advanced:
-                        vendor = self.snmp_get_vendor_string(IP)
+                        vendor = self.subs.snmp_get_vendor_string(IP)
                         print("{} , {} , {}".format(FQDN, IP, vendor))
                     else:
                         print("{} , {}".format(FQDN,IP))
