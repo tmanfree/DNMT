@@ -253,9 +253,9 @@ class Tools:
 
                     if 'advanced' in self.cmdargs and self.cmdargs.advanced:
                         vendor = self.subs.snmp_get_vendor_string(IP)
-                        switchlisting += "{} , {} , {}".format(FQDN, IP, vendor)
+                        switchlisting += "{} , {} , {}\n".format(FQDN, IP, vendor)
                     else:
-                        switchlisting += "{} , {}".format(FQDN,IP)
+                        switchlisting += "{} , {}\n".format(FQDN,IP)
         except socket.error as e:
             print('Failed to perform zone transfer:', e)
         except dns.exception.FormError as e:
