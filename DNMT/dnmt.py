@@ -208,6 +208,11 @@ def dnmt():
     appoke_parser.add_argument('-t', '--tdr', help="perform TDR test", default=False, action="store_true")
     appoke_parser.add_argument('-l', '--login', help="Ask for login credentials", default=False, action="store_true")
 
+    #diggle functionality
+    dig_tool_parser = tools_parser.add_parser("dig", help="List hostnames from dns by domain")
+    dig_tool_parser.add_argument('hoststring', help='things to match on for DNS names ie: switch-location-place')
+    dig_tool_parser.add_argument('domain', help='domain to do a zone transfer from')
+
 
 
     argcomplete.autocomplete(parser)
@@ -257,6 +262,8 @@ def dnmt():
                 sys.exit(errcode)
         elif cmdargs.tools == 'Port_Change':
             tools.Change_Port_Vlan()
+        elif cmdargs.tools =='dig':
+            tools.diggle()
     elif cmdargs.maincommand == 'StatusChecks':
         if cmdargs.statuschecks == "Activity_Tracking":
             statusChecks.Activity_Tracking_Begin()

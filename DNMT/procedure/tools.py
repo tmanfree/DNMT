@@ -10,6 +10,9 @@ import subprocess,platform,os,time,datetime
 import getpass
 import difflib
 import pickle
+import socket
+import dns.resolver
+import dns.zone
 
 
 
@@ -227,3 +230,27 @@ class Tools:
         else:
             print("Description not updated, still \"{}\"".format(newDescription))
 
+
+    def diggle(self):
+        try:
+            # Grab the name server first
+            soa_answer = dns.resolver.query(self.cmdargs.domain, 'SOA')
+            master_answer = dns.resolver.query(soa_answer[0].mname, 'A')
+            # could skip previous 2 lines by presetting Name server address
+            z = dns.zone.from_xfr(dns.query.xfr(master_answer[0].address, self.cmdargs.domain))
+            names = z.nodes.keys()
+            matchcounter = 0
+
+            print("Hostname , IP")
+            for n in names:
+                if re.match(self.cmdargs.hoststring, str(n),flags=re.IGNORECASE): #Case insensitive for simplicity
+                    matchcounter += 1
+                    FQDN = str(n)+"."+self.cmdargs.domain
+                    print("{} , {}".format(FQDN,socket.gethostbyname(FQDN)))
+        except socket.error as e:
+            print('Failed to perform zone transfer:', e)
+        except dns.exception.FormError as e:
+            print('Failed to perform zone transfer:', e)
+        except Exception as err:
+            print(err)
+        print("Job complete, {} matches found".format(matchcounter))
