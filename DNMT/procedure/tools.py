@@ -241,12 +241,21 @@ class Tools:
             names = z.nodes.keys()
             matchcounter = 0
 
-            print("Hostname , IP")
+            if 'advanced' in self.cmdargs and self.cmdargs.advanced:
+                print("Hostname , IP , Vendor")
+            else:
+                print("Hostname , IP ")
             for n in names:
                 if re.match(self.cmdargs.hoststring, str(n),flags=re.IGNORECASE): #Case insensitive for simplicity
                     matchcounter += 1
                     FQDN = str(n)+"."+self.cmdargs.domain
-                    print("{} , {}".format(FQDN,socket.gethostbyname(FQDN)))
+                    IP = socket.gethostbyname(FQDN)
+
+                    if 'advanced' in self.cmdargs and self.cmdargs.advanced:
+                        vendor = self.snmp_get_vendor_string(IP)
+                        print("{} , {} , {}".format(FQDN, IP, vendor))
+                    else:
+                        print("{} , {}".format(FQDN,IP))
         except socket.error as e:
             print('Failed to perform zone transfer:', e)
         except dns.exception.FormError as e:

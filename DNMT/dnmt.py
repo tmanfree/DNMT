@@ -212,6 +212,7 @@ def dnmt():
     dig_tool_parser = tools_parser.add_parser("dig", help="List hostnames from dns by domain")
     dig_tool_parser.add_argument('hoststring', help='things to match on for DNS names ie: switch-location-place')
     dig_tool_parser.add_argument('domain', help='domain to do a zone transfer from')
+    dig_tool_parser.add_argument('-a', '--advanced', help="Gather more info about hosts", default=False, action="store_true")
 
 
 
