@@ -242,9 +242,9 @@ class Tools:
             matchcounter = 0
 
             if 'advanced' in self.cmdargs and self.cmdargs.advanced:
-                print("Hostname , IP , Vendor")
+                switchlisting = "Hostname , IP , Vendor\n"
             else:
-                print("Hostname , IP ")
+                switchlisting = "Hostname , IP\n"
             for n in names:
                 if re.match(self.cmdargs.hoststring, str(n),flags=re.IGNORECASE): #Case insensitive for simplicity
                     matchcounter += 1
@@ -253,13 +253,13 @@ class Tools:
 
                     if 'advanced' in self.cmdargs and self.cmdargs.advanced:
                         vendor = self.subs.snmp_get_vendor_string(IP)
-                        print("{} , {} , {}".format(FQDN, IP, vendor))
+                        switchlisting += "{} , {} , {}".format(FQDN, IP, vendor)
                     else:
-                        print("{} , {}".format(FQDN,IP))
+                        switchlisting += "{} , {}".format(FQDN,IP)
         except socket.error as e:
             print('Failed to perform zone transfer:', e)
         except dns.exception.FormError as e:
             print('Failed to perform zone transfer:', e)
         except Exception as err:
             print(err)
-        print("Job complete, {} matches found".format(matchcounter))
+        print("{}\n Job complete, {} matches found".format(switchlisting,matchcounter))

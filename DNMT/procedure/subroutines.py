@@ -34,7 +34,7 @@ class SubRoutines:
                    *args)
         )
         if errorIndication:  # check for errors
-            print(errorIndication)
+            print("{} - {}".format(ipaddr,errorIndication))
         elif errorStatus:  # error status (confirm this)
             print('%s at %s' % (errorStatus.prettyPrint(),
                                 errorIndex and varBinds[int(errorIndex) - 1][0] or '?'))
@@ -51,7 +51,7 @@ class SubRoutines:
                    *args)
         )
         if errorIndication:  # check for errors
-            print(errorIndication)
+            print("{} - {}".format(ipaddr,errorIndication))
         elif errorStatus:  # error status (confirm this)
             print('%s at %s' % (errorStatus.prettyPrint(),
                                 errorIndex and varBinds[int(errorIndex) - 1][0] or '?'))
@@ -66,7 +66,7 @@ class SubRoutines:
             CommunityData(self.config.ro),UdpTransportTarget((ipaddr, 161)), ContextData(),
                                                                             *args, lexicographicMode=False):
             if errorIndication:
-                print(errorIndication, file=sys.stderr)
+                print("{} - {}".format(ipaddr,errorIndication), file=sys.stderr)
                 break
             elif errorStatus:
                 print('%s at %s' % (errorStatus.prettyPrint(),
@@ -84,7 +84,7 @@ class SubRoutines:
             CommunityData(self.config.ro+"@"+str(vlanid)),UdpTransportTarget((ipaddr, 161)), ContextData(),
                                                                             *args, lexicographicMode=False):
             if errorIndication:
-                print(errorIndication, file=sys.stderr)
+                print("{} - {}".format(ipaddr,errorIndication), file=sys.stderr)
                 break
             elif errorStatus:
                 print('%s at %s' % (errorStatus.prettyPrint(),
