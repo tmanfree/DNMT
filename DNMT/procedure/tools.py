@@ -232,6 +232,7 @@ class Tools:
 
 
     def diggle(self):
+        switchlisting = None
         try:
             # Grab the name server first
             soa_answer = dns.resolver.query(self.cmdargs.domain, 'SOA')
@@ -262,4 +263,7 @@ class Tools:
             print('Failed to perform zone transfer:', e)
         except Exception as err:
             print(err)
-        print("{}\n Job complete, {} matches found".format(switchlisting,matchcounter))
+        if switchlisting is not None:
+            print("{}\n Job complete, {} matches found".format(switchlisting,matchcounter))
+        else:
+            print(" Job complete, NO matches found")

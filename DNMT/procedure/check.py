@@ -689,7 +689,7 @@ class Check:
 
                     # temp = '\n'.join(', '.join(elems) for elems in after_swcheck_dict["sw_list"])
 
-
+                    #<TODO add logic to clearly indicate if a switch is missing or removed from the list when it wasn't before>
                     status_dict["Print_Sum"] += "\n".join(', '.join(elems) for elems in after_swcheck_dict["sw_list"]) \
                                                 + "\n--------\n" \
                                                 + "Snooping Bindings before:" + str(len(before_swcheck_dict["snoop_list"])) \

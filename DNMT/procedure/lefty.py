@@ -162,24 +162,21 @@ class Lefty:
         ipaddrlist = []
         if re.match("(\d{1,3}\.){3}\d{1,3}", self.cmdargs.ipaddr): #if a ipv4 address
             ipaddrlist.append(self.cmdargs.ipaddr)
-        elif re.match("\S+\.ualberta\.ca",self.cmdargs.ipaddr): # if a hostname
-            ipaddrlist.append(socket.gethostbyname(self.cmdargs.ipaddr))
         elif re.match("^\S+\s\S+$",self.cmdargs.ipaddr): #a general area for example "coh-tr domain.ca"
-
             #############STARTEDIT
             try:
                 searchstring = self.cmdargs.ipaddr.split(' ')
                 #Grab the name server first
-                soa_answer = dns.resolver.query(searchstring[1], 'SOA')
+                soa_answer = dns.resolver.query(searchstring[0], 'SOA')
                 master_answer = dns.resolver.query(soa_answer[0].mname,'A')
                 # could skip previous 2 lines by presetting Name server address
-                z = dns.zone.from_xfr(dns.query.xfr(master_answer[0].address,searchstring[1]))
+                z = dns.zone.from_xfr(dns.query.xfr(master_answer[0].address,searchstring[0]))
                 names = z.nodes.keys()
                 # names.sort()
 
                 for n in names:
-                    if re.match(searchstring[0], str(n)):
-                        ipaddrlist.append(socket.gethostbyname((str(n)+"."+searchstring[1])))
+                    if re.match(searchstring[1], str(n)):
+                        ipaddrlist.append(socket.gethostbyname((str(n)+"."+searchstring[0])))
             except socket.error as e:
                 print('Failed to perform zone transfer:', e)
             except dns.exception.FormError as e:
@@ -187,6 +184,9 @@ class Lefty:
             except Exception as err:
                 print(err)
             ############DONEEDIT
+        elif re.match("\S+\.ualberta\.ca",self.cmdargs.ipaddr): # if a hostname
+            ipaddrlist.append(socket.gethostbyname(self.cmdargs.ipaddr))
+
 
 
 
@@ -217,21 +217,33 @@ class Lefty:
             print("Currently only works reliably with HP switches")
 
 
+    def Mac_Count_Check(self,port,foundmacintlist):
+        numberOfMacs = 0
+        for macListing in foundmacintlist:
+            if macListing['Port'] == port:
+                numberOfMacs += 1
+        return numberOfMacs
+
     def Mac_Check(self,ipaddr, searchmac,foundmaclist, foundmacintlist):
         partialmatches = 0
         for foundmac in foundmaclist:
             if foundmac['Mac'] == searchmac:  # Complete Match
                 for macint in foundmacintlist:
                     if macint['Id'] == foundmac["Id"]:
+                        if self.Mac_Count_Check(macint['Port'],foundmacintlist) > 1:
+                            foundType = "Uplink Match"
+                        else:
+                            foundType = "Complete Match"
+
                         fullint = self.subs.snmp_get_full_interface(ipaddr,macint['Port'])
                         # finishedmaclist.append({"Mac": foundmac['Mac'], "Port": macint["Port"], "Status": "Complete Match"})
                         self.log_array.append({'location': "MAC:{}, Switch:{}, "
                                                            "Port:{}".format(foundmac['Mac'], ipaddr,
                                                                             fullint),
-                                               'info': "Complete Match", 'csv': "{},"
+                                               'info': foundType, 'csv': "{},"
                                                                          "{},{},{}".format(foundmac['Mac'],
                                                                                            ipaddr,
-                                                                                           fullint, "Complete Match")})
+                                                                                           fullint, foundType)})
                         return
             elif searchmac in foundmac['Mac']:
                 for macint in foundmacintlist:
