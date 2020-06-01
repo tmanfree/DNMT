@@ -310,7 +310,7 @@ class StatusChecks:
                 for tempswitch in OldSwitchStatus.switches:
                     for tempmodule in tempswitch.modules:
                         for oldport in tempmodule.ports:
-                            newport = NewSwitchStatus.getPortById(oldport.intID)
+                            newport = NewSwitchStatus.getPortByPortName(oldport.portname) #Changed 20200601 from id Cisco changing IDs....
                             if oldport.activityChanged(newport):
                                 oldport.deltalastin = newport.inputcounters - oldport.inputcounters
                                 oldport.deltalastout = newport.outputcounters - oldport.outputcounters

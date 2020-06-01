@@ -27,6 +27,10 @@ class StackStruct:
     def getSwitches(self):#uneccessary for a get function as we can directly access
         return self.switches
 
+    def getPortByPortName(self,PortName):
+        return next((port for Sw in self.switches for Mod in Sw.modules for port in Mod.ports if port.portname == PortName),
+                    None)
+
     def getPortById(self,Id):
         return next((port for Sw in self.switches for Mod in Sw.modules for port in Mod.ports if port.intID == Id),
                     None)
