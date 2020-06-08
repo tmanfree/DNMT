@@ -527,7 +527,10 @@ class Check:
                             if mins_waited > 3600 :
                                 #TODO Add writing to log file here?
                                 print("No reply from switch IP:{}: for {} minutes\n Please investigate!".format(ipaddr,mins_waited/60))
-                                sys.exit(1)
+                                status_dict = {"ip": ipaddr, "Print_Sum": "ERROR - Device did not respond after reload",
+                                               "summary": "ERROR - Device did not respond after reload"}
+                                return status_dict
+                                #sys.exit(1)
 
                         if self.subs.ping_check(ipaddr): # unnecessary test?
                             print("switch: {} is back online!".format(ipaddr))
