@@ -755,7 +755,7 @@ class Check:
             else:
                 print("device {} not reachable".format(ipaddr))
         except Exception as e: # super broad exception
-            print("##### {} ERROR in Processing:{} #####".format(ipaddr, err.args[0]))
+            print("##### {} ERROR in Processing:{} #####".format(ipaddr, e.args[0]))
             status_dict = {"ip": ipaddr,"Print_Sum":"Failure in processing","summary":"Failure in processing"}
             return status_dict
 
