@@ -192,6 +192,9 @@ class Check:
 
                     self.subs.verbose_printer(result["summary"]) # make this printing by default?
             print("***Batch Done***")
+        elif self.cmdargs.upgradecheck == 'viewfiles' and self.cmdargs.viewfiles:
+                #add functionality to parse the various log files that are created, so you dont manually look:
+            print("Functionality not implemented yet, sorry :(")
         print("***Job Complete, Exiting Program***")
 
     def single_search(self,ipaddr):

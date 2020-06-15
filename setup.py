@@ -6,7 +6,7 @@ DESCRIPTION = "Direct Network Management Tool"
 URL = "https://github.com/tmanfree/DNMT"
 EMAIL = "tmanfree@hotmail.com"
 AUTHOR = "Thomas Mandzie"
-VERSION = "0.0.33"
+VERSION = "0.0.34"
 
 
 with open("README.md", "r") as fh:

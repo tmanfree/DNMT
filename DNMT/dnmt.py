@@ -142,6 +142,15 @@ def dnmt():
     batch_check_parser.add_argument('-d', '--delay', help="specify minutes to delay reload (If Applying)")
     batch_check_parser.add_argument('-u', '--updateinterval', help="specify the check interval in seconds after reload (If Applying)"
                                                                    "Default is 30")
+    #viewlog functionality #integrate with regular updatecheck? single and batch? print first line of sum file for status
+    viewlog_check_parser = check_parser.add_parser("viewlog", help="parse logs for easier viewing").add_subparsers(dest="viewlog")
+    before_viewlog_check_parser = viewlog_check_parser.add_parser('before', help="check before file of an IP")
+    before_viewlog_check_parser.add_argument('ipaddr', metavar='IP', help='The IP to check')
+    after_viewlog_check_parser = viewlog_check_parser.add_parser('after', help="check after file of an IP")#THERE ARE AFTERS AND RELOADS
+    after_viewlog_check_parser.add_argument('ipaddr', metavar='IP', help='The IP to check')
+
+
+
     #Status Checking parsers
     status_checks_parser = subparsers.add_parser("StatusChecks", help="functions regarding checking the status of switches").add_subparsers(dest="statuschecks")
     maintenance_parser = status_checks_parser.add_parser("maintenance",help="perform maintenance (clean up)")
