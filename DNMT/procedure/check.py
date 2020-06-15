@@ -215,6 +215,7 @@ class Check:
                 else:
                     before_swcheck_dict = {"ip": ipaddr}
                     #Grabs a snapshot of the switch, not currently used for anything but archival
+                    #TODO UNCOMMENT!
                     before_swcheck_dict["SwitchStatus"] = self.subs.snmp_get_switch_data_full(ipaddr)
                     print("ping response for {}, grabbing data".format(ipaddr))
 
@@ -309,37 +310,39 @@ class Check:
                                     # loop through each of the switches
                                     for f in flashes:
                                         x = int(f[-2])-1 #get switch number from flash-x
-                                        self.subs.verbose_printer(
-                                            '{} switch-{} current ver: {} {} {}'.format(before_swcheck_dict["ip"],
-                                                                                        str(show_version[x][0]),
-                                                                                        str(show_version[x][3]),
-                                                                                        str(show_version[x][4]),
-                                                                                        str(show_version[x][5])))
-                                        before_swcheck_dict["curVer"] += "\nSw#{}, Ver:{}, Mode:{}".format(
-                                            str(show_version[x][0]), str(show_version[x][3]), str(show_version[x][5]))
-                                        #TODO grab the boot file to verify what will be booted
-                                        #TODO compare this packages.conf file to the
-                                        packages = net_connect.send_command('cat ' + f + 'packages.conf')
-                                        before_swcheck_dict["{}fschk".format(f)] = self.sw_3650_precheck(net_connect, f,
-                                                                                                    before_swcheck_dict, packages)
-                                        if (packages == before_swcheck_dict["packages.conf"]):
+                                        if x < len(show_version): #this should ignore provisioned switches
                                             self.subs.verbose_printer(
-                                                "{} {} packages.conf is identical to master switch".format(before_swcheck_dict["ip"], f))
-                                            if (before_swcheck_dict["{}fschk".format(f)]): # check if flash verified successfully
+                                                '{} switch-{} current ver: {} {} {}'.format(before_swcheck_dict["ip"],
+                                                                                            str(show_version[x][0]),
+                                                                                            str(show_version[x][3]),
+                                                                                            str(show_version[x][4]),
+                                                                                            str(show_version[x][5])))
+                                            before_swcheck_dict["curVer"] += "\nSw#{}, Ver:{}, Mode:{}".format(
+                                                str(show_version[x][0]), str(show_version[x][3]), str(show_version[x][5]))
+                                            #TODO grab the boot file to verify what will be booted
+                                            #TODO compare this packages.conf file to the
+                                            packages = net_connect.send_command('cat ' + f + 'packages.conf')
+                                            ##TODO UNCOMMENT!
+                                            before_swcheck_dict["{}fschk".format(f)] = self.sw_3650_precheck(net_connect, f,
+                                                                                                        before_swcheck_dict, packages)
+                                            if (packages == before_swcheck_dict["packages.conf"]):
                                                 self.subs.verbose_printer(
-                                                    "{} {} flash verification successful".format(before_swcheck_dict["ip"], f))
-                                                #TODO placeholder, add logic?, print regardless of verbose?
+                                                    "{} {} packages.conf is identical to master switch".format(before_swcheck_dict["ip"], f))
+                                                if (before_swcheck_dict["{}fschk".format(f)]): # check if flash verified successfully
+                                                    self.subs.verbose_printer(
+                                                        "{} {} flash verification successful".format(before_swcheck_dict["ip"], f))
+                                                    #TODO placeholder, add logic?, print regardless of verbose?
+                                                else:
+                                                    self.subs.verbose_printer(
+                                                        "{} {} flash verification failed".format(before_swcheck_dict["ip"], f))
+                                                    ExitOut = True
                                             else:
                                                 self.subs.verbose_printer(
-                                                    "{} {} flash verification failed".format(before_swcheck_dict["ip"], f))
+                                                    "{} {} packages.conf is different than master".format(before_swcheck_dict["ip"], f))
                                                 ExitOut = True
-                                        else:
-                                            self.subs.verbose_printer(
-                                                "{} {} packages.conf is different than master".format(before_swcheck_dict["ip"], f))
-                                            ExitOut = True
-                                        before_swcheck_dict[f] = net_connect.send_command('show ' + f)
+                                            before_swcheck_dict[f] = net_connect.send_command('show ' + f)
                                 else: # if it is not a 3650, or 9000 model catalyst
-                                    pass
+                                    pass ###########everything under this was indented more
                                     # before_swcheck_dict["curVer"] += "\nSw#{}, Ver:{}".format(
                                     #     str(show_version[0][0]), str(show_version[0][3]))
                                     # loop through each of the switches
@@ -395,7 +398,7 @@ class Check:
                                                     "{} {} flash verification failed".format(before_swcheck_dict["ip"], f))
                                                 ExitOut = True
                                             before_swcheck_dict[f] = net_connect.send_command('show ' + f)
-
+#End of processing multiple switches
                             else: # if only a single switch
                                 if any(n in show_version[0][2] for n in ["3650", "C9"]):
                                     self.subs.verbose_printer(
