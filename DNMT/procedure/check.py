@@ -217,7 +217,7 @@ class Check:
             availablefiles.append("Exit")
             selectionmade = -1
 
-            while not (selectionmade >= 0 and selectionmade < len(availablefiles)):
+            while (selectionmade != len(availablefiles)):
                 print("***The following files hae been found, please select one***")
                 print("***CURRENTLY WORKS WITH BEFORE FILES***")
                 for num, name in enumerate(availablefiles, start=0):
@@ -229,14 +229,16 @@ class Check:
                     if selectionmade >= len(availablefiles) or selectionmade < 0:
                         raise ValueError
                 except ValueError:
-                    print("\nInvalid Response, please enter a valid number from 0 - {}\n".format(len(availablefiles)))
-                # if not response == 'yes':
-                #     self.subs.verbose_printer('Did not proceed with change.')
-            if (selectionmade == len(availablefiles)):
-                print("Exiting out")
-                sys.exit(0)
-            print("Selection is {}".format(availablefiles[selectionmade]))
-            self.view_logs(availablefiles[selectionmade])
+                    print("\nInvalid Response, please enter a valid number from 0 - {}\n".format(len(availablefiles)-1))
+                    selectionmade = -1
+
+                if (selectionmade == len(availablefiles)-1): #exit is added to available selections
+                    print("Exiting out")
+                    sys.exit(0)
+                if selectionmade >= 0: #igrnore -1 error case
+                    print("Selection is {}".format(availablefiles[selectionmade]))
+                    self.view_logs(availablefiles[selectionmade])
+                # selectionmade = -1 #reset selection made to -1
         else:
             print("No files found in the current folder, exiting")
             sys.exit(0)
@@ -250,32 +252,38 @@ class Check:
 
     def view_logs(self, filename):
         if (re.search('-Before.txt', filename) is not None) or (re.search('-After.txt', filename) is not None):
-            with open(filename, "rb") as myNewFile:
-                before_swcheck_dict = pickle.load(myNewFile)
-                if len(before_swcheck_dict) > 0:
-                    selectionmade = ""
-                    self.list_entries(before_swcheck_dict)
-                    while not (selectionmade == "exit"):
-                        response = input("Please enter your selection:")
-                        try:
-                            selectionmade = response
-                            if selectionmade not in before_swcheck_dict.keys() and selectionmade not in ["exit","list","all"] :
-                                raise KeyError
-                            elif (selectionmade == "exit"):
-                                print("Exiting out")
-                                return
-                            elif (selectionmade == "list"):
-                                self.list_entries(before_swcheck_dict)
-                            elif (selectionmade == "all"):
-                                print(before_swcheck_dict)  # TODO MAKE THIS PRETTY
-                            # print("Selection is {}".format(availablefiles[selectionmade]))
-                            else:
-                                print("{}\n".format(before_swcheck_dict[selectionmade]))
-                        except KeyError:
-                            print("\nInvalid Response, please enter a valid entry or type 'exit'\n")
-                else:
-                    print("No entries found in the file")
-                    return
+            with open(filename, "rb") as file:
+                before_swcheck_dict = pickle.load(file)
+                file.close()
+            if len(before_swcheck_dict) > 0:
+                selectionmade = ""
+                self.list_entries(before_swcheck_dict)
+                while not (selectionmade == "exit"):
+                    response = input("Please enter your selection:")
+                    try:
+                        selectionmade = response
+                        if selectionmade not in before_swcheck_dict.keys() and selectionmade not in ["exit","list","all"] :
+                            raise KeyError
+                        elif (selectionmade == "exit"):
+                            print("Exiting out")
+                            return
+                        elif (selectionmade == "list"):
+                            self.list_entries(before_swcheck_dict)
+                        elif (selectionmade == "all"):
+                            print(before_swcheck_dict)  # TODO MAKE THIS PRETTY
+                        # print("Selection is {}".format(availablefiles[selectionmade]))
+                        else:
+                            print("{}\n".format(before_swcheck_dict[selectionmade]))
+                    except KeyError:
+                        print("\nInvalid Response, please enter a valid entry or type 'exit'\n")
+            else:
+                print("No entries found in the file")
+                return
+        else:
+            file = open(filename, "r")
+            print(file.read())
+                # iplist.append(ip.rstrip())
+            file.close()
 
     def single_search(self,ipaddr):
         try: #wrapping to keep multiprossesing safer
