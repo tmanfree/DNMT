@@ -143,11 +143,13 @@ def dnmt():
     batch_check_parser.add_argument('-u', '--updateinterval', help="specify the check interval in seconds after reload (If Applying)"
                                                                    "Default is 30")
     #viewlog functionality #integrate with regular updatecheck? single and batch? print first line of sum file for status
-    viewlog_check_parser = check_parser.add_parser("viewlog", help="parse logs for easier viewing").add_subparsers(dest="viewlog")
-    before_viewlog_check_parser = viewlog_check_parser.add_parser('before', help="check before file of an IP")
-    before_viewlog_check_parser.add_argument('ipaddr', metavar='IP', help='The IP to check')
-    after_viewlog_check_parser = viewlog_check_parser.add_parser('after', help="check after file of an IP")#THERE ARE AFTERS AND RELOADS
-    after_viewlog_check_parser.add_argument('ipaddr', metavar='IP', help='The IP to check')
+    viewlog_check_parser = check_parser.add_parser("viewlog", help="parse logs for easier viewing")
+    viewlog_check_parser.add_argument('ipaddr', metavar='IP', help='The IP to check')
+    # viewlog_check_parser = check_parser.add_parser("viewlog", help="parse logs for easier viewing").add_subparsers(dest="viewlog")
+    # before_viewlog_check_parser = viewlog_check_parser.add_parser('before', help="check before file of an IP")
+    # before_viewlog_check_parser.add_argument('ipaddr', metavar='IP', help='The IP to check')
+    # after_viewlog_check_parser = viewlog_check_parser.add_parser('after', help="check after file of an IP")#THERE ARE AFTERS AND RELOADS
+    # after_viewlog_check_parser.add_argument('ipaddr', metavar='IP', help='The IP to check')
 
 
 
@@ -258,12 +260,14 @@ def dnmt():
         hostnamer.bulk_vlan_change(cmdargs.ipaddr,cmdargs.oldvlan,int(cmdargs.newvlan))
     elif cmdargs.maincommand == "UpgradeCheck":
         #UpgradeCheck.main()
+        upgradeCheck.begin()
+        # if cmdargs.upgradecheck == 'single' and cmdargs.ipaddr:
+        #     #upgradeCheck.single_search(cmdargs.ipaddr)
+        #     upgradeCheck.begin()
+        # elif cmdargs.upgradecheck == 'batch' and cmdargs.file:
+        #     upgradeCheck.begin()
+        # elif cmdargs.upgradecheck == 'viewlog' and cmdargs.ipaddr:
 
-        if cmdargs.upgradecheck == 'single' and cmdargs.ipaddr:
-            #upgradeCheck.single_search(cmdargs.ipaddr)
-            upgradeCheck.begin()
-        elif cmdargs.upgradecheck == 'batch' and cmdargs.file:
-            upgradeCheck.begin()
     elif cmdargs.maincommand == "tools":
         if cmdargs.tools == 'AP_Poke':
             try:  #<TODO ADD THIS FUNCTIONALITY EVERYWHERE>

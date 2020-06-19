@@ -192,10 +192,90 @@ class Check:
 
                     self.subs.verbose_printer(result["summary"]) # make this printing by default?
             print("***Batch Done***")
-        elif self.cmdargs.upgradecheck == 'viewfiles' and self.cmdargs.viewfiles:
-                #add functionality to parse the various log files that are created, so you dont manually look:
-            print("Functionality not implemented yet, sorry :(")
+        elif self.cmdargs.upgradecheck == 'viewlog':
+            self.list_logs(self.cmdargs.ipaddr)
+       #add functionality to parse the various log files that are created, so you dont manually look:
         print("***Job Complete, Exiting Program***")
+
+    def list_logs(self, ipaddr):
+        # check log folder to see what files are available:
+        # < IP > -Before.txt
+        # < IP > - < Check | Reload > -After.txt
+        # < IP > - < Check | Reload > -Diff.txt
+        # < IP > - < Check | Reload > -Sum.txt
+        # < IP > -Verification.txt
+
+        # os.path.join(self.config.logpath, ipaddr + "-Before.txt")
+        # test = os.listdir(os.path.join(self.config.logpath))
+        availablefiles = []
+        for file in os.listdir(os.curdir):
+            if file.endswith(".txt"):
+                if re.search('^'+ ipaddr + '-', file) is not None:
+                    availablefiles.append(file)
+
+        if len(availablefiles) > 0:
+            availablefiles.append("Exit")
+            selectionmade = -1
+
+            while not (selectionmade >= 0 and selectionmade < len(availablefiles)):
+                print("***The following files hae been found, please select one***")
+                print("***CURRENTLY WORKS WITH BEFORE FILES***")
+                for num, name in enumerate(availablefiles, start=0):
+                    print("[{}]: {}".format(num, name))
+
+                response = input("Please enter your selection:")
+                try:
+                    selectionmade = int(response)
+                    if selectionmade >= len(availablefiles) or selectionmade < 0:
+                        raise ValueError
+                except ValueError:
+                    print("\nInvalid Response, please enter a valid number from 0 - {}\n".format(len(availablefiles)))
+                # if not response == 'yes':
+                #     self.subs.verbose_printer('Did not proceed with change.')
+            if (selectionmade == len(availablefiles)):
+                print("Exiting out")
+                sys.exit(0)
+            print("Selection is {}".format(availablefiles[selectionmade]))
+            self.view_logs(availablefiles[selectionmade])
+        else:
+            print("No files found in the current folder, exiting")
+            sys.exit(0)
+    def list_entries(self, swcheck_dict):
+        print("***The following entries have been found, please select one***")
+        for name in swcheck_dict.keys():
+            print("{}:".format(name))
+        print("\n(list,all and exit are valid)")
+
+        return
+
+    def view_logs(self, filename):
+        if (re.search('-Before.txt', filename) is not None) or (re.search('-After.txt', filename) is not None):
+            with open(filename, "rb") as myNewFile:
+                before_swcheck_dict = pickle.load(myNewFile)
+                if len(before_swcheck_dict) > 0:
+                    selectionmade = ""
+                    self.list_entries(before_swcheck_dict)
+                    while not (selectionmade == "exit"):
+                        response = input("Please enter your selection:")
+                        try:
+                            selectionmade = response
+                            if selectionmade not in before_swcheck_dict.keys() and selectionmade not in ["exit","list","all"] :
+                                raise KeyError
+                            elif (selectionmade == "exit"):
+                                print("Exiting out")
+                                return
+                            elif (selectionmade == "list"):
+                                self.list_entries(before_swcheck_dict)
+                            elif (selectionmade == "all"):
+                                print(before_swcheck_dict)  # TODO MAKE THIS PRETTY
+                            # print("Selection is {}".format(availablefiles[selectionmade]))
+                            else:
+                                print("{}\n".format(before_swcheck_dict[selectionmade]))
+                        except KeyError:
+                            print("\nInvalid Response, please enter a valid entry or type 'exit'\n")
+                else:
+                    print("No entries found in the file")
+                    return
 
     def single_search(self,ipaddr):
         try: #wrapping to keep multiprossesing safer
