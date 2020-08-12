@@ -150,11 +150,58 @@ class Test:
             print("NETMIKO ERROR {}:{}".format(ipaddr,err.args[0]))
 
 
+    def connectcount_begin(self):
+        #Iterate through addresses List
+        file = open(self.cmdargs.file, "r")
+        for ip in file:
+            self.connectcount(ip.rstrip())
+        file.close()
+
+    def connectcount(self, ipaddr):
+        try:
+            # test = self.subs.snmp_get_mac_table_bulk(self.cmdargs.ipaddr)
+            # test1 = self.subs.snmp_get_switch_data_full(self.cmdargs.ipaddr)
+            net_connect = self.subs.create_connection(ipaddr)
+            if net_connect:
+                # Show Interface Status
+                # output = net_connect.send_command('show mac address-table ')
+                net_connect.send_command('term shell 0')
+                #before_swcheck_dict = {"ip": ipaddr}
+                intlist = []
+
+                tempvar = net_connect.send_command('show int  | include thernet|Last input')
+                lastvar = ""
+                for line in tempvar.splitlines():
+                    portnum = self.subs.regex_parser_var0(r"Ethernet([0-9]/\d{1,2})", line)
+                    if portnum is not None:
+                        lastvar = portnum
+                    elif lastvar  is not "":
+                        innertemp = self.subs.regex_parser_varx(r"Last input (\S+),\s+output (\S+)", line)
+                        if innertemp is not None:
+                            pass
+                            intlist.append((lastvar,innertemp[0],innertemp[1]))
+                            lastvar = ""
+                    # if (len(lastvar) == 2): #verify that return isn't borked, should get 3 length tuple
+                    #    before_swcheck_dict[lastvar] = "test"
+
+
+                net_connect.disconnect()
+                print("Interface,Last input,Last output")
+                for line in intlist:
+                    print("{},{},{}".format(line[0],line[1],line[2]))
+        # netmiko connection error handling
+        except netmiko.ssh_exception.NetMikoAuthenticationException as err:
+            self.subs.verbose_printer(err.args[0], "Netmiko Authentication Failure")
+        except netmiko.ssh_exception.NetMikoTimeoutException as err:
+            self.subs.verbose_printer(err.args[0], "Netmiko Timeout Failure")
+        except ValueError as err:
+            print(err.args[0])
+        except Exception as err:  # currently a catch all to stop linux from having a conniption when reloading
+            print("NETMIKO ERROR {}:{}".format(ipaddr, err.args[0]))
+
 
 
     def dell_snmp_Begin(self):
-
-
         #Iterate through addresses List
         file = open(self.cmdargs.file, "r")
         for ip in file:

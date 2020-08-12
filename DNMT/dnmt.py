@@ -195,6 +195,8 @@ def dnmt():
     dell_snmp_parser = test_parser.add_parser("dellsnmp", help="add snmp ro string")
     dell_snmp_parser.add_argument('file', metavar='file', help='The file with IPs to check')
     dell_snmp_parser.add_argument('snmpstring', metavar='snmpstring', help="snmp string to add")
+    connect_count_parser = test_parser.add_parser("connectcount", help="count not connect")
+    connect_count_parser.add_argument('file', help='The file with IPs to check')
 
 
 
@@ -297,6 +299,9 @@ def dnmt():
             test.BadPhoneBegin()
         elif cmdargs.test == "dellsnmp":
             test.dell_snmp_Begin()
+        elif cmdargs.test == "connectcount":
+            test.connectcount_begin()
+
 
 
 
