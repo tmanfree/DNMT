@@ -150,6 +150,14 @@ class Test:
             print("NETMIKO ERROR {}:{}".format(ipaddr,err.args[0]))
 
 
+    def batchrunwrapper(self):
+        file = open(self.cmdargs.file, "r")
+        for command in file:
+            Return_val = subprocess.run(command, shell=True)
+        file.close()
+
+
+
     def connectcount_begin(self):
         #Iterate through addresses List
         file = open(self.cmdargs.file, "r")
@@ -168,6 +176,8 @@ class Test:
                 net_connect.send_command('term shell 0')
                 #before_swcheck_dict = {"ip": ipaddr}
                 intlist = []
+                desclist = []
+                vlanlist = []
 
                 tempvar = net_connect.send_command('show int  | include thernet|Last input')
                 lastvar = ""
@@ -176,19 +186,46 @@ class Test:
                     if portnum is not None:
                         lastvar = portnum
                     elif lastvar  is not "":
-                        innertemp = self.subs.regex_parser_varx(r"Last input (\S+),\s+output (\S+)", line)
+                        innertemp = self.subs.regex_parser_varx(r"Last input (\S+),\s+output (\S+),", line)
                         if innertemp is not None:
                             pass
                             intlist.append((lastvar,innertemp[0],innertemp[1]))
                             lastvar = ""
                     # if (len(lastvar) == 2): #verify that return isn't borked, should get 3 length tuple
-                    #    before_swcheck_dict[lastvar] = "test"
+                    #    before_swcheck_dict[lastvar] = "test"\
+                tempvar = net_connect.send_command('show int desc')
+                for line in tempvar.splitlines():
+                    interface = self.subs.regex_parser_var0(r"^\S+(\d/\d{1,2})", line)
+                    if interface is not None:
+                        description = self.subs.regex_parser_var0(r"^\S+\d/\d{1,2}\s+(?:up|down)\s+(?:up|down)\s+(.+)",line)
+                        desclist.append((interface,description))
+                        # if description is not "" and description is not None:
+                        #     description = description.rstrip()
+
+                tempvar = net_connect.send_command('show int status')
+                for line in tempvar.splitlines():
+                    interface = self.subs.regex_parser_var0(r"^\S+(\d/\d{1,2})", line)
+                    if interface is not None:
+                        # description = self.subs.regex_parser_var0(r"^\S+\d/\d{1,2}\s+(.+)(?:connected|notconnect)", line)
+                        # if description is not "" and description is not None:
+                        #     description = description.rstrip()
+
+                        vlan = self.subs.regex_parser_var0(r"(?:connected|notconnect)\s+(\S+)\s+", line)
+                        vlanlist.append((interface,vlan))
 
 
                 net_connect.disconnect()
-                print("Interface,Last input,Last output")
-                for line in intlist:
-                    print("{},{},{}".format(line[0],line[1],line[2]))
+                # print("Interface,Last input,Last output")
+                # for line in intlist:
+                #     print("{},{},{}".format(line[0],line[1],line[2]))
+                # for line in  desclist:
+                #     print("{},{},{}".format(line[0], line[1], line[2]))
+
+                print ("descint,intint,label,vlan,lastinput,lastoutput")
+                for descit, intit, vlanit in zip(desclist,intlist,vlanlist):
+                    print("{},{},{},{},{},{},{},{}".format(ipaddr,descit[0],intit[0],vlanit[0],vlanit[1],descit[1],intit[1],intit[2]))
+                    if descit[0] != intit[0] or descit[0] != vlanit[0]:
+                        print("^^^^^^^^^^^^^^^^^^^^^^^ERROR MISMATCHED INTS^^^^^^^^^^^^")
         # netmiko connection error handling
         except netmiko.ssh_exception.NetMikoAuthenticationException as err:
             self.subs.verbose_printer(err.args[0], "Netmiko Authentication Failure")

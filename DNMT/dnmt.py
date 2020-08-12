@@ -197,6 +197,8 @@ def dnmt():
     dell_snmp_parser.add_argument('snmpstring', metavar='snmpstring', help="snmp string to add")
     connect_count_parser = test_parser.add_parser("connectcount", help="count not connect")
     connect_count_parser.add_argument('file', help='The file with IPs to check')
+    batch_run_wrapper_parser = test_parser.add_parser("batchrunwrapper", help="run batches of command line scripts")
+    batch_run_wrapper_parser.add_argument('file', help='The file with cli commands to run')
 
 
 
@@ -301,6 +303,8 @@ def dnmt():
             test.dell_snmp_Begin()
         elif cmdargs.test == "connectcount":
             test.connectcount_begin()
+        elif cmdargs.test == "batchrunwrapper":
+            test.batchrunwrapper()
 
 
 
