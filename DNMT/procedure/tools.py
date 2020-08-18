@@ -332,6 +332,10 @@ class Tools:
 
     def Apply_Port_Labels(self,full_label_dict,):
         #TODO list previous description and new description, to show the change
+        #TODO add processing for Vlans
+        #TODO make a list of the ports to change and then change them all at the same time (same command_list)
+        #   to send to netmiko to improve processing time, rather than jumping in and out of the config for each one
+
         bSuccess = True
         for switch_dict in full_label_dict['switches']:
             try:
@@ -381,6 +385,8 @@ class Tools:
                     if re.search('Invalid input detected', result) is not None:
                         self.Print_And_Log("\nError saving config on {}\n".format(switch_dict['IP']))
                         bSuccess = False
+                    else:
+                        self.Print_And_Log("\nSuccess saving config on {}\n".format(switch_dict['IP']))
                     net_connect.disconnect()
             except Exception as e:
                 self.Print_And_Log("\nConnection/label application failure:{}\n".format(e))
@@ -430,7 +436,7 @@ class Tools:
             smtp.sendmail(temp_from, temp_to, themsg)
             smtp.close()
 
-        except smtplib.SMTPException:
-            print("Failed to send Email")
+        except smtplib.SMTPException as err:
+            print("Failed to send Email:{}".format(err))
         except Exception as err:
             print(err)
