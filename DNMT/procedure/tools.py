@@ -344,15 +344,16 @@ class Tools:
                     net_connect.enable()  # move this out of the if/else statements
                     net_connect.send_command('term shell 0')
                     for label in switch_dict['Labels']:
+                        current_config = net_connect.send_command('show run {}'.format(label['port']))
+                        current_descr = self.subs.regex_parser_var0("description (.*)",current_config)
                         if not self.cmdargs.batch:
-                            result = net_connect.send_command('show run {}'.format(label['port']))
-                            if re.search('Invalid input detected', result) is not None:
+                            if re.search('Invalid input detected', current_config) is not None:
                                 self.Print_And_Log("\nERROR grabbing port info of {} on {}, skipping\n".format(label['port'],switch_dict['IP']))
                                 bSuccess = False
                             else:
                                 response = input(
                                     "Current Config of {}:\n{}\n !!!!  Apply new port label of \"{}\"? (type 'yes' to continue'):".format(
-                                        label['port'], result, label['desc']))
+                                        label['port'], current_config, label['desc']))
                                 if not response == 'yes':
                                     self.Print_And_Log("\nDid not proceed with changing {} on {}, skipping\n".format(label['port'],switch_dict['IP']))
                                     bSuccess = False
@@ -365,9 +366,8 @@ class Tools:
                                         bSuccess = False
                                     else:
                                         self.Print_And_Log(
-                                            "\nSuccessfully updated port info of {} on {}\n".format(label['port'],
-                                                                                              switch_dict[
-                                                                                                  'IP']))
+                                            "\nSuccessfully updated port info of {} on {}\n Old:{} New:{}\n".format(label['port'],
+                                                                                              switch_dict['IP'],current_descr,label['desc']))
                         else: #if in batch mode
                             result = net_connect.send_config_set([label['port'],label['desc']])
                             if re.search('Invalid input detected', result) is not None:
@@ -398,10 +398,6 @@ class Tools:
             self.subs.verbose_printer("##### Emailing now #####")
 
             temp_from = "admin@localhost"
-            if 'email' in self.cmdargs and self.cmdargs.email is not None:
-               temp_to = self.cmdargs.email
-            else:
-                temp_to = "admin@localhost" #placeholder
 
             # Create the message
             themsg = MIMEMultipart()
