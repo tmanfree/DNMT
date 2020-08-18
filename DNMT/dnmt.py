@@ -232,6 +232,7 @@ def dnmt():
     #portlabel grab/send functionality
     port_label_tool_parser = tools_parser.add_parser("Port_Label", help="check for port label files in email")
     port_label_tool_parser.add_argument('-b', '--batch', help="skip verification with user, apply changes", default=False, action="store_true")
+    port_label_tool_parser.add_argument('-n', '--notify', help="send email to submitter",default=False, action="store_true")
     port_label_tool_parser.add_argument('-v', '--verbose', help="Run with additional information", default=False, action="store_true")
 
 

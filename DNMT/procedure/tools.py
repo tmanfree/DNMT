@@ -18,10 +18,14 @@ import dns.zone
 import imaplib
 import email
 import ast
-
+import smtplib
+from email import encoders
 
 #3rd party imports
 import netmiko
+from email.mime.base import MIMEBase
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 from pathos.multiprocessing import ProcessingPool as Pool
 
 #local subroutine import
@@ -298,28 +302,36 @@ class Tools:
                             # from_bytes, not from_string
                             msg = email.message_from_bytes(response_part[1])
                             email_subject = msg['subject']
-                            # email_from = msg['from']
+                            email_from = msg['from']
                             if (email_subject == '<PORTLABELS> New Port Labels'):
+                                self.log_array.append("Email processing beginning\n")
                                 email_body = msg.get_payload(decode=True)
                                 dict_str = email_body.decode("UTF-8")
                                 label_dict = ast.literal_eval(dict_str)
                                 if (self.Apply_Port_Labels(label_dict)):
-                                    print("Labels applied correctly, message index:{}".format(str(int_msg_index)))
+                                    self.Print_And_Log("Labels applied correctly, message index:{}".format(str(int_msg_index)))
                                     mailconnection.store(msg_index, '+FLAGS', '(\\Seen)')
                                 else:
-                                    print("ERROR: Labels did not apply correctly, message index:{}".format(
+                                    self.Print_And_Log("ERROR: Labels did not apply correctly, message index:{}".format(
                                         str(int_msg_index)))
                                     mailconnection.store(msg_index, '-FLAGS', '(\\Seen)')
 
-                                # print('From : ' + email_from + '\n')
-                                # print('Subject : ' + email_subject + '\n')
                             else:
-                                print("ERROR: incorrect message subject, message index:{}, subject:{}".format(
+                               self.Print_And_Log("ERROR: incorrect message subject, message index:{}, subject:{}".format(
                                     str(int_msg_index),email_subject))
+                            if self.cmdargs.notify:
+                                self.Email_Now(email_from,email_body)
         except Exception as e:
             print("Email processing failure:{}".format(e))
 
+
+
+    def Print_And_Log(self,to_print):
+        self.subs.verbose_printer(to_print)
+        self.log_array[0] += (to_print + "\n")
+
     def Apply_Port_Labels(self,full_label_dict,):
+        #TODO list previous description and new description, to show the change
         bSuccess = True
         for switch_dict in full_label_dict['switches']:
             try:
@@ -331,37 +343,94 @@ class Tools:
                         if not self.cmdargs.batch:
                             result = net_connect.send_command('show run {}'.format(label['port']))
                             if re.search('Invalid input detected', result) is not None:
-                                print("\nERROR grabbing port info of {} on {}, skipping\n".format(label['port'],switch_dict['IP']))
+                                self.Print_And_Log("\nERROR grabbing port info of {} on {}, skipping\n".format(label['port'],switch_dict['IP']))
                                 bSuccess = False
                             else:
                                 response = input(
                                     "Current Config of {}:\n{}\n !!!!  Apply new port label of \"{}\"? (type 'yes' to continue'):".format(
                                         label['port'], result, label['desc']))
                                 if not response == 'yes':
-                                    print("\nDid not proceed with changing {} on {}, skipping\n".format(label['port'],switch_dict['IP']))
+                                    self.Print_And_Log("\nDid not proceed with changing {} on {}, skipping\n".format(label['port'],switch_dict['IP']))
                                     bSuccess = False
                                 else:
                                     result = net_connect.send_config_set([label['port'],label['desc']])
                                     if re.search('Invalid input detected', result) is not None:
-                                        print("\nERROR updating port info of {} on {}\n".format(label['port'],
+                                        self.Print_And_Log("\nERROR updating port info of {} on {}\n".format(label['port'],
                                                                                                       switch_dict[
                                                                                                           'IP']))
                                         bSuccess = False
+                                    else:
+                                        self.Print_And_Log(
+                                            "\nSuccessfully updated port info of {} on {}\n".format(label['port'],
+                                                                                              switch_dict[
+                                                                                                  'IP']))
                         else: #if in batch mode
                             result = net_connect.send_config_set([label['port'],label['desc']])
                             if re.search('Invalid input detected', result) is not None:
-                                print("\nERROR updating port info of {} on {}, continuing\n".format(label['port'],
+                                self.Print_And_Log("\nERROR updating port info of {} on {}, continuing\n".format(label['port'],
                                                                                               switch_dict[
                                                                                                   'IP']))
                                 bSuccess = False
-                            #<TODO> add verification of result that there were no issues, search for %?
+                            else:
+                                self.Print_And_Log(
+                                    "\nSuccessfully updated port info of {} on {}\n".format(label['port'],
+                                                                                            switch_dict[
+                                                                                                'IP']))
 
                     result += net_connect.save_config()
                     if re.search('Invalid input detected', result) is not None:
-                        print("\nError saving config on {}\n".format(switch_dict['IP']))
+                        self.Print_And_Log("\nError saving config on {}\n".format(switch_dict['IP']))
                         bSuccess = False
                     net_connect.disconnect()
             except Exception as e:
-                print("\nConnection/label application failure:{}\n".format(e))
+                self.Print_And_Log("\nConnection/label application failure:{}\n".format(e))
                 bSuccess = False
         return bSuccess
+
+    def Email_Now(self,to_email,original_text):
+        try:
+            self.subs.verbose_printer("##### Emailing now #####")
+
+            temp_from = "admin@localhost"
+            if 'email' in self.cmdargs and self.cmdargs.email is not None:
+               temp_to = self.cmdargs.email
+            else:
+                temp_to = "admin@localhost" #placeholder
+
+            # Create the message
+            themsg = MIMEMultipart()
+            themsg["From"] = temp_from
+            themsg["Subject"] = "response from Port Labelling - {}".format(datetime.date.today().strftime('%Y-%m-%d'))
+            themsg["To"] = to_email
+
+
+
+            # themsg.preamble = 'I am not using a MIME-aware mail reader.\n'
+            # msg = MIMEBase('application', 'zip')
+            # msg.set_payload(zf.read())
+            # encoders.encode_base64(msg)
+            # msg.add_header('Content-Disposition', 'attachment',
+            #                filename=status_filename + '.zip')
+            #
+            #
+            # themsg.attach(msg)
+
+            #create the body of the email
+            body = self.log_array[0] + "\n"
+            body += "\n ------------------------------------\n ORIGINAL MSG BELOW\n{}".format(original_text)+"\n"
+
+
+            themsg.attach(MIMEText(body, 'plain'))
+
+            themsg = themsg.as_string()
+
+            # send the message
+            smtp = smtplib.SMTP()
+            smtp.connect()
+            smtp.sendmail(temp_from, temp_to, themsg)
+            smtp.close()
+
+        except smtplib.SMTPException:
+            print("Failed to send Email")
+        except Exception as err:
+            print(err)
