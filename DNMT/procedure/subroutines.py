@@ -1178,7 +1178,7 @@ class SubRoutines:
     #   Sets up a connection to the provided ip address. Currently setup to connect to cisco switches
     def create_connection(self,ipaddr):
         if 'verbose' in self.cmdargs and self.cmdargs.verbose:
-            print('------- CONNECTING to switch {}-------'.format(ipaddr))
+            print('------- CONNECTING to switch {} -------'.format(ipaddr))
 
         # Switch Parameters
         cisco_sw = {

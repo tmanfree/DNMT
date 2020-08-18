@@ -424,7 +424,7 @@ class Tools:
             # send the message
             smtp = smtplib.SMTP()
             smtp.connect()
-            smtp.sendmail(temp_from, temp_to, themsg)
+            smtp.sendmail(temp_from, to_email, themsg)
             smtp.close()
 
         except smtplib.SMTPException as err:
