@@ -346,11 +346,13 @@ class Tools:
                     for label in switch_dict['Labels']:
                         current_config = net_connect.send_command('show run {}'.format(label['port']))
                         current_descr = self.subs.regex_parser_var0("description (.*)",current_config)
-                        if not self.cmdargs.batch:
-                            if re.search('Invalid input detected', current_config) is not None:
-                                self.Print_And_Log("\nERROR grabbing port info of {} on {}, skipping\n".format(label['port'],switch_dict['IP']))
-                                bSuccess = False
-                            else:
+                        if re.search('Invalid input detected', current_config) is not None:
+                            self.Print_And_Log(
+                                "\nERROR grabbing port info of {} on {}, skipping\n".format(label['port'],
+                                                                                            switch_dict['IP']))
+                            bSuccess = False
+                        else:
+                            if not self.cmdargs.batch:
                                 response = input(
                                     "Current Config of {}:\n{}\n !!!!  Apply new port label of \"{}\"? (type 'yes' to continue'):".format(
                                         label['port'], current_config, label['desc']))
@@ -358,30 +360,10 @@ class Tools:
                                     self.Print_And_Log("\nDid not proceed with changing {} on {}, skipping\n".format(label['port'],switch_dict['IP']))
                                     bSuccess = False
                                 else:
-                                    result = net_connect.send_config_set([label['port'],label['desc']])
-                                    if re.search('Invalid input detected', result) is not None:
-                                        self.Print_And_Log("\nERROR updating port info of {} on {}\n".format(label['port'],
-                                                                                                      switch_dict[
-                                                                                                          'IP']))
-                                        bSuccess = False
-                                    else:
-                                        self.Print_And_Log(
-                                            "\nSuccessfully updated port info of {} on {}\n Old:{} New:{}\n".format(label['port'],
-                                                                                              switch_dict['IP'],current_descr,label['desc']))
-                        else: #if in batch mode
-                            result = net_connect.send_config_set([label['port'],label['desc']])
-                            if re.search('Invalid input detected', result) is not None:
-                                self.Print_And_Log("\nERROR updating port info of {} on {}, continuing\n".format(label['port'],
-                                                                                              switch_dict[
-                                                                                                  'IP']))
-                                bSuccess = False
-                            else:
-                                self.Print_And_Log(
-                                    "\nSuccessfully updated port info of {} on {}\n".format(label['port'],
-                                                                                            switch_dict[
-                                                                                                'IP']))
-
-                    result += net_connect.save_config()
+                                    bSuccess = self.Apply_Description(net_connect,label,switch_dict['IP'],current_descr,bSuccess)
+                            else: #if in batch mode
+                                bSuccess = self.Apply_Description(net_connect,label,switch_dict['IP'],current_descr,bSuccess)
+                    result = net_connect.save_config()
                     if re.search('Invalid input detected', result) is not None:
                         self.Print_And_Log("\nError saving config on {}\n".format(switch_dict['IP']))
                         bSuccess = False
@@ -391,6 +373,19 @@ class Tools:
             except Exception as e:
                 self.Print_And_Log("\nConnection/label application failure:{}\n".format(e))
                 bSuccess = False
+        return bSuccess
+
+    def Apply_Description(self,net_connect,label,ipaddr,current_descr,bSuccess):
+        result = net_connect.send_config_set([label['port'], label['desc']])
+        if re.search('Invalid input detected', result) is not None:
+            self.Print_And_Log("\nERROR updating port info of {} on {}\n".format(label['port'],
+                                                                                 ipaddr))
+            bSuccess = False
+        else:
+            self.Print_And_Log(
+                "\nSuccessfully updated port info of {} on {}\n Old:{} New:{}\n".format(label['port'],
+                                                                                        ipaddr,
+                                                                                        current_descr, label['desc']))
         return bSuccess
 
     def Email_Now(self,to_email,original_text):
