@@ -14,6 +14,10 @@ import socket
 import dns.resolver
 import dns.zone
 
+#for the port labelling
+import imaplib
+import email
+import ast
 
 
 #3rd party imports
@@ -267,3 +271,97 @@ class Tools:
             print("{}\n Job complete, {} matches found".format(switchlisting,matchcounter))
         else:
             print(" Job complete, NO matches found")
+
+    def Port_Label_Check(self):
+        # self.read_email_from_gmail()
+        try:
+            #login and grab mail from
+            mailconnection = imaplib.IMAP4_SSL('imap.gmail.com')
+            mailconnection.login(self.config.port_label_email, self.config.port_label_pw)
+            mailconnection.select('PortLabels')
+
+            # result, data = mail.search(None, 'ALL')
+            # mailconnection.store(b'1', '-FLAGS', '(\\Seen)')
+            # mailconnection.uid('STORE', b'1', '+FLAGS', '\SEEN')
+            result, data = mailconnection.search(None, 'UNSEEN')
+            mail_ids = data[0]
+
+            id_list = mail_ids.split()
+            if len(id_list) > 0:
+                for msg_index in id_list:
+                    int_msg_index = int(msg_index)    # need str(i)
+                    result, data = mailconnection.fetch(str(int_msg_index), '(RFC822)') #sets read
+                    mailconnection.store(msg_index, '-FLAGS', '(\\Seen)')
+
+                    for response_part in data:
+                        if isinstance(response_part, tuple):
+                            # from_bytes, not from_string
+                            msg = email.message_from_bytes(response_part[1])
+                            email_subject = msg['subject']
+                            # email_from = msg['from']
+                            if (email_subject == '<PORTLABELS> New Port Labels'):
+                                email_body = msg.get_payload(decode=True)
+                                dict_str = email_body.decode("UTF-8")
+                                label_dict = ast.literal_eval(dict_str)
+                                if (self.Apply_Port_Labels(label_dict)):
+                                    print("Labels applied correctly, message index:{}".format(str(int_msg_index)))
+                                    mailconnection.store(msg_index, '+FLAGS', '(\\Seen)')
+                                else:
+                                    print("ERROR: Labels did not apply correctly, message index:{}".format(
+                                        str(int_msg_index)))
+                                    mailconnection.store(msg_index, '-FLAGS', '(\\Seen)')
+
+                                # print('From : ' + email_from + '\n')
+                                # print('Subject : ' + email_subject + '\n')
+                            else:
+                                print("ERROR: incorrect message subject, message index:{}, subject:{}".format(
+                                    str(int_msg_index),email_subject))
+        except Exception as e:
+            print("Email processing failure:{}".format(e))
+
+    def Apply_Port_Labels(self,full_label_dict,):
+        bSuccess = True
+        for switch_dict in full_label_dict['switches']:
+            try:
+                net_connect = self.subs.create_connection(switch_dict['IP'])
+                if net_connect:
+                    net_connect.enable()  # move this out of the if/else statements
+                    net_connect.send_command('term shell 0')
+                    for label in switch_dict['Labels']:
+                        if not self.cmdargs.batch:
+                            result = net_connect.send_command('show run {}'.format(label['port']))
+                            if re.search('Invalid input detected', result) is not None:
+                                print("\nERROR grabbing port info of {} on {}, skipping\n".format(label['port'],switch_dict['IP']))
+                                bSuccess = False
+                            else:
+                                response = input(
+                                    "Current Config of {}:\n{}\n !!!!  Apply new port label of \"{}\"? (type 'yes' to continue'):".format(
+                                        label['port'], result, label['desc']))
+                                if not response == 'yes':
+                                    print("\nDid not proceed with changing {} on {}, skipping\n".format(label['port'],switch_dict['IP']))
+                                    bSuccess = False
+                                else:
+                                    result = net_connect.send_config_set([label['port'],label['desc']])
+                                    if re.search('Invalid input detected', result) is not None:
+                                        print("\nERROR updating port info of {} on {}\n".format(label['port'],
+                                                                                                      switch_dict[
+                                                                                                          'IP']))
+                                        bSuccess = False
+                        else: #if in batch mode
+                            result = net_connect.send_config_set([label['port'],label['desc']])
+                            if re.search('Invalid input detected', result) is not None:
+                                print("\nERROR updating port info of {} on {}, continuing\n".format(label['port'],
+                                                                                              switch_dict[
+                                                                                                  'IP']))
+                                bSuccess = False
+                            #<TODO> add verification of result that there were no issues, search for %?
+
+                    result += net_connect.save_config()
+                    if re.search('Invalid input detected', result) is not None:
+                        print("\nError saving config on {}\n".format(switch_dict['IP']))
+                        bSuccess = False
+                    net_connect.disconnect()
+            except Exception as e:
+                print("\nConnection/label application failure:{}\n".format(e))
+                bSuccess = False
+        return bSuccess

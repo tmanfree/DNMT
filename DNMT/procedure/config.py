@@ -22,6 +22,8 @@ def load_sw_base_conf():
     global ro
     global rw
     global logpath
+    global port_label_email
+    global port_label_pw
 
     username = config['SWITCHCRED']['username']
     password = config['SWITCHCRED']['password']
@@ -29,4 +31,6 @@ def load_sw_base_conf():
     ro = config['SNMP']['ro']
     rw = config['SNMP']['rw']
     logpath = config['PATH']['logpath']
+    port_label_email = config['PORTLABEL']['email']
+    port_label_pw = config['PORTLABEL']['password']
 
