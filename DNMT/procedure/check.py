@@ -70,7 +70,7 @@ class Check:
             return False
 
         for f in package_test_list:
-            verification = net_connect.send_command('Verify /md5 {}{} '.format(flashnum, f)) #verifying, but showing % Invalid input detected at '^' marker. on 2960x for .bin
+            verification = net_connect.send_command('Verify /md5 {}{} '.format(flashnum, f), max_loops=1000) #verifying, but showing % Invalid input detected at '^' marker. on 2960x for .bin
             self.subs.verbose_printer("{} {}{}\n{}".format(before_swcheck_dict["ip"], flashnum, f, verification))
             if "ERROR".lower() in verification.lower():
                 self.subs.verbose_printer(
