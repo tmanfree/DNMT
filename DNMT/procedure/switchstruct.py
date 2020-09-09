@@ -17,12 +17,16 @@ class StackStruct:
         self.vendor = vendor
         self.hostname = None
         self.switches = []
+        self.CSVHeader = "IP,Vendor,Hostname,SwitchNum,Model,Serial,SoftwareVer,ModuleNum,PortNum,PortName,PortDesc,PoE,CDP name,CDP port,CDP type,Status (1=Up),DataVlan,VoiceVlan,Mode (1=Trunk),IntID,InputErrors,OutputErrors,InputCounters,OutputCounters,LastTimeUpdated,DeltaInputCounters,DeltaOutputCounters"
 
     def addSwitch(self,switchNum):
         self.switches.append(SwitchStruct(switchNum))
 
     def getSwitch(self,switchNum):
         return next((x for x in self.switches if x.switchnumber == switchNum), None)
+
+    def getSwitchBySerialNumber(self,serialNumber):
+        return next((x for x in self.switches if x.serialnumber == serialNumber), None)
 
     def getSwitches(self):#uneccessary for a get function as we can directly access
         return self.switches
@@ -45,7 +49,7 @@ class StackStruct:
             switch.printSwitch()
 
     def printSingleLine(self):
-        print("IP,Vendor,Hostname,SwitchNum,Model,Serial,SoftwareVer,ModuleNum,PortNum,PortName,PortDesc,PoE,CDP,Status (1=Up),DataVlan,VoiceVlan,Mode (1=Trunk),IntID,InputErrors,OutputErrors,InputCounters,OutputCounters,LastTimeUpdated,DeltaInputCounters,DeltaOutputCounters")
+        print(self.CSVHeader)
         for switch in self.switches:
             switch.printSingleLine(self.ip, self.vendor, self.hostname)
 
@@ -58,9 +62,7 @@ class StackStruct:
     def exportCSV(self,filename):
         with open(filename, 'w', encoding='utf-8') as filePointer:
 
-            print(
-                "IP,Vendor,Hostname,SwitchNum,Model,Serial,SoftwareVer,ModuleNum,PortNum,PortName,PortDesc,PoE,CDP,Status (1=Up),DataVlan,VoiceVlan,Mode (1=Trunk),IntID,InputErrors,OutputErrors,InputCounters,OutputCounters,LastTimeUpdated,DeltaInputCounters,DeltaOutputCounters",
-                file=filePointer)
+            print(self.CSVHeader,file=filePointer)
 
             for switch in self.switches:
                 switch.exportCSV(self.ip,self.vendor, self.hostname,filePointer)
@@ -157,7 +159,9 @@ class PortStruct:
         self.portname = None
         self.description = None
         self.poe = None
-        self.cdp = None
+        self.cdpname = None
+        self.cdpport = None
+        self.cdptype = None
         self.status = None
         self.datavlan = None
         self.voicevlan = None
@@ -184,40 +188,48 @@ class PortStruct:
             self.outputerrors[len(self.outputerrors)]
 
     def activityChanged(self,compareport):
-        return (self.cdp != compareport.cdp or
-                self.description != compareport.description or
-                self.cdp != compareport.cdp or
-                self.datavlan != compareport.datavlan or
-                self.voicevlan != compareport.voicevlan or
-                self.poe != compareport.poe or
-                self.status != compareport.status or
-                self.portmode != compareport.portmode or
-                self.inputerrors != compareport.inputerrors or
-                self.outputerrors != compareport.outputerrors or
-                self.inputcounters != compareport.inputcounters or
-                self.outputcounters != compareport.outputcounters)
+        try:
+            if (self.cdpname != compareport.cdpname or
+                    self.description != compareport.description or
+                    self.cdpport != compareport.cdpport or
+                    self.cdptype != compareport.cdptype or
+                    self.datavlan != compareport.datavlan or
+                    self.voicevlan != compareport.voicevlan or
+                    self.poe != compareport.poe or
+                    self.status != compareport.status or
+                    self.portmode != compareport.portmode or
+                    self.inputerrors != compareport.inputerrors or
+                    self.outputerrors != compareport.outputerrors or
+                    self.inputcounters != compareport.inputcounters or
+                    self.outputcounters != compareport.outputcounters):
+                return True
+            else:
+                return False
+        except AttributeError as err:  # currently a catch all to stop linux from having a conniption when reloading
+            # print("#####  Attribute not found ERROR:{} #####".format(err.args[0]))
+            return True # return true to over write any ports that don't have the required new fields. Ignore old removed ones
 
     def appendSingleLine (self,passedTup):
-        return "{},{},{},{},{},\"{}\",{},{},{},{},{},{},{},{},{},{},{},{},\"{}\",\"{}\",\"{}\",\"{}\"\n".format(
+        return "{},{},{},{},{},\"{}\",{},{},{},{},{},{},{},{},{},{},{},{},{},{},\"{}\",\"{}\",\"{}\",\"{}\"\n".format(
             str(passedTup).translate({ord(i): None for i in '()\''}),
             self.portnumber, self.portname, self.description, self.poe,
-            self.cdp, self.status, self.datavlan, self.voicevlan,
+            self.cdpname, self.cdpport, self.cdptype, self.status, self.datavlan, self.voicevlan,
             self.portmode, self.intID, self.inputerrors, self.outputerrors,
             self.inputcounters, self.outputcounters,
             self.lastupdate, self.deltalastin, self.deltalastout,self.historicalinputerrors,self.historicaloutputerrors,
             self.historicalinputcounters,self.historicaloutputcounters)
 
     def printSingleLine(self,passedTup):
-        print("{},{},{},{},{},\"{}\",{},{},{},{},{},{},{},{},{},{},{},{}".format(str(passedTup).translate({ord(i): None for i in '()\''}),
+        print("{},{},{},{},{},\"{}\",{},{},{},{},{},{},{},{},{},{},{},{},{},{}".format(str(passedTup).translate({ord(i): None for i in '()\''}),
                                                         self.portnumber, self.portname, self.description, self.poe,
-                                                        self.cdp, self.status, self.datavlan, self.voicevlan,
+                                                        self.cdpname, self.cdpport, self.cdptype, self.status, self.datavlan, self.voicevlan,
                                                         self.portmode, self.intID, self.inputerrors, self.outputerrors,
                                                               self.inputcounters, self.outputcounters,
                                                               self.lastupdate,self.deltalastin,self.deltalastout))
     def exportCSV(self,passedTup,filePointer):
-        print("{},{},{},{},{},\"{}\",{},{},{},{},{},{},{},{},{},{},{},{}".format(str(passedTup).translate({ord(i): None for i in '()\''}),
+        print("{},{},{},{},{},\"{}\",{},{},{},{},{},{},{},{},{},{},{},{},{},{}".format(str(passedTup).translate({ord(i): None for i in '()\''}),
                                                         self.portnumber, self.portname, self.description, self.poe,
-                                                        self.cdp, self.status, self.datavlan, self.voicevlan,
+                                                        self.cdpname, self.cdpport, self.cdptype, self.status, self.datavlan, self.voicevlan,
                                                         self.portmode, self.intID, self.inputerrors, self.outputerrors,
                                                               self.inputcounters, self.outputcounters,
                                                               self.lastupdate,self.deltalastin,self.deltalastout),
@@ -231,7 +243,9 @@ class PortStruct:
         print("port name:{}".format(self.portname))
         print("port description:{}".format(self.description))
         print("port POE:{}".format(self.poe))
-        print("port CDP:{}".format(self.cdp))
+        print("port CDP name:{}".format(self.cdpname))
+        print("port CDP remote port:{}".format(self.cdpport))
+        print("port CDP device type:{}".format(self.cdptype))
         print("port Status (1=up,2=down):{}".format(self.status))
         print("port DataVlan:{}".format(self.datavlan))
         print("port VoiceVlan:{}".format(self.voicevlan))
@@ -254,8 +268,8 @@ class PortStruct:
     def setPoE(self,PoE):
         self.poe = PoE
 
-    def setCdp(self,CDP):
-        self.cdp = CDP
+    # def setCdp(self,CDP):
+    #     self.cdp = CDP
 
     def setName(self, Name):
         self.portname = Name

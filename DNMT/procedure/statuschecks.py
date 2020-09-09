@@ -218,8 +218,9 @@ class StatusChecks:
             print(err)
 
     def Create_Readable_Activity_File(self,status_filename,iplist):
-        TotalStatus = "IP,Vendor,Hostname,SwitchNum,Model,Serial,SoftwareVer,ModuleNum,PortNum,PortName,PortDesc,PoE,CDP,Status (1=Up),DataVlan,VoiceVlan,Mode (1=Trunk),IntID,InputErrors,OutputErrors,InputCounters,OutputCounters,LastTimeUpdated,DeltaInputCounters,DeltaOutputCounters,HistoricalInputErrors,HistoricalOutputErrors,HistoricalInputCounters,HistoricalOutputCounters\n"
-        #Currently grabs all existing statcheck files, this could be changed to only act on the iplist provided
+        # TotalStatus = "IP,Vendor,Hostname,SwitchNum,Model,Serial,SoftwareVer,ModuleNum,PortNum,PortName,PortDesc,PoE,CDP,Status (1=Up),DataVlan,VoiceVlan,Mode (1=Trunk),IntID,InputErrors,OutputErrors,InputCounters,OutputCounters,LastTimeUpdated,DeltaInputCounters,DeltaOutputCounters,HistoricalInputErrors,HistoricalOutputErrors,HistoricalInputCounters,HistoricalOutputCounters\n"
+        TotalStatus = "IP,Vendor,Hostname,SwitchNum,Model,Serial,SoftwareVer,ModuleNum,PortNum,PortName,PortDesc,PoE,CDP name,CDP port,CDP type,Status (1=Up),DataVlan,VoiceVlan,Mode (1=Trunk),IntID,InputErrors,OutputErrors,InputCounters,OutputCounters,LastTimeUpdated,DeltaInputCounters,DeltaOutputCounters,HistoricalInputErrors,HistoricalOutputErrors,HistoricalInputCounters,HistoricalOutputCounters\n"
+        #By default grabs all existing statcheck files, this could be changed to only act on the iplist provided
 
         if 'limit' in self.cmdargs and self.cmdargs.limit is True:
             self.subs.verbose_printer("##### Creating Limited Summary List #####")
@@ -229,7 +230,7 @@ class StatusChecks:
                     # with open(file, "rb") as myNewFile:
                     # LOADING Compressed files
                     with bz2.open(
-                            os.path.join(self.log_path, "activitycheck", "rawfiles", "{}-statcheck.bz2".format(ip)),
+                            os.path.join(self.log_path, "activitycheck", "rawfiles","active", "{}-statcheck.bz2".format(ip)),
                             "rb") as f:
                         SwitchStatus = pickle.load(f, encoding='utf-8')
                         TotalStatus += SwitchStatus.appendSingleLine()
@@ -239,12 +240,12 @@ class StatusChecks:
                     self.failure_files.append("{}-statcheck.bz2".format(ip))
         else:
             self.subs.verbose_printer("##### Creating Full Summary List #####")
-            for file in os.listdir(os.path.join(self.log_path,"activitycheck", "rawfiles")):
+            for file in os.listdir(os.path.join(self.log_path,"activitycheck", "rawfiles","active")):
                 if file.endswith("-statcheck.bz2"):
                     #process
                     try:
                         # with open(file, "rb") as myNewFile:
-                        with bz2.open(os.path.join(self.log_path, "activitycheck","rawfiles", file), "rb") as f:
+                        with bz2.open(os.path.join(self.log_path, "activitycheck","rawfiles","active", file), "rb") as f:
                             SwitchStatus = pickle.load(f)
                             TotalStatus += SwitchStatus.appendSingleLine()
                         self.successful_files.append(file)
@@ -268,7 +269,7 @@ class StatusChecks:
             zf.close()
 
 
-
+#Activity_Tracking_Comparison(porttwo.inputerrors,portone.historicalinputerrors,portone.maxhistoricalentries)
     def Activity_Tracking_Comparison(self, newval,historicalvals,maxvals):
         if newval is not None:  # ensure there are new entries
             if len(historicalvals) != 0:  # make sure there are existing historical entries
@@ -281,6 +282,57 @@ class StatusChecks:
                 historicalvals.append(
                     (int(datetime.datetime.now().strftime("%Y%m%d%H%M")), newval))
         return historicalvals
+
+    def Port_Update_Historical_Counters(self,portone,porttwo):
+        if 'maxentries' in self.cmdargs and self.cmdargs.maxentries is not None:
+            if self.cmdargs.maxentries.isdigit():
+                portone.maxhistoricalentries = int(self.cmdargs.maxentries)
+            else:
+                self.subs.verbose_printer("max entries cmdarg is not a number")
+
+        portone.historicalinputerrors = self.Activity_Tracking_Comparison(porttwo.inputerrors,
+                                                                          portone.historicalinputerrors,
+                                                                          portone.maxhistoricalentries)
+        portone.historicaloutputerrors = self.Activity_Tracking_Comparison(porttwo.outputerrors,
+                                                                           portone.historicaloutputerrors,
+                                                                           portone.maxhistoricalentries)
+        portone.historicalinputcounters = self.Activity_Tracking_Comparison(porttwo.inputcounters,
+                                                                            portone.historicalinputcounters,
+                                                                            portone.maxhistoricalentries)
+        portone.historicaloutputcounters = self.Activity_Tracking_Comparison(porttwo.outputcounters,
+                                                                             portone.historicaloutputcounters,
+                                                                             portone.maxhistoricalentries)
+
+    def Port_Updating_Active(self, portone,porttwo):
+        portone.deltalastin = porttwo.inputcounters - portone.inputcounters
+        portone.deltalastout = porttwo.outputcounters - portone.outputcounters
+        portone.lastupdate = datetime.date.today().strftime('%Y-%m-%d')
+        self.Port_Update_Historical_Counters(portone,porttwo)
+
+
+
+    def Port_Updating_Archive(self, portone,porttwo):
+        portone.deltalastin = porttwo.deltalastin
+        portone.deltalastout = porttwo.deltalastout
+        portone.cdpname = porttwo.cdpname
+        portone.cdpport = porttwo.cdpport
+        portone.cdptype = porttwo.cdptype
+        portone.poe = porttwo.poe
+        portone.description = porttwo.description
+        portone.datavlan = porttwo.datavlan
+        portone.voicevlan = porttwo.voicevlan
+        portone.status = porttwo.status
+        portone.portmode = porttwo.portmode
+        portone.inputerrors = porttwo.inputerrors
+        portone.outputerrors = porttwo.outputerrors
+        portone.inputcounters = porttwo.inputcounters
+        portone.outputcounters = porttwo.outputcounters
+        portone.lastupdate = porttwo.lastupdate
+        portone.historicalinputerrors = porttwo.historicalinputerrors
+        portone.historicaloutputerrors = porttwo.historicaloutputerrors
+        portone.historicalinputcounters = porttwo.historicalinputcounters
+        portone.historicaloutputcounters = porttwo.historicaloutputcounters
+
 
     def Activity_Tracking(self,ipaddr):
     # this function will:
@@ -304,43 +356,68 @@ class StatusChecks:
                 if len(NewSwitchStatus.switches) == 0:
                     raise ValueError('##### {} ERROR - No Data in switchstruct #####'.format(ipaddr))
 
-                with bz2.open(os.path.join(self.log_path, "activitycheck", "rawfiles","{}-statcheck.bz2".format(ipaddr)), "rb") as myNewFile:
+                #load archival information (may have removed switches in it)
+                with bz2.open(os.path.join(self.log_path, "activitycheck", "rawfiles","legacy","{}-statcheck.bz2".format(ipaddr)), "rb") as myNewFile:
                     OldSwitchStatus = pickle.load(myNewFile)
 
+                # if len(OldSwitchStatus.switches) != len(NewSwitchStatus.switches):
+                #TODO Check if the existing file is empty or if there is a different number of switches. If empty,save NewSwitcStatus instead
+                #If different number, check which switch is which based on serial numbers to try to save historical data?
+                #Then write out OldSwitchStatus to a archive file/folder and write the new one out
+                #TODO Why not use the newswitch status instead? Data may be lost if a switch is down when the new one is there? could fix that by adding any missing data to the new one?
+
+                #update the new switch status with archival info
+                for tempswitch in NewSwitchStatus.switches:
+                    #if the switchnumber doesn't exist in the archive status file, add it
+                    if OldSwitchStatus.getSwitch(tempswitch.switchnumber) is None:
+                        OldSwitchStatus.addSwitch(tempswitch.switchnumber)
+                    else:
+                        for tempmodule in tempswitch.modules:
+                            for newport in tempmodule.ports:
+                                oldport = OldSwitchStatus.getPortByPortName(newport.portname)
+                                if oldport is not None: #check if the port exists in archival data
+                                    if newport.activityChanged(oldport): #if the port info has changed...
+                                        self.Port_Updating_Active(newport, oldport) #update the new port
+                                    else: #otherwise, grab the historical data to paste in here
+                                        newport.lastupdate = oldport.lastupdate
+                                        newport.deltalastin = oldport.deltalastin
+                                        newport.deltalastout = oldport.deltalastout
+                                        newport.historicalinputerrors = oldport.historicalinputerrors
+                                        newport.historicaloutputerrors = oldport.historicaloutputerrors
+                                        newport.historicalinputcounters = oldport.historicalinputcounters
+                                        newport.historicaloutputcounters = oldport.historicaloutputcounters
+                                else: #if it is a new port entry
+                                    newport.lastupdate = datetime.date.today().strftime('%Y-%m-%d')
+                                    newport.deltalastin = 0
+                                    newport.deltalastout = 0
+
+
+                #update the old status file for archive. This should prevent losing data if there is an outage during collection
                 for tempswitch in OldSwitchStatus.switches:
                     for tempmodule in tempswitch.modules:
                         for oldport in tempmodule.ports:
                             newport = NewSwitchStatus.getPortByPortName(oldport.portname) #Changed 20200601 from id Cisco changing IDs....
-                            if oldport.activityChanged(newport):
-                                oldport.deltalastin = newport.inputcounters - oldport.inputcounters
-                                oldport.deltalastout = newport.outputcounters - oldport.outputcounters
-                                oldport.cdp = newport.cdp
-                                oldport.poe = newport.poe
-                                oldport.status = newport.status
-                                oldport.portmode = newport.portmode
-                                oldport.inputerrors = newport.inputerrors
-                                oldport.outputerrors = newport.outputerrors
-                                oldport.inputcounters = newport.inputcounters
-                                oldport.outputcounters = newport.outputcounters
-                                oldport.lastupdate = datetime.date.today().strftime('%Y-%m-%d')
-
-                                if 'maxentries' in self.cmdargs and self.cmdargs.maxentries is not None:
-                                    if self.cmdargs.maxentries.isdigit():
-                                        oldport.maxhistoricalentries = int(self.cmdargs.maxentries)
-                                    else:
-                                        self.subs.verbose_printer("max entries cmdarg is not a number")
+                            if newport is not None: #if the port exists in the new status check to see if it has changed
+                                if oldport.activityChanged(newport): #if the port has changed, update it, otherwise leave it
+                                    self.Port_Updating_Archive(oldport, newport) #update any old ports that exist for the archive
 
 
-                                oldport.historicalinputerrors = self.Activity_Tracking_Comparison(newport.inputerrors, oldport.historicalinputerrors, oldport.maxhistoricalentries)
-                                oldport.historicaloutputerrors = self.Activity_Tracking_Comparison(newport.outputerrors, oldport.historicaloutputerrors, oldport.maxhistoricalentries)
-                                oldport.historicalinputcounters = self.Activity_Tracking_Comparison(newport.inputcounters, oldport.historicalinputcounters, oldport.maxhistoricalentries)
-                                oldport.historicaloutputcounters = self.Activity_Tracking_Comparison(newport.outputcounters, oldport.historicaloutputcounters, oldport.maxhistoricalentries)
 
                 #TODO Compare the two files now
+                #write out active status for combining into statcheck csv
                 with bz2.BZ2File(
-                        os.path.join(self.log_path, "activitycheck", "rawfiles", "{}-statcheck.bz2".format(ipaddr)),
+                        os.path.join(self.log_path, "activitycheck", "rawfiles","active", "{}-statcheck.bz2".format(ipaddr)),
+                        'wb') as sfile:
+                    pickle.dump(NewSwitchStatus, sfile)
+                    sfile.close()
+
+                #Write out archival switchstatus to load again later
+                with bz2.BZ2File(
+                        os.path.join(self.log_path, "activitycheck", "rawfiles","legacy", "{}-statcheck.bz2".format(ipaddr)),
                         'wb') as sfile:
                     pickle.dump(OldSwitchStatus, sfile)
+
+                    sfile.close()
 
                 # self.successful_switches.append(ipaddr)
                 returnval = (True, ipaddr)
@@ -357,9 +434,19 @@ class StatusChecks:
                 # self.successful_switches.append(ipaddr)
                 returnval = (True, ipaddr)
                 with bz2.BZ2File(
-                        os.path.join(self.log_path, "activitycheck", "rawfiles", "{}-statcheck.bz2".format(ipaddr)),
+                        os.path.join(self.log_path, "activitycheck", "rawfiles","active", "{}-statcheck.bz2".format(ipaddr)),
                         'wb') as sfile:
                     pickle.dump(OldSwitchStatus, sfile)
+                    sfile.close()
+
+                with bz2.BZ2File(
+                        os.path.join(self.log_path, "activitycheck", "rawfiles","legacy", "{}-statcheck.bz2".format(ipaddr)),
+                        'wb') as sfile:
+                    pickle.dump(OldSwitchStatus, sfile)
+                    sfile.close()
+
+
+
             except ValueError as err:
                 print(err)
                 # self.failure_switches.append(ipaddr)

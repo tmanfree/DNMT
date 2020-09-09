@@ -846,16 +846,22 @@ class SubRoutines:
         #   grabs the cdp object type that is connected to each interface
     def snmp_get_cdp_type_bulk(self, ipaddr):
         # oidstring = '1.3.6.1.2.1.31.1.1.1.1'
-        oidstring = '1.3.6.1.4.1.9.9.23.1.2.1.1.8'
+        # oidstring = '1.3.6.1.4.1.9.9.23.1.2.1.1.8'
+        oidstring = '1.3.6.1.4.1.9.9.23.1.2.1.1'
         varBinds = self.snmp_walk(ipaddr, ObjectType(ObjectIdentity(oidstring)))
         interfaceCdpList = []
 
         for varBind in varBinds:
-            interfaceCdp = varBind._ObjectType__args[1]._value.decode("utf-8")
-            # if '/' in interfaceDescription:
-            oidTuple = varBind._ObjectType__args[0]._ObjectIdentity__oid._value
-            intId = oidTuple[len(oidTuple) - 2]
-            interfaceCdpList.append({'Id': intId, 'Cdp': interfaceCdp})
+            #Category labels (6 = Name, 7 = Remote Port, 8 = Type of device)
+            oidCategory = varBind._ObjectType__args[0]._ObjectIdentity__oid._value[13]
+
+            if 6 <= oidCategory <= 8: # only care about oids of 6,7 or 8
+                cdpValue = varBind._ObjectType__args[1]._value.decode("utf-8")
+
+                oidTuple = varBind._ObjectType__args[0]._ObjectIdentity__oid._value
+                intId = oidTuple[len(oidTuple) - 2]
+
+                interfaceCdpList.append({'Category':oidCategory ,'Id': intId, 'Value': cdpValue })
 
         return interfaceCdpList
 
@@ -1119,7 +1125,14 @@ class SubRoutines:
                 if port is not None:  # ignore vlan interfaces and non existent interfaces
                     foundport = switchStruct.getPortById(port['Id'])
                     if foundport is not None:
-                        foundport.cdp = port['Cdp']
+                        if port['Category'] == 6:
+                            foundport.cdpname = port['Value']
+                        elif port['Category'] == 7:
+                            foundport.cdpport = port['Value']
+                        elif port['Category'] == 8:
+                            foundport.cdptype = port['Value']
+
+
 
             # Get input Errors for ports
             for port in self.snmp_get_input_errors_bulk(ipaddr):
