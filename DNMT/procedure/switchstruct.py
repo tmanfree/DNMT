@@ -22,6 +22,9 @@ class StackStruct:
     def addSwitch(self,switchNum):
         self.switches.append(SwitchStruct(switchNum))
 
+    def addExistingSwitch(self,switchCopy):
+        self.switches.append(switchCopy)
+
     def getSwitch(self,switchNum):
         return next((x for x in self.switches if x.switchnumber == switchNum), None)
 

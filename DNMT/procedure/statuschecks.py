@@ -135,7 +135,7 @@ class StatusChecks:
             print ("##### ERROR with processing:{} #####".format(err))
 
         # After all processes return, read in each pickle and create a single output file?
-        status_filename = "{}-FullStatus.csv".format(datetime.date.today().strftime('%Y-%m-%d'))
+        status_filename = "{}-FullStatus.csv".format(datetime.datetime.now().strftime('%Y-%m-%d-%H%M'))
         try:
             self.Create_Readable_Activity_File(status_filename,iplist)
         except Exception as err:
@@ -290,22 +290,22 @@ class StatusChecks:
             else:
                 self.subs.verbose_printer("max entries cmdarg is not a number")
 
-        portone.historicalinputerrors = self.Activity_Tracking_Comparison(porttwo.inputerrors,
-                                                                          portone.historicalinputerrors,
+        portone.historicalinputerrors = self.Activity_Tracking_Comparison(portone.inputerrors,
+                                                                          porttwo.historicalinputerrors,
                                                                           portone.maxhistoricalentries)
-        portone.historicaloutputerrors = self.Activity_Tracking_Comparison(porttwo.outputerrors,
-                                                                           portone.historicaloutputerrors,
+        portone.historicaloutputerrors = self.Activity_Tracking_Comparison(portone.outputerrors,
+                                                                           porttwo.historicaloutputerrors,
                                                                            portone.maxhistoricalentries)
-        portone.historicalinputcounters = self.Activity_Tracking_Comparison(porttwo.inputcounters,
-                                                                            portone.historicalinputcounters,
+        portone.historicalinputcounters = self.Activity_Tracking_Comparison(portone.inputcounters,
+                                                                            porttwo.historicalinputcounters,
                                                                             portone.maxhistoricalentries)
-        portone.historicaloutputcounters = self.Activity_Tracking_Comparison(porttwo.outputcounters,
-                                                                             portone.historicaloutputcounters,
+        portone.historicaloutputcounters = self.Activity_Tracking_Comparison(portone.outputcounters,
+                                                                             porttwo.historicaloutputcounters,
                                                                              portone.maxhistoricalentries)
 
     def Port_Updating_Active(self, portone,porttwo):
-        portone.deltalastin = porttwo.inputcounters - portone.inputcounters
-        portone.deltalastout = porttwo.outputcounters - portone.outputcounters
+        portone.deltalastin = portone.inputcounters - porttwo.inputcounters
+        portone.deltalastout = portone.outputcounters - porttwo.outputcounters
         portone.lastupdate = datetime.date.today().strftime('%Y-%m-%d')
         self.Port_Update_Historical_Counters(portone,porttwo)
 
@@ -332,7 +332,6 @@ class StatusChecks:
         portone.historicaloutputerrors = porttwo.historicaloutputerrors
         portone.historicalinputcounters = porttwo.historicalinputcounters
         portone.historicaloutputcounters = porttwo.historicaloutputcounters
-
 
     def Activity_Tracking(self,ipaddr):
     # this function will:
@@ -370,7 +369,9 @@ class StatusChecks:
                 for tempswitch in NewSwitchStatus.switches:
                     #if the switchnumber doesn't exist in the archive status file, add it
                     if OldSwitchStatus.getSwitch(tempswitch.switchnumber) is None:
-                        OldSwitchStatus.addSwitch(tempswitch.switchnumber)
+                        OldSwitchStatus.addExistingSwitch(tempswitch) #will be a link, but should be fine
+                        # OldSwitchStatus.addExistingSwitch(copy.deepcopy(tempswitch))
+                        # OldSwitchStatus.addExistingSwitch(tempswitch.__dict__.copy())
                     else:
                         for tempmodule in tempswitch.modules:
                             for newport in tempmodule.ports:
@@ -378,6 +379,7 @@ class StatusChecks:
                                 if oldport is not None: #check if the port exists in archival data
                                     if newport.activityChanged(oldport): #if the port info has changed...
                                         self.Port_Updating_Active(newport, oldport) #update the new port
+                                        self.Port_Updating_Archive(oldport, newport)  # update any old ports that exist
                                     else: #otherwise, grab the historical data to paste in here
                                         newport.lastupdate = oldport.lastupdate
                                         newport.deltalastin = oldport.deltalastin
@@ -392,14 +394,15 @@ class StatusChecks:
                                     newport.deltalastout = 0
 
 
+
                 #update the old status file for archive. This should prevent losing data if there is an outage during collection
-                for tempswitch in OldSwitchStatus.switches:
-                    for tempmodule in tempswitch.modules:
-                        for oldport in tempmodule.ports:
-                            newport = NewSwitchStatus.getPortByPortName(oldport.portname) #Changed 20200601 from id Cisco changing IDs....
-                            if newport is not None: #if the port exists in the new status check to see if it has changed
-                                if oldport.activityChanged(newport): #if the port has changed, update it, otherwise leave it
-                                    self.Port_Updating_Archive(oldport, newport) #update any old ports that exist for the archive
+                # for tempswitch in OldSwitchStatus.switches: #remove this stuff, and just update the old with new values after assigning to the new
+                #     for tempmodule in tempswitch.modules:
+                #         for oldport in tempmodule.ports:
+                #             newport = NewSwitchStatus.getPortByPortName(oldport.portname) #Changed 20200601 from id Cisco changing IDs....
+                #             if newport is not None: #if the port exists in the new status check to see if it has changed
+                #                 if oldport.activityChanged(newport): #if the port has changed, update it, otherwise leave it
+                #                     self.Port_Updating_Archive(oldport, newport) #update any old ports that exist for the archive
 
 
 
