@@ -17,7 +17,7 @@ class StackStruct:
         self.vendor = vendor
         self.hostname = None
         self.switches = []
-        self.CSVHeader = "IP,Vendor,Hostname,SwitchNum,Model,Serial,SoftwareVer,ModuleNum,PortNum,PortName,PortDesc,PoE,CDP name,CDP port,CDP type,Status (1=Up),DataVlan,VoiceVlan,Mode (1=Trunk),IntID,InputErrors,OutputErrors,InputCounters,OutputCounters,LastTimeUpdated,DeltaInputCounters,DeltaOutputCounters"
+        self.CSVHeader = "IP,Vendor,Hostname,SwitchNum,Model,Serial,SoftwareVer,ModuleNum,PortNum,PortName,PortDesc,PoE,Neighbour name,Neighbour port,Neighbour Info,Status (1=Up),DataVlan,VoiceVlan,Mode (1=Trunk),IntID,InputErrors,OutputErrors,InputCounters,OutputCounters,LastTimeUpdated,DeltaInputCounters,DeltaOutputCounters"
 
     def addSwitch(self,switchNum):
         self.switches.append(SwitchStruct(switchNum))

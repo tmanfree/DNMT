@@ -219,7 +219,7 @@ class StatusChecks:
 
     def Create_Readable_Activity_File(self,status_filename,iplist):
         # TotalStatus = "IP,Vendor,Hostname,SwitchNum,Model,Serial,SoftwareVer,ModuleNum,PortNum,PortName,PortDesc,PoE,CDP,Status (1=Up),DataVlan,VoiceVlan,Mode (1=Trunk),IntID,InputErrors,OutputErrors,InputCounters,OutputCounters,LastTimeUpdated,DeltaInputCounters,DeltaOutputCounters,HistoricalInputErrors,HistoricalOutputErrors,HistoricalInputCounters,HistoricalOutputCounters\n"
-        TotalStatus = "IP,Vendor,Hostname,SwitchNum,Model,Serial,SoftwareVer,ModuleNum,PortNum,PortName,PortDesc,PoE,CDP name,CDP port,CDP type,Status (1=Up),DataVlan,VoiceVlan,Mode (1=Trunk),IntID,InputErrors,OutputErrors,InputCounters,OutputCounters,LastTimeUpdated,DeltaInputCounters,DeltaOutputCounters,HistoricalInputErrors,HistoricalOutputErrors,HistoricalInputCounters,HistoricalOutputCounters\n"
+        TotalStatus = "IP,Vendor,Hostname,SwitchNum,Model,Serial,SoftwareVer,ModuleNum,PortNum,PortName,PortDesc,PoE,Neighbour name,Neighbour port,Neighbour type,Status (1=Up),DataVlan,VoiceVlan,Mode (1=Trunk),IntID,InputErrors,OutputErrors,InputCounters,OutputCounters,LastTimeUpdated,DeltaInputCounters,DeltaOutputCounters,HistoricalInputErrors,HistoricalOutputErrors,HistoricalInputCounters,HistoricalOutputCounters\n"
         #By default grabs all existing statcheck files, this could be changed to only act on the iplist provided
 
         if 'limit' in self.cmdargs and self.cmdargs.limit is True:

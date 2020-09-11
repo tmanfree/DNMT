@@ -836,32 +836,42 @@ class SubRoutines:
 
         return interfaceTrunkingList
 
+
         # Name: snmp_get_cdp_type_bulk
         # Input:
         #   ipaddr (string)
         #      -The ipaddress/hostname to grab info from
+        #   vendor (string)
+        #      -The vendor type: Cisco,HP,Dell
         # Return:
         #  cdp neighbour list
         # Summary:
-        #   grabs the cdp object type that is connected to each interface
-    def snmp_get_cdp_type_bulk(self, ipaddr):
-        # oidstring = '1.3.6.1.2.1.31.1.1.1.1'
-        # oidstring = '1.3.6.1.4.1.9.9.23.1.2.1.1.8'
-        oidstring = '1.3.6.1.4.1.9.9.23.1.2.1.1'
-        varBinds = self.snmp_walk(ipaddr, ObjectType(ObjectIdentity(oidstring)))
+        #   grabs the cdp or LLDP infothat is connected to each interface. Currently not grabbing field 10 of lldp
+    def snmp_get_neighbour_bulk(self, ipaddr, vendor):
         interfaceCdpList = []
 
+        if vendor == "Cisco" or vendor == "HP":
+            oidString = '1.3.6.1.4.1.9.9.23.1.2.1.1'
+            typeList = [6,7,8]
+            categoryIndex = 13
+        elif vendor =="Dell":
+            oidString = '1.0.8802.1.1.2.1.4.1.1'
+            typeList = [7,9] # add 10 to get some type info?
+            categoryIndex = 10
+        else:
+            return interfaceCdpList
+        varBinds = self.snmp_walk(ipaddr, ObjectType(ObjectIdentity(oidString)))
         for varBind in varBinds:
-            #Category labels (6 = Name, 7 = Remote Port, 8 = Type of device)
-            oidCategory = varBind._ObjectType__args[0]._ObjectIdentity__oid._value[13]
+            # Category labels (6 = Name, 7 = Remote Port, 8 = Type of device)
+            oidCategory = varBind._ObjectType__args[0]._ObjectIdentity__oid._value[categoryIndex]
 
-            if 6 <= oidCategory <= 8: # only care about oids of 6,7 or 8
+            if oidCategory  in typeList:  # only care about oids of 6,7 or 8
                 cdpValue = varBind._ObjectType__args[1]._value.decode("utf-8")
-
                 oidTuple = varBind._ObjectType__args[0]._ObjectIdentity__oid._value
                 intId = oidTuple[len(oidTuple) - 2]
 
-                interfaceCdpList.append({'Category':oidCategory ,'Id': intId, 'Value': cdpValue })
+                interfaceCdpList.append({'Category': oidCategory, 'Id': intId, 'Value': cdpValue})
+
 
         return interfaceCdpList
 
@@ -1121,15 +1131,15 @@ class SubRoutines:
                         foundport.datavlan = port['Vlan']
 
            # Get CDP information for ports
-            for port in self.snmp_get_cdp_type_bulk(ipaddr):
+            for port in self.snmp_get_neighbour_bulk(ipaddr,vendor):
                 if port is not None:  # ignore vlan interfaces and non existent interfaces
                     foundport = switchStruct.getPortById(port['Id'])
                     if foundport is not None:
-                        if port['Category'] == 6:
+                        if port['Category'] in [6,9]: # 6 for Cisco, 9 for Dell
                             foundport.cdpname = port['Value']
                         elif port['Category'] == 7:
                             foundport.cdpport = port['Value']
-                        elif port['Category'] == 8:
+                        elif port['Category'] == 8: #for Dell, could include 10 as a type?
                             foundport.cdptype = port['Value']
 
 
