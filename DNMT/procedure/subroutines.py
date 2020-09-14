@@ -866,11 +866,14 @@ class SubRoutines:
             oidCategory = varBind._ObjectType__args[0]._ObjectIdentity__oid._value[categoryIndex]
 
             if oidCategory  in typeList:  # only care about oids of 6,7 or 8
-                cdpValue = varBind._ObjectType__args[1]._value.decode("utf-8")
-                oidTuple = varBind._ObjectType__args[0]._ObjectIdentity__oid._value
-                intId = oidTuple[len(oidTuple) - 2]
+                try:
+                    cdpValue = varBind._ObjectType__args[1]._value.decode("utf-8")
+                    oidTuple = varBind._ObjectType__args[0]._ObjectIdentity__oid._value
+                    intId = oidTuple[len(oidTuple) - 2]
 
-                interfaceCdpList.append({'Category': oidCategory, 'Id': intId, 'Value': cdpValue})
+                    interfaceCdpList.append({'Category': oidCategory, 'Id': intId, 'Value': cdpValue})
+                except Exception as err:
+                    self.verbose_printer("{} Error assigning Neighbour Value:{}".format(ipaddr,err))
 
 
         return interfaceCdpList
