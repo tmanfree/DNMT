@@ -173,6 +173,8 @@ def dnmt():
     activity_tracking_parser.add_argument('-v', '--verbose', help="run in verbose mode", default=False,
                                           action="store_true")
     activity_tracking_parser.add_argument('-m', '--maxentries', help="modify max number of historical entries")
+    activity_tracking_parser.add_argument('-x', '--xecutive', help="print out a modified summary file", default=False,
+                                          action="store_true")
 
     switch_check_parser = status_checks_parser.add_parser("Switch_Check", help="check switch info")
     switch_check_parser.add_argument('-i', '--ipaddr', metavar='IP', help='Switch Address interface is on')

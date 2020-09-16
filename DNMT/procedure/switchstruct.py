@@ -62,6 +62,12 @@ class StackStruct:
             totalString += switch.appendSingleLine(self.ip,self.vendor, self.hostname)
         return totalString
 
+    def appendSingleLineExec(self):
+        totalString = ""
+        for switch in self.switches:
+            totalString += switch.appendSingleLineExec((self.ip,self.vendor, self.hostname))
+        return totalString
+
     def exportCSV(self,filename):
         with open(filename, 'w', encoding='utf-8') as filePointer:
 
@@ -113,6 +119,12 @@ class SwitchStruct:
             totalString += module.appendSingleLine((ip,vendor,hostname, self.switchnumber, self.model, self.serialnumber, self.version))
         return totalString
 
+    def appendSingleLineExec(self, passedTup):
+        totalString =""
+        for module in self.modules:
+            totalString += module.appendSingleLineExec(passedTup+(self.switchnumber, self.model, self.serialnumber, self.version))
+        return totalString
+
     def exportCSV(self,ip,vendor, hostname, filePointer):
         for module in self.modules:
             module.exportCSV((ip,vendor,hostname,self.switchnumber,self.model,self.serialnumber,self.version),filePointer)
@@ -147,6 +159,12 @@ class ModuleStruct:
         totalString = ""
         for port in self.ports:
             totalString += port.appendSingleLine(passedTup+(self.modulenumber,))
+        return totalString
+
+    def appendSingleLineExec(self,passedTup):
+        totalString = ""
+        for port in self.ports:
+            totalString += port.appendSingleLineExec(passedTup+(self.modulenumber,))
         return totalString
 
     def exportCSV(self, passedTup, filePointer):
@@ -213,7 +231,7 @@ class PortStruct:
             return True # return true to over write any ports that don't have the required new fields. Ignore old removed ones
 
     def appendSingleLine (self,passedTup):
-        return "{},{},{},{},{},\"{}\",{},{},{},\"{}\",{},{},{},{},{},{},{},{},{},{},\"{}\",\"{}\",\"{}\",\"{}\"\n".format(
+        return "{},{},{},\"{}\",{},\"{}\",{},\"{}\",{},{},{},{},{},{},{},{},{},{},{},{},\"{}\",\"{}\",\"{}\",\"{}\"\n".format(
             str(passedTup).translate({ord(i): None for i in '()\''}),
             self.portnumber, self.portname, self.description, self.poe,
             self.cdpname, self.cdpport, self.cdptype, self.status, self.datavlan, self.voicevlan,
@@ -222,15 +240,28 @@ class PortStruct:
             self.lastupdate, self.deltalastin, self.deltalastout,self.historicalinputerrors,self.historicaloutputerrors,
             self.historicalinputcounters,self.historicaloutputcounters)
 
+    def appendSingleLineExec (self,passedTup):
+        poePrinting = 0
+        if self.poe is not None and self.poe > 0:
+            poePrinting = 1 #to act as a binary poe or no
+
+        return "{},{},{},\"{}\",{},{},{},{},{},{},{},{},{},{},{},{}\n".format(
+            str(passedTup).translate({ord(i): None for i in '()\''}),
+            self.portnumber, self.portname, self.description, poePrinting,
+            self.status, self.datavlan, self.voicevlan,
+            self.portmode, self.inputerrors, self.outputerrors,
+            self.inputcounters, self.outputcounters,
+            self.lastupdate, self.deltalastin, self.deltalastout)
+
     def printSingleLine(self,passedTup):
-        print("{},{},{},{},{},\"{}\",{},{},{},\"{}\",{},{},{},{},{},{},{},{},{},{}".format(str(passedTup).translate({ord(i): None for i in '()\''}),
+        print("{},{},{},\"{}\",{},\"{}\",{},\"{}\",{},{},{},{},{},{},{},{},{},{},{},{}".format(str(passedTup).translate({ord(i): None for i in '()\''}),
                                                         self.portnumber, self.portname, self.description, self.poe,
                                                         self.cdpname, self.cdpport, self.cdptype, self.status, self.datavlan, self.voicevlan,
                                                         self.portmode, self.intID, self.inputerrors, self.outputerrors,
                                                               self.inputcounters, self.outputcounters,
                                                               self.lastupdate,self.deltalastin,self.deltalastout))
     def exportCSV(self,passedTup,filePointer):
-        print("{},{},{},{},{},\"{}\",{},{},{},\"{}\",{},{},{},{},{},{},{},{},{},{}".format(str(passedTup).translate({ord(i): None for i in '()\''}),
+        print("{},{},{},\"{}\",{},\"{}\",{},\"{}\",{},{},{},{},{},{},{},{},{},{},{},{}".format(str(passedTup).translate({ord(i): None for i in '()\''}),
                                                         self.portnumber, self.portname, self.description, self.poe,
                                                         self.cdpname, self.cdpport, self.cdptype, self.status, self.datavlan, self.voicevlan,
                                                         self.portmode, self.intID, self.inputerrors, self.outputerrors,
