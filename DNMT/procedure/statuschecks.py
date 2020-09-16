@@ -218,7 +218,7 @@ class StatusChecks:
             print(err)
 
     def Create_Readable_Activity_File(self,status_filename,iplist):
-        if 'xecutive' in self.cmdargs and self.cmdargs.limit is True:
+        if 'xecutive' in self.cmdargs and self.cmdargs.xecutive is True:
             TotalStatus = "IP,Vendor,Hostname,SwitchNum,Model,Serial,SoftwareVer,ModuleNum,PortNum,PortName,PortDesc,PoE draw (1=Yes),Status (1=Up),DataVlan,VoiceVlan,Mode (1=Trunk),InputErrors,OutputErrors,InputCounters,OutputCounters,LastTimeUpdated,DeltaInputCounters,DeltaOutputCounters\n"
         else:
             TotalStatus = "IP,Vendor,Hostname,SwitchNum,Model,Serial,SoftwareVer,ModuleNum,PortNum,PortName,PortDesc,PoE,Neighbour name,Neighbour port,Neighbour type,Status (1=Up),DataVlan,VoiceVlan,Mode (1=Trunk),IntID,InputErrors,OutputErrors,InputCounters,OutputCounters,LastTimeUpdated,DeltaInputCounters,DeltaOutputCounters,HistoricalInputErrors,HistoricalOutputErrors,HistoricalInputCounters,HistoricalOutputCounters\n"
@@ -237,7 +237,7 @@ class StatusChecks:
                 # LOADING Compressed files
                 with bz2.open(os.path.join(self.log_path, "activitycheck", "rawfiles", "active", ip), "rb") as f:
                     SwitchStatus = pickle.load(f, encoding='utf-8')
-                    if 'xecutive' in self.cmdargs and self.cmdargs.limit is True:
+                    if 'xecutive' in self.cmdargs and self.cmdargs.xecutive is True:
                         TotalStatus += SwitchStatus.appendSingleLineExec()
                     else:
                         TotalStatus += SwitchStatus.appendSingleLine()
