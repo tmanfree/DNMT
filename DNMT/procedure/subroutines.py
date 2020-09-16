@@ -872,7 +872,7 @@ class SubRoutines:
                     intId = oidTuple[len(oidTuple) - 2]
 
                     interfaceCdpList.append({'Category': oidCategory, 'Id': intId, 'Value': cdpValue})
-                except Exception as err:
+                except Exception as err: #UnicodeDecodeError on hex values when presenting a mac address
                     self.verbose_printer("{} Error assigning Neighbour Value:{}".format(ipaddr,err))
 
 
