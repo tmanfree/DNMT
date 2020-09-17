@@ -312,6 +312,7 @@ class StatusChecks:
         portone.poe = porttwo.poe
         portone.description = porttwo.description
         portone.datavlan = porttwo.datavlan
+        portone.datavlanname = porttwo.datavlanname
         portone.voicevlan = porttwo.voicevlan
         portone.status = porttwo.status
         portone.portmode = porttwo.portmode
