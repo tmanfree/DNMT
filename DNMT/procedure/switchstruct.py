@@ -239,14 +239,24 @@ class PortStruct:
 
 
     def appendSingleLine (self,passedTup):
-        return "{},{},{},\"{}\",{},\"{}\",{},\"{}\",{},{},{},{},{},{},{},{},{},{},{},{},\"{}\",\"{}\",\"{}\",\"{}\"\n".format(
-            str(passedTup).translate({ord(i): None for i in '()\''}),
-            self.portnumber, self.portname, self.description, self.poe,
-            self.cdpname, self.cdpport, self.cdptype, self.status, self.datavlan, self.voicevlan,
-            self.portmode, self.intID, self.inputerrors, self.outputerrors,
-            self.inputcounters, self.outputcounters,
-            self.lastupdate, self.deltalastin, self.deltalastout,self.historicalinputerrors,self.historicaloutputerrors,
-            self.historicalinputcounters,self.historicaloutputcounters)
+        while True:
+            try:
+                return "{},{},{},\"{}\",{},\"{}\",{},\"{}\",{},{},{},{},{},{},{},{},{},{},{},{},{},\"{}\",\"{}\",\"{}\",\"{}\"\n".format(
+                    str(passedTup).translate({ord(i): None for i in '()\''}),
+                    self.portnumber, self.portname, self.description, self.poe,
+                    self.cdpname, self.cdpport, self.cdptype, self.status, self.datavlan,
+                    self.datavlanname,self.voicevlan,
+                    self.portmode, self.intID, self.inputerrors, self.outputerrors,
+                    self.inputcounters, self.outputcounters,
+                    self.lastupdate, self.deltalastin, self.deltalastout,self.historicalinputerrors,self.historicaloutputerrors,
+                    self.historicalinputcounters,self.historicaloutputcounters)
+            except AttributeError as errmsg:
+                # test = re.findall(r'^\*\s+(\d)', errmsg,re.MULTILINE)
+                regsearch = re.findall(r"object has no attribute '(\S+)'$", errmsg.args[0], re.MULTILINE)
+                if len(regsearch) > 0:
+                    exec("self."+regsearch[0] + "= None")
+                else:
+                    raise Exception('##### ERROR - missing required Data to print: {} #####'.format(errmsg.args[0]))
 
     def appendSingleLineExec (self,passedTup):
         # self.checkForVars(["portnumber","portname","description",""])

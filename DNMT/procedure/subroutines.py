@@ -691,7 +691,7 @@ class SubRoutines:
     # Return:
     #   vlanList (list of vlans from switch)
     # Summary:
-    #   Grabs list of vlans from 1.3.6.1.4.1.9.9.46.1.3.1.1.4.1
+    #   Grabs list of vlans from 1.3.6.1.4.1.9.9.46.1.3.1.1.4.1 for cisco
     #   currently ignores vlan 1002 - 1005 as they are defaults on cisco
     def snmp_get_vlan_database(self, ipaddr, vendor):
 
