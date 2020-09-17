@@ -17,6 +17,7 @@ class StackStruct:
         self.vendor = vendor
         self.hostname = None
         self.switches = []
+        self.vlanList = []
         self.CSVHeader = "IP,Vendor,Hostname,SwitchNum,Model,Serial,SoftwareVer,ModuleNum,PortNum,PortName,PortDesc,PoE,Neighbour name,Neighbour port,Neighbour Info,Status (1=Up),DataVlan,VoiceVlan,Mode (1=Trunk),IntID,InputErrors,OutputErrors,InputCounters,OutputCounters,LastTimeUpdated,DeltaInputCounters,DeltaOutputCounters"
 
     def addSwitch(self,switchNum):
@@ -64,6 +65,7 @@ class StackStruct:
 
     def appendSingleLineExec(self):
         totalString = ""
+        # if self.vlanList
         for switch in self.switches:
             totalString += switch.appendSingleLineExec((self.ip,self.vendor, self.hostname))
         return totalString
@@ -185,7 +187,9 @@ class PortStruct:
         self.cdptype = None
         self.status = None
         self.datavlan = None
+        self.datavlanname = None
         self.voicevlan = None
+        self.voicevlanname = None
         self.portmode = None #access/trunk
         self.intID = int(portNum)
         self.inputerrors = None
@@ -230,6 +234,10 @@ class PortStruct:
             # print("#####  Attribute not found ERROR:{} #####".format(err.args[0]))
             return True # return true to over write any ports that don't have the required new fields. Ignore old removed ones
 
+    # def checkForVars(self,varList):
+    #    list_of_existing_vars = [a for a in dir(self) if not a.startswith('__')]
+
+
     def appendSingleLine (self,passedTup):
         return "{},{},{},\"{}\",{},\"{}\",{},\"{}\",{},{},{},{},{},{},{},{},{},{},{},{},\"{}\",\"{}\",\"{}\",\"{}\"\n".format(
             str(passedTup).translate({ord(i): None for i in '()\''}),
@@ -241,29 +249,48 @@ class PortStruct:
             self.historicalinputcounters,self.historicaloutputcounters)
 
     def appendSingleLineExec (self,passedTup):
+        # self.checkForVars(["portnumber","portname","description",""])
         poePrinting = 0
+        dataVlanName = ""
+        voiceVlanName = ""
+
         if self.poe is not None and self.poe > 0:
             poePrinting = 1 #to act as a binary poe or no
+        # dataVlanName = [vlanEntry['Name'] for vlanEntry in vlanList if 'ID' in vlanEntry and vlanEntry["ID"  == self.datavlan]]
 
-        return "{},{},{},\"{}\",{},{},{},{},{},{},{},{},{},{},{},{}\n".format(
-            str(passedTup).translate({ord(i): None for i in '()\''}),
-            self.portnumber, self.portname, self.description, poePrinting,
-            self.status, self.datavlan, self.voicevlan,
-            self.portmode, self.inputerrors, self.outputerrors,
-            self.inputcounters, self.outputcounters,
-            self.lastupdate, self.deltalastin, self.deltalastout)
+        while True:
+            try:
+                return "{},{},{},\"{}\",{},{},{},\"{}\",{},{},{},{},{},{},{},{},{}\n".format(
+                    str(passedTup).translate({ord(i): None for i in '()\''}),
+                    self.portnumber, self.portname, self.description, poePrinting,
+                    self.status, self.datavlan, self.datavlanname,self.voicevlan,
+                    self.portmode, self.inputerrors, self.outputerrors,
+                    self.inputcounters, self.outputcounters,
+                    self.lastupdate, self.deltalastin, self.deltalastout)
+            except AttributeError as errmsg:
+                # test = re.findall(r'^\*\s+(\d)', errmsg,re.MULTILINE)
+                regsearch = re.findall(r"object has no attribute '(\S+)'$", errmsg.args[0], re.MULTILINE)
+                if len(regsearch) > 0:
+                    exec("self."+regsearch[0] + "= None")
+                else:
+                    raise Exception('##### ERROR - missing required Data to print: {} #####'.format(errmsg.args[0]))
+
+
+
 
     def printSingleLine(self,passedTup):
-        print("{},{},{},\"{}\",{},\"{}\",{},\"{}\",{},{},{},{},{},{},{},{},{},{},{},{}".format(str(passedTup).translate({ord(i): None for i in '()\''}),
+        print("{},{},{},\"{}\",{},\"{}\",{},\"{}\",{},{},{},{},{},{},{},{},{},{},{},{},{}".format(str(passedTup).translate({ord(i): None for i in '()\''}),
                                                         self.portnumber, self.portname, self.description, self.poe,
-                                                        self.cdpname, self.cdpport, self.cdptype, self.status, self.datavlan, self.voicevlan,
+                                                        self.cdpname, self.cdpport, self.cdptype, self.status,
+                                                        self.datavlan, self.datavlanname, self.voicevlan,
                                                         self.portmode, self.intID, self.inputerrors, self.outputerrors,
                                                               self.inputcounters, self.outputcounters,
                                                               self.lastupdate,self.deltalastin,self.deltalastout))
     def exportCSV(self,passedTup,filePointer):
-        print("{},{},{},\"{}\",{},\"{}\",{},\"{}\",{},{},{},{},{},{},{},{},{},{},{},{}".format(str(passedTup).translate({ord(i): None for i in '()\''}),
+        print("{},{},{},\"{}\",{},\"{}\",{},\"{}\",{},{},{},{},{},{},{},{},{},{},{},{},{}".format(str(passedTup).translate({ord(i): None for i in '()\''}),
                                                         self.portnumber, self.portname, self.description, self.poe,
-                                                        self.cdpname, self.cdpport, self.cdptype, self.status, self.datavlan, self.voicevlan,
+                                                        self.cdpname, self.cdpport, self.cdptype, self.status,
+                                                        self.datavlan,self.datavlanname,self.voicevlan,
                                                         self.portmode, self.intID, self.inputerrors, self.outputerrors,
                                                               self.inputcounters, self.outputcounters,
                                                               self.lastupdate,self.deltalastin,self.deltalastout),
@@ -282,6 +309,7 @@ class PortStruct:
         print("port CDP device type:{}".format(self.cdptype))
         print("port Status (1=up,2=down):{}".format(self.status))
         print("port DataVlan:{}".format(self.datavlan))
+        print("port DataVlan Name:{}".format(self.datavlanname))
         print("port VoiceVlan:{}".format(self.voicevlan))
         print("port Mode:{}".format(self.portmode))
         print("port ID:{}".format(self.intID))

@@ -695,7 +695,7 @@ class SubRoutines:
     #   currently ignores vlan 1002 - 1005 as they are defaults on cisco
     def snmp_get_vlan_database(self, ipaddr, vendor):
 
-        if vendor =="HP":
+        if vendor =="HP" or vendor =='Dell':
             oidstring = '1.3.6.1.2.1.17.7.1.4.3.1.1'
         else: #vendor == "Cisco":
             oidstring = '1.3.6.1.4.1.9.9.46.1.3.1.1.4.{}'.format('1')
@@ -710,7 +710,10 @@ class SubRoutines:
             oidTuple = varBind._ObjectType__args[0]._ObjectIdentity__oid._value
             vlanId = oidTuple[len(oidTuple) - 1]
             if (vlanId not in vlansToIgnore):
-                vlanList.append({'ID': vlanId, "Name": varBind._ObjectType__args[1]._value})
+                try:
+                    vlanList.append({'ID': vlanId, "Name": varBind._ObjectType__args[1]._value.decode("utf-8")})
+                except Exception as err:  # UnicodeDecodeError on hex values when presenting a mac address
+                    self.verbose_printer("{} Error decoding vlan {} name:{}".format(ipaddr, vlanId, err))
 
         ##if in verbose mode
         # for vlan in vlanList:
@@ -1055,6 +1058,7 @@ class SubRoutines:
 
         vendor = self.snmp_get_vendor_string(ipaddr)
         switchStruct = StackStruct(ipaddr, vendor)
+        switchStruct.vlanList  = self.snmp_get_vlan_database(ipaddr,vendor)
         if vendor != "None Found":
             switchStruct.hostname = self.snmp_get_hostname(ipaddr)
 
@@ -1132,6 +1136,9 @@ class SubRoutines:
                     foundport = switchStruct.getPortById(port['Id'])
                     if foundport is not None:
                         foundport.datavlan = port['Vlan']
+                        foundport.datavlanname = next((vlanEntry['Name'] for vlanEntry in switchStruct.vlanList if vlanEntry["ID"] ==  port['Vlan']), None)
+                        # foundport.datavlanname = [vlanEntry['Name'] for vlanEntry in switchStruct.vlanList if
+                        #                 'ID' in vlanEntry and vlanEntry["ID"] == port['Vlan']]
 
            # Get CDP information for ports
             for port in self.snmp_get_neighbour_bulk(ipaddr,vendor):
@@ -1327,9 +1334,9 @@ class SubRoutines:
     #   regex_parser_var0 adds some error handling to the regex searching functions. returning a "N/A" default if
     #       nothing is found
     def regex_parser_var0 (self,regex, input):
-        findval = re.findall(regex, input, re.MULTILINE);
+        findval = re.findall(regex, input, re.MULTILINE)
         if len(findval) > 0:
-            return findval[0];
+            return findval[0]
         else:
             return None
 
@@ -1345,7 +1352,7 @@ class SubRoutines:
     #   regex_parser_varx adds some error handling to the regex searching functions. returning a "N/A" default if
     #       nothing is found
     def regex_parser_varx (self,regex, input):
-        findval = re.findall(regex, input, re.MULTILINE);
+        findval = re.findall(regex, input, re.MULTILINE)
         if len(findval) > 0 :
             return findval[0]
             # if len(findval[0]) > numMatches:
