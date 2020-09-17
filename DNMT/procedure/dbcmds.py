@@ -44,7 +44,7 @@ class DBcmds:
                 self.subs.verbose_printer("##### Now Checking {} for matches file {} / {} #####".format(ip,ipindex+1,len(fileList)))
                 # LOADING Compressed files
                 # portList = []
-                with bz2.open(os.path.join(self.subs.log_path, "activitycheck", "rawfiles", "active", ip), "rb") as f:
+                with bz2.open(os.path.join(self.subs.log_path, "activitycheck", "rawfiles", "legacy", ip), "rb") as f:
                     SwitchStatus = pickle.load(f, encoding='utf-8')
                     if 'name' in self.cmdargs and (self.cmdargs.name is None or self.cmdargs.name.lower() in SwitchStatus.hostname.lower()): #insensitive hostname checking
                         portList = []
@@ -66,7 +66,7 @@ class DBcmds:
                             matchlist.append({'Ip':SwitchStatus.ip,'Port':port.portname, 'Desc':port.description,})
 
             except Exception as err:  # currently a catch all to stop linux from having a conniption when reloading
-                print("FILE ERROR {}:{}".format(ip, err.args[0]))
+                self.subs.verbose_printer("FILE ERROR {}:{}".format(ip, err.args[0]))
         print("{} Matches found\n".format(len(matchlist)))
         if 'file' in self.cmdargs and self.cmdargs.file is None:
             if 'csv' in self.cmdargs and self.cmdargs.csv:
