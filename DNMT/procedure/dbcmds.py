@@ -66,7 +66,7 @@ class DBcmds:
                             matchlist.append({'Ip':SwitchStatus.ip,'Port':port.portname, 'Desc':port.description,})
 
             except Exception as err:  # currently a catch all to stop linux from having a conniption when reloading
-                self.subs.verbose_printer("FILE ERROR {}:{}".format(ip, err.args[0]))
+                print("FILE ERROR {}:{}".format(ip, err.args[0]))
         print("{} Matches found\n".format(len(matchlist)))
         if 'file' in self.cmdargs and self.cmdargs.file is None:
             if 'csv' in self.cmdargs and self.cmdargs.csv:
