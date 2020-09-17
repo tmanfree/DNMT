@@ -39,6 +39,20 @@ class StackStruct:
         return next((port for Sw in self.switches for Mod in Sw.modules for port in Mod.ports if port.portname == PortName),
                     None)
 
+    def getPortByDesc_Exact(self,PortDesc):
+        return [port for Sw in self.switches for Mod in Sw.modules for port in Mod.ports if PortDesc == port.description]
+
+    def getPortByDesc_Exact_Insensitive(self,PortDesc):
+        return [port for Sw in self.switches for Mod in Sw.modules for port in Mod.ports if
+                PortDesc.lower() == port.description.lower()]
+
+    def getPortByDesc_Partial(self,PortDesc):
+        return [port for Sw in self.switches for Mod in Sw.modules for port in Mod.ports if PortDesc in port.description]
+
+    def getPortByDesc_Partial_Insensitive(self,PortDesc):
+        return [port for Sw in self.switches for Mod in Sw.modules for port in Mod.ports if PortDesc.lower() in port.description.lower()]
+
+
     def getPortById(self,Id):
         return next((port for Sw in self.switches for Mod in Sw.modules for port in Mod.ports if port.intID == Id),
                     None)

@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 
-import random, re, socket,time,sys
+import random, re, socket,time,sys,os
 import subprocess,platform,datetime
 import netmiko
 from pysnmp.hlapi import *
+
 
 from pysnmp.entity.rfc3413.oneliner import cmdgen
 from pysnmp.proto import rfc1902
@@ -17,6 +18,7 @@ class SubRoutines:
         self.log_array = [] #may not need this
         self.cmdargs = cmdargs
         self.config = config
+        self.log_path = os.path.abspath(os.path.join(os.sep, 'var', 'log', 'dnmt')) #will be used by statuschecks right now
 
 
 
@@ -1359,3 +1361,57 @@ class SubRoutines:
 
         else:
             return None
+
+    # Name: Create_Readable_Activity_File
+    # Input:
+    #   status_filename (raw string)
+    #      -This variable will contains the regex expression to use.
+    #   iplist (list of strings)
+    #      -This variable contains the string to apply the regex search to.
+    # Return:
+    #   Nothing (change to boolean for success)
+    # Summary:
+    #   Create readable activity file will create a csv file out of the ips in the provided
+    # def Create_Readable_Activity_File(self,status_filename,iplist):
+    #     if 'xecutive' in self.cmdargs and self.cmdargs.xecutive is True:
+    #         TotalStatus = "IP,Vendor,Hostname,SwitchNum,Model,Serial,SoftwareVer,ModuleNum,PortNum,PortName,PortDesc,PoE draw (1=Yes),Status (1=Up),DataVlan,DataVlan name,VoiceVlan,Mode (1=Trunk),InputErrors,OutputErrors,InputCounters,OutputCounters,LastTimeUpdated,DeltaInputCounters,DeltaOutputCounters\n"
+    #     else:
+    #         TotalStatus = "IP,Vendor,Hostname,SwitchNum,Model,Serial,SoftwareVer,ModuleNum,PortNum,PortName,PortDesc,PoE,Neighbour name,Neighbour port,Neighbour type,Status (1=Up),DataVlan,DataVlan name,VoiceVlan,Mode (1=Trunk),IntID,InputErrors,OutputErrors,InputCounters,OutputCounters,LastTimeUpdated,DeltaInputCounters,DeltaOutputCounters,HistoricalInputErrors,HistoricalOutputErrors,HistoricalInputCounters,HistoricalOutputCounters\n"
+    #     #By default grabs all existing statcheck files, this could be changed to only act on the iplist provided
+    #
+    #
+    #     if 'limit' in self.cmdargs and self.cmdargs.limit is True:
+    #         self.verbose_printer("##### Creating Limited Summary List #####")
+    #         fileList = [f+"-statcheck.bz2" for f in iplist]
+    #     else:
+    #         self.verbose_printer("##### Creating Full Summary List #####")
+    #         fileList = [f for f in os.listdir(os.path.join(self.log_path,"activitycheck", "rawfiles","active")) if f.endswith('-statcheck.bz2')]
+    #     for ip in fileList:
+    #         # process
+    #         try:
+    #             # LOADING Compressed files
+    #             with bz2.open(os.path.join(self.log_path, "activitycheck", "rawfiles", "active", ip), "rb") as f:
+    #                 SwitchStatus = pickle.load(f, encoding='utf-8')
+    #                 if 'xecutive' in self.cmdargs and self.cmdargs.xecutive is True:
+    #                     TotalStatus += SwitchStatus.appendSingleLineExec()
+    #                 else:
+    #                     TotalStatus += SwitchStatus.appendSingleLine()
+    #
+    #                 self.successful_files.append("{}".format(ip))
+    #         except Exception as err:  # currently a catch all to stop linux from having a conniption when reloading
+    #             print("FILE ERROR {}-statcheck:{}".format(ip, err.args[0]))
+    #             self.failure_files.append("{}".format(ip))
+    #
+    #     ## Works, but emailing is a pain
+    #     # with bz2.BZ2File(os.path.join(self.log_path, "activitycheck", "processedfiles", "{}.bz2".format(status_filename)),
+    #     #                  'wb') as sfile:
+    #     #     sfile.write(TotalStatus.encode("utf-8"))
+    #
+    #     zf = zipfile.ZipFile(os.path.join(self.log_path, "activitycheck", "processedfiles", "{}.zip".format(status_filename)),
+    #                          mode='w',
+    #                          compression=zipfile.ZIP_DEFLATED,
+    #                          )
+    #     try:
+    #         zf.writestr(status_filename, TotalStatus)
+    #     finally:
+    #         zf.close()

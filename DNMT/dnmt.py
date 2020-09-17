@@ -16,6 +16,7 @@ from DNMT.procedure.lefty import Lefty
 from DNMT.procedure.check import Check
 from DNMT.procedure import config
 from DNMT.procedure.hostnamer import HostNamer
+from DNMT.procedure.dbcmds import DBcmds
 
 from DNMT.procedure.statuschecks import StatusChecks
 # from DNMT.procedure.SnmpFuncs import SnmpFuncs
@@ -182,6 +183,21 @@ def dnmt():
     switch_check_parser.add_argument('-v', '--verbose', help="run in verbose mode", default=False, action="store_true")
     switch_check_parser.add_argument('-l', '--load', help="load switchstruct from a specified file")
 
+    #DB commands - subset of status checking
+    db_cmds_parser = subparsers.add_parser("DBcmds",
+                                                 help="functions simulating databases").add_subparsers(dest="DBcmds")
+    db_cmds_find_parser = db_cmds_parser.add_parser("find", help="search for items").add_subparsers(dest="find")
+    db_cmds_find_desc_parser = db_cmds_find_parser.add_parser("desc", help="search for descriptions")
+    db_cmds_find_desc_parser.add_argument('searchstring', help='text to search for')
+    db_cmds_find_desc_parser.add_argument('-s', '--sensitive', help="search for string sensitive to case", default=False, action="store_true")
+    db_cmds_find_desc_parser.add_argument('-e', '--exact', help="search for exact match", default=False, action="store_true")
+    db_cmds_find_desc_parser.add_argument('-c', '--csv', help="Output as CSV", default=False,
+                                          action="store_true")
+    db_cmds_find_desc_parser.add_argument('-v', '--verbose', help="verbose output", default=False, action="store_true")
+    db_cmds_find_desc_parser.add_argument('-f', '--file', help="Output to specific file")
+    db_cmds_find_desc_parser.add_argument('-n', '--name', help=" name of switch to search (can be partial)")
+
+
     #Tests Begin
     test_parser = subparsers.add_parser("test", help="various tests").add_subparsers(dest="test")
     command_blaster_parser = test_parser.add_parser("Command_Blaster", help="send some non-enabled commands")
@@ -201,6 +217,8 @@ def dnmt():
     connect_count_parser.add_argument('file', help='The file with IPs to check')
     batch_run_wrapper_parser = test_parser.add_parser("batchrunwrapper", help="run batches of command line scripts")
     batch_run_wrapper_parser.add_argument('file', help='The file with cli commands to run')
+
+
 
 
 
@@ -248,6 +266,7 @@ def dnmt():
     upgradeCheck = Check(cmdargs, config)
     statusChecks = StatusChecks(cmdargs,config)
     tools = Tools(cmdargs, config)
+    dccmds = DBcmds(cmdargs,config)
     # functions = Functions(cmdargs,config)
     # snmpFuncs = SnmpFuncs(cmdargs,config)
     test = Test(cmdargs, config)
@@ -302,6 +321,11 @@ def dnmt():
                 statusChecks.Maintenance(int(cmdargs.maxfiles))
             except ValueError:
                 print("maxfiles is not a number, exiting")
+    elif cmdargs.maincommand =='DBcmds':
+        if cmdargs.DBcmds == 'find':
+            if cmdargs.find == 'desc':
+                dccmds.Find_Desc()
+
     elif cmdargs.maincommand == 'test':
         if cmdargs.test == 'Command_Blaster':
             test.Command_Blaster_Begin()

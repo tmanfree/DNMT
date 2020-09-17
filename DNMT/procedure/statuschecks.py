@@ -38,7 +38,8 @@ class StatusChecks:
         self.cmdargs = cmdargs
         self.config = config
         self.subs = SubRoutines(cmdargs, config)
-        self.log_path = os.path.abspath(os.path.join(os.sep, 'var', 'log', 'dnmt'))
+        # self.log_path = os.path.abspath(os.path.join(os.sep, 'var', 'log', 'dnmt'))
+        # self.subs.log_path = os.path.abspath(os.path.join(os.sep, 'var', 'log', 'dnmt'))
         self.successful_switches = [] #used for activity tracking
         self.failure_switches = [] #used for activity tracking
         self.successful_files = []#used for activity tracking
@@ -49,7 +50,7 @@ class StatusChecks:
         self.subs.verbose_printer("##### Cleaning up files #####")
 
         #Remove oldest files (listed first on windows
-        filelist = os.listdir(os.path.join(self.log_path, "activitycheck", "processedfiles"))
+        filelist = os.listdir(os.path.join(self.subs.log_path, "activitycheck", "processedfiles"))
         if len(filelist) > 0 and len(filelist) > maxfiles:
             # self.subs.verbose_printer("##### unsorted list:{} #####".format(filelist))
             sortedfilelist = sorted(filelist)
@@ -63,7 +64,7 @@ class StatusChecks:
                         self.subs.verbose_printer("##### File to remove:{} #####".format(file))
                         if 'test' in self.cmdargs and self.cmdargs.test is False :
                             self.subs.verbose_printer("##### Removing file:{} #####".format(file))
-                            os.remove(os.path.join(self.log_path, "activitycheck", "processedfiles",file))
+                            os.remove(os.path.join(self.subs.log_path, "activitycheck", "processedfiles",file))
                     except Exception as err:  # currently a catch all to stop linux from having a conniption when reloading
                         print("FILE ERROR {}:{}".format(file, err.args[0]))
                         self.failure_files.append(file)
@@ -73,10 +74,10 @@ class StatusChecks:
     def Activity_Tracking_Begin(self):
         iplist = []
         total_start = time.time()
-        if not os.path.exists(os.path.join(self.log_path, "activitycheck", "rawfiles")):
-            os.makedirs(os.path.join(self.log_path, "activitycheck", "rawfiles"))
-        if not os.path.exists(os.path.join(self.log_path, "activitycheck", "processedfiles")):
-            os.makedirs(os.path.join(self.log_path, "activitycheck", "processedfiles"))
+        if not os.path.exists(os.path.join(self.subs.log_path, "activitycheck", "rawfiles")):
+            os.makedirs(os.path.join(self.subs.log_path, "activitycheck", "rawfiles"))
+        if not os.path.exists(os.path.join(self.subs.log_path, "activitycheck", "processedfiles")):
+            os.makedirs(os.path.join(self.subs.log_path, "activitycheck", "processedfiles"))
         # Specifying a file only changes what IPs are updated, right now the status check grabs all existing files in
         # the raw data folder
         try:
@@ -148,7 +149,7 @@ class StatusChecks:
         try:
             self.subs.verbose_printer("##### Emailing now #####")
 
-            zf = open(os.path.join(self.log_path, "activitycheck", "processedfiles", "{}.zip".format(status_filename)), 'rb')
+            zf = open(os.path.join(self.subs.log_path, "activitycheck", "processedfiles", "{}.zip".format(status_filename)), 'rb')
 
 
             temp_from = "admin@localhost"
@@ -229,12 +230,12 @@ class StatusChecks:
             fileList = [f+"-statcheck.bz2" for f in iplist]
         else:
             self.subs.verbose_printer("##### Creating Full Summary List #####")
-            fileList = [f for f in os.listdir(os.path.join(self.log_path,"activitycheck", "rawfiles","active")) if f.endswith('-statcheck.bz2')]
+            fileList = [f for f in os.listdir(os.path.join(self.subs.log_path,"activitycheck", "rawfiles","active")) if f.endswith('-statcheck.bz2')]
         for ip in fileList:
             # process
             try:
                 # LOADING Compressed files
-                with bz2.open(os.path.join(self.log_path, "activitycheck", "rawfiles", "active", ip), "rb") as f:
+                with bz2.open(os.path.join(self.subs.log_path, "activitycheck", "rawfiles", "active", ip), "rb") as f:
                     SwitchStatus = pickle.load(f, encoding='utf-8')
                     if 'xecutive' in self.cmdargs and self.cmdargs.xecutive is True:
                         TotalStatus += SwitchStatus.appendSingleLineExec()
@@ -251,7 +252,7 @@ class StatusChecks:
         #                  'wb') as sfile:
         #     sfile.write(TotalStatus.encode("utf-8"))
 
-        zf = zipfile.ZipFile(os.path.join(self.log_path, "activitycheck", "processedfiles", "{}.zip".format(status_filename)),
+        zf = zipfile.ZipFile(os.path.join(self.subs.log_path, "activitycheck", "processedfiles", "{}.zip".format(status_filename)),
                              mode='w',
                              compression=zipfile.ZIP_DEFLATED,
                              )
@@ -349,7 +350,7 @@ class StatusChecks:
                     raise ValueError('##### {} ERROR - No Data in switchstruct #####'.format(ipaddr))
 
                 #load archival information (may have removed switches in it)
-                with bz2.open(os.path.join(self.log_path, "activitycheck", "rawfiles","legacy","{}-statcheck.bz2".format(ipaddr)), "rb") as myNewFile:
+                with bz2.open(os.path.join(self.subs.log_path, "activitycheck", "rawfiles","legacy","{}-statcheck.bz2".format(ipaddr)), "rb") as myNewFile:
                     OldSwitchStatus = pickle.load(myNewFile)
 
                 # if len(OldSwitchStatus.switches) != len(NewSwitchStatus.switches):
@@ -402,14 +403,14 @@ class StatusChecks:
                 #TODO Compare the two files now
                 #write out active status for combining into statcheck csv
                 with bz2.BZ2File(
-                        os.path.join(self.log_path, "activitycheck", "rawfiles","active", "{}-statcheck.bz2".format(ipaddr)),
+                        os.path.join(self.subs.log_path, "activitycheck", "rawfiles","active", "{}-statcheck.bz2".format(ipaddr)),
                         'wb') as sfile:
                     pickle.dump(NewSwitchStatus, sfile)
                     sfile.close()
 
                 #Write out archival switchstatus to load again later
                 with bz2.BZ2File(
-                        os.path.join(self.log_path, "activitycheck", "rawfiles","legacy", "{}-statcheck.bz2".format(ipaddr)),
+                        os.path.join(self.subs.log_path, "activitycheck", "rawfiles","legacy", "{}-statcheck.bz2".format(ipaddr)),
                         'wb') as sfile:
                     pickle.dump(OldSwitchStatus, sfile)
 
@@ -430,13 +431,13 @@ class StatusChecks:
                 # self.successful_switches.append(ipaddr)
                 returnval = (True, ipaddr)
                 with bz2.BZ2File(
-                        os.path.join(self.log_path, "activitycheck", "rawfiles","active", "{}-statcheck.bz2".format(ipaddr)),
+                        os.path.join(self.subs.log_path, "activitycheck", "rawfiles","active", "{}-statcheck.bz2".format(ipaddr)),
                         'wb') as sfile:
                     pickle.dump(OldSwitchStatus, sfile)
                     sfile.close()
 
                 with bz2.BZ2File(
-                        os.path.join(self.log_path, "activitycheck", "rawfiles","legacy", "{}-statcheck.bz2".format(ipaddr)),
+                        os.path.join(self.subs.log_path, "activitycheck", "rawfiles","legacy", "{}-statcheck.bz2".format(ipaddr)),
                         'wb') as sfile:
                     pickle.dump(OldSwitchStatus, sfile)
                     sfile.close()
