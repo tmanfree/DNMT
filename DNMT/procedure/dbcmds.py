@@ -97,7 +97,7 @@ class DBcmds:
     def Find_Mac(self):
         totalstart = time.process_time()
         if 'ipfile' in self.cmdargs and self.cmdargs.ipfile is not None:
-            ipList = open(os.path.join(self.cmdargs.file), "r")
+            ipList = open(os.path.join(self.cmdargs.ipfile), "r")
         else:
             ipList = open(os.path.abspath(os.path.join(os.sep, 'usr', 'lib', 'capt', "activitycheckIPlist")), "r")
         for ip in ipList:
