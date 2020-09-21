@@ -115,26 +115,32 @@ class DBcmds:
         print("Total Time to search for Macs:{} seconds".format(time.process_time() - totalstart))
 
     def Find_Mac_Table(self,ipaddr):
-        match_entry_list = []
-        start = time.process_time()
-        if self.subs.ping_check(ipaddr):
-            vendor = self.subs.snmp_get_vendor_string(ipaddr)
+        try:
+            match_entry_list = []
+            start = time.process_time()
+            if self.subs.ping_check(ipaddr):
+                vendor = self.subs.snmp_get_vendor_string(ipaddr)
 
-            if vendor == "HP": #currently only search on HP switches
-                self.subs.verbose_printer("{} searching for MAC:{}".format(ipaddr, time.process_time() - start))
-                list = self.subs.snmp_get_mac_table_bulk(ipaddr, vendor)
-                self.subs.verbose_printer("{} Time to grab Macs:{} seconds".format(ipaddr, time.process_time() - start))
+                if vendor == "HP": #currently only search on HP switches
+                    self.subs.verbose_printer("{} searching for MAC:{}".format(ipaddr, self.subs.normalize_mac(self.cmdargs.searchstring)))
+                    list = self.subs.snmp_get_mac_table_bulk(ipaddr, vendor)
+                    self.subs.verbose_printer("{} Time to grab Macs:{} seconds".format(ipaddr, time.process_time() - start))
 
-                for entry in list:
-                    try:
-                        mac_entry_string = self.subs.normalize_mac(entry["MAC"].hex())
-                        if self.subs.normalize_mac(self.cmdargs.searchstring.lower()) in mac_entry_string:
-                            match_entry_list.append(entry)
-                    except Exception as err:
-                        print(err)
+                    match_entry_list = [f for f in list if self.subs.normalize_mac(self.cmdargs.searchstring) in self.subs.normalize_mac(f["MAC"].hex())]
+                    # for entry in list:
+                    #     try:
+                    #         mac_entry_string = self.subs.normalize_mac(entry["MAC"].hex())
+                    #         if self.subs.normalize_mac(self.cmdargs.searchstring.lower()) in mac_entry_string:
+                    #             match_entry_list.append(entry)
+                    #     except Exception as err:
+                    #         print(err)
 
-                if len(match_entry_list) > 0:
-                    print("{} - {} matches to \"{}\" found".format(ipaddr, len(match_entry_list), self.subs.normalize_mac(self.cmdargs.searchstring)))
-                    for match in match_entry_list:
-                        print("MAC:{} Interface:{} Vlan:{}".format(self.subs.normalize_mac(match["MAC"].hex()),
-                                                                   match["InterfaceID"], match["Vlan"]))
+                    if len(match_entry_list) > 0:
+                        print("{} - {} matches to \"{}\" found".format(ipaddr, len(match_entry_list), self.subs.normalize_mac(self.cmdargs.searchstring)))
+                        for match in match_entry_list:
+                            print("MAC:{} Interface:{} Vlan:{}".format(self.subs.normalize_mac(match["MAC"].hex()),
+                                                                       match["InterfaceID"], match["Vlan"]))
+                    else:
+                        self.subs.verbose_printer("{} - {} matches to \"{}\" found".format(ipaddr, len(match_entry_list), self.subs.normalize_mac(self.cmdargs.searchstring)))
+        except Exception as err:
+            print(err)
