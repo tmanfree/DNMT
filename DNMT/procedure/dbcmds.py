@@ -121,14 +121,14 @@ class DBcmds:
 
         for entry in list:
             try:
-                mac_entry_string = entry["MAC"].hex()
-                if self.cmdargs.searchstring.lower() in mac_entry_string:
+                mac_entry_string = self.subs.normalize_mac(entry["MAC"].hex())
+                if self.subs.normalize_mac(self.cmdargs.searchstring.lower()) in mac_entry_string:
                     match_entry_list.append(entry)
             except Exception as err:
                 print(err)
 
         if len(match_entry_list) > 0:
-            print("{} - {} matches to \"{}\" found".format(ipaddr, len(match_entry_list), self.cmdargs.searchstring))
+            print("{} - {} matches to \"{}\" found".format(ipaddr, len(match_entry_list), self.subs.normalize_mac(self.cmdargs.searchstring)))
             for match in match_entry_list:
                 print("MAC:{} Interface:{} Vlan:{}".format(self.subs.normalize_mac(match["MAC"].hex()),
                                                            match["InterfaceID"], match["Vlan"]))
