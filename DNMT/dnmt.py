@@ -197,6 +197,11 @@ def dnmt():
     db_cmds_find_desc_parser.add_argument('-f', '--file', help="Output to specific file")
     db_cmds_find_desc_parser.add_argument('-n', '--name', help=" name of switch to search (can be partial)")
 
+    db_cmds_find_mac_parser = db_cmds_find_parser.add_parser("mac", help="search for macs")
+    db_cmds_find_mac_parser.add_argument('searchstring', help='text to search for')
+    db_cmds_find_mac_parser.add_argument('-v', '--verbose', help="verbose output", default=False, action="store_true")
+    db_cmds_find_mac_parser.add_argument('-n', '--name', help=" name of switch to search (can be partial)")
+
 
     #Tests Begin
     test_parser = subparsers.add_parser("test", help="various tests").add_subparsers(dest="test")
@@ -266,7 +271,7 @@ def dnmt():
     upgradeCheck = Check(cmdargs, config)
     statusChecks = StatusChecks(cmdargs,config)
     tools = Tools(cmdargs, config)
-    dccmds = DBcmds(cmdargs,config)
+    dbcmds = DBcmds(cmdargs,config)
     # functions = Functions(cmdargs,config)
     # snmpFuncs = SnmpFuncs(cmdargs,config)
     test = Test(cmdargs, config)
@@ -324,7 +329,9 @@ def dnmt():
     elif cmdargs.maincommand =='DBcmds':
         if cmdargs.DBcmds == 'find':
             if cmdargs.find == 'desc':
-                dccmds.Find_Desc()
+                dbcmds.Find_Desc()
+            elif cmdargs.find == 'mac':
+                dbcmds.Find_Mac()
 
     elif cmdargs.maincommand == 'test':
         if cmdargs.test == 'Command_Blaster':

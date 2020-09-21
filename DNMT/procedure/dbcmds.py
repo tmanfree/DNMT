@@ -92,3 +92,43 @@ class DBcmds:
                     self.subs.verbose_printer("Writing Complete to CSV")
             except Exception as err:
                 print("ERROR ### Something went wrong writing to file")
+
+
+    def Find_Mac(self):
+        totalstart = time.process_time()
+        file = open(os.path.abspath(os.path.join(os.sep, 'usr', 'lib', 'capt', "activitycheckIPlist")), "r")
+        for ip in file:
+
+            ipaddr = ip.rstrip()
+            if 'name' in self.cmdargs and self.cmdargs.name is not None:
+                hostname = self.subs.snmp_get_hostname(ipaddr)
+                if self.cmdargs.name.lower() in hostname.lower():
+                    self.Find_Mac_Table(ipaddr)
+
+            else:
+                self.Find_Mac_Table(ipaddr)
+
+
+        print("Total Time to search for Macs:{} seconds".format(time.process_time() - totalstart))
+
+    def Find_Mac_Table(self,ipaddr):
+        match_entry_list = []
+        start = time.process_time()
+        vendor = self.subs.snmp_get_vendor_string(ipaddr)
+        self.subs.verbose_printer("{} searching for MAC:{}".format(ipaddr, time.process_time() - start))
+        list = self.subs.snmp_get_mac_table_bulk(ipaddr, vendor)
+        self.subs.verbose_printer("{} Time to grab Macs:{} seconds".format(ipaddr, time.process_time() - start))
+
+        for entry in list:
+            try:
+                mac_entry_string = entry["MAC"].hex()
+                if self.cmdargs.searchstring.lower() in mac_entry_string:
+                    match_entry_list.append(entry)
+            except Exception as err:
+                print(err)
+
+        if len(match_entry_list) > 0:
+            print("{} - {} matches to \"{}\" found".format(ipaddr, len(match_entry_list), self.cmdargs.searchstring))
+            for match in match_entry_list:
+                print("MAC:{} Interface:{} Vlan:{}".format(self.subs.normalize_mac(match["MAC"].hex()),
+                                                           match["InterfaceID"], match["Vlan"]))

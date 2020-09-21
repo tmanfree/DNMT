@@ -290,7 +290,7 @@ class SubRoutines:
     # Return:
     #  MacList (a list of the interfaces that mac addresses are on that are  on the switch)
     # Summary:
-    #   Returns the ports that mac addresses are on, according to their ID
+    #   Returns the ports that mac addresses are on, according to their ID (on vlan 1...)
     def snmp_get_mac_int_bulk(self, ipaddr):
         MacList = []
         #1.3.6.1.2.1.17.4.3.1.2  will give the port the ID is on X.X.X.X.X.X = Port (Integer)
@@ -314,7 +314,7 @@ class SubRoutines:
     # Return:
     #  MacList (a list of the macs that are  on the switch)
     # Summary:
-    #   grabs all mac addresses in the table assignments
+    #   grabs all mac addresses in the table assignments, on vlan 1...
     def snmp_get_mac_id_bulk(self, ipaddr):
         MacList = []
         #1.3.6.1.2.1.17.4.3.1.2  will give the port the ID is on X.X.X.X.X.X = Port (Integer)
@@ -1029,18 +1029,33 @@ class SubRoutines:
 
         oidstring = '1.3.6.1.2.1.17.4.3.1'
         macList=[]
-        vlanList = self.snmp_get_vlan_database(ipaddr,vendor)
 
-        for vlan in vlanList:
-            #Return should always be a factor of 3. X=MAC, X+1=Port, X+2=status
-            varBinds = self.vlan_at_snmp_walk(ipaddr,vlan['ID'],ObjectType(ObjectIdentity(oidstring)))
+        if vendor == "HP":
+            varBinds = self.snmp_walk(ipaddr, ObjectType(ObjectIdentity(oidstring)))
             i = 0
-            while ( i < len(varBinds)/3):
+            while (i < len(varBinds) / 3):
                 macList.append({"MAC": varBinds[i]._ObjectType__args[1]._value,
-                                "InterfaceID": varBinds[i + int(len(varBinds)/3)]._ObjectType__args[1]._value,
-                                "Status": varBinds[i + int((len(varBinds)/3)*2)]._ObjectType__args[1]._value,
-                                "Vlan": vlan['ID']})
+                                "InterfaceID": varBinds[i + int(len(varBinds) / 3)]._ObjectType__args[1]._value,
+                                "Status": varBinds[i + int((len(varBinds) / 3) * 2)]._ObjectType__args[1]._value,
+                                "Vlan": "N/A"})
                 i += 1
+
+        elif vendor == "Cisco":
+
+            vlanList = self.snmp_get_vlan_database(ipaddr,vendor)
+
+            for vlan in vlanList:
+                #Return should always be a factor of 3. X=MAC, X+1=Port, X+2=status
+                varBinds = self.vlan_at_snmp_walk(ipaddr,vlan['ID'],ObjectType(ObjectIdentity(oidstring)))
+                i = 0
+                while ( i < len(varBinds)/3):
+                    macList.append({"MAC": varBinds[i]._ObjectType__args[1]._value,
+                                    "InterfaceID": varBinds[i + int(len(varBinds)/3)]._ObjectType__args[1]._value,
+                                    "Status": varBinds[i + int((len(varBinds)/3)*2)]._ObjectType__args[1]._value,
+                                    "Vlan": vlan['ID']})
+                    i += 1
+        elif vendor == 'Dell':
+            self.verbose_printer("{} Not printing Dell switches. Need to enable them manually with enable-dot1d-mibwalk")
 
 
         return macList
