@@ -201,6 +201,7 @@ def dnmt():
     db_cmds_find_mac_parser.add_argument('searchstring', help='text to search for')
     db_cmds_find_mac_parser.add_argument('-v', '--verbose', help="verbose output", default=False, action="store_true")
     db_cmds_find_mac_parser.add_argument('-n', '--name', help=" name of switch to search (can be partial)")
+    db_cmds_find_desc_parser.add_argument('-i', '--ipfile', help="file to grap IPs from if not default")
 
 
     #Tests Begin
