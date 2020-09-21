@@ -118,7 +118,9 @@ class DBcmds:
         try:
             match_entry_list = []
             start = time.process_time()
+            self.subs.verbose_printer("attempting to ping {}".format(ipaddr))
             if self.subs.ping_check(ipaddr):
+                self.subs.verbose_printer("ping to {} SUCCESSFUL".format(ipaddr))
                 vendor = self.subs.snmp_get_vendor_string(ipaddr)
 
                 if vendor == "HP": #currently only search on HP switches
@@ -142,5 +144,7 @@ class DBcmds:
                                                                        match["InterfaceID"], match["Vlan"]))
                     else:
                         self.subs.verbose_printer("{} - {} matches to \"{}\" found".format(ipaddr, len(match_entry_list), self.subs.normalize_mac(self.cmdargs.searchstring)))
+            else:
+                self.subs.verbose_printer("ping to {} FAILED")
         except Exception as err:
             print(err)
