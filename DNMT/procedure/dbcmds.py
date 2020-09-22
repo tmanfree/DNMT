@@ -114,7 +114,7 @@ class DBcmds:
 
         print("Total Time to search for Macs:{} seconds".format(time.process_time() - totalstart))
 
-    def Find_Mac_Table(self,ipaddr):
+    def Find_Mac_Table(self,ipaddr): #TODO merge functionality with MACSearch general
         try:
             match_entry_list = []
             start = time.process_time()
@@ -127,16 +127,8 @@ class DBcmds:
                     self.subs.verbose_printer("{} Time to grab Macs:{} seconds".format(ipaddr, time.process_time() - start))
 
                     match_entry_list = [f for f in list if self.subs.normalize_mac(self.cmdargs.searchstring) in self.subs.normalize_mac(f["MAC"].hex())]
-                    # for entry in list:
-                    #     try:
-                    #         mac_entry_string = self.subs.normalize_mac(entry["MAC"].hex())
-                    #         if self.subs.normalize_mac(self.cmdargs.searchstring.lower()) in mac_entry_string:
-                    #             match_entry_list.append(entry)
-                    #     except Exception as err:
-                    #         print(err)
-
                     if len(match_entry_list) > 0:
-                        print("\n### {} - {} matches to \"{}\" found ###\n".format(ipaddr, len(match_entry_list), self.subs.normalize_mac(self.cmdargs.searchstring)))
+                        print("\n### {} - {} matches to \"{}\" found ###".format(ipaddr, len(match_entry_list), self.subs.normalize_mac(self.cmdargs.searchstring)))
                         for match in match_entry_list:
                             print("MAC:{} Interface:{} Vlan:{}".format(self.subs.normalize_mac(match["MAC"].hex()),
                                                                        match["InterfaceID"], match["Vlan"]))

@@ -1110,7 +1110,7 @@ class SubRoutines:
 
             #go through power return Not working for Dell
             for port in self.snmp_get_port_poe_alloc_bulk(ipaddr):
-                if port is not None and switchStruct.getSwitch(port['Switch']).id is not None: #added catch for provisioned switch 1 being missing
+                if port is not None and switchStruct.getSwitch(port['Switch']) is not None and switchStruct.getSwitch(port['Switch']).id is not None: #added catch for provisioned switch 1 being missing
                     #This doesnt use the interfaceId, the first return should be the base-t result in the event of gi & te
                     #such as 3650 uplink module being 1/0/1 on ten and gi
                     # self.verbose_printer("#####{} poe processing port {}".format(ipaddr,port))
