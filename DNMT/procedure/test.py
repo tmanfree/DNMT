@@ -310,7 +310,7 @@ class Test:
                 net_connect = self.subs.create_connection(ipaddr)
                 if net_connect:
                     ### ADD ERROR HANDLING FOR FAILED CONNECTION
-                    self.subs.verbose_printer("-------- CONNECTED TO {}  --------".format( ipaddr))
+                    print("-------- CONNECTED TO {}  --------".format( ipaddr))
                     net_connect.enable()
 
                     for vlanEntry in current_vlan_list:
@@ -337,6 +337,7 @@ class Test:
 
 
                     net_connect.disconnect()
+                    print("-------- FINISHED PROCESSING {}  --------".format(ipaddr))
                 else:
                     print("-------- FAILED TO CONNECTED TO {} --------".format(ipaddr))
             except netmiko.ssh_exception.NetMikoAuthenticationException as err:
