@@ -24,6 +24,8 @@ def load_sw_base_conf():
     global logpath
     global port_label_email
     global port_label_pw
+    global ipam_un
+    global ipam_pw
 
     username = config['SWITCHCRED']['username']
     password = config['SWITCHCRED']['password']
@@ -33,4 +35,6 @@ def load_sw_base_conf():
     logpath = config['PATH']['logpath']
     port_label_email = config['PORTLABEL']['email']
     port_label_pw = config['PORTLABEL']['password']
+    ipam_un = config['IPAMCRED']['username']
+    ipam_pw =  config['IPAMCRED']['password']
 

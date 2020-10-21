@@ -3,6 +3,8 @@
 import re
 import sys
 import subprocess,platform,os,time,datetime
+import requests
+
 import getpass
 import difflib
 import smtplib
@@ -54,6 +56,9 @@ class Test:
         error_dict["crc errors"] = self.subs.snmp_get_crc_errors_by_id(self.cmdargs.ipaddr, intId)
         for entry in error_dict:
             print("{}:{}".format(entry, error_dict[entry]))
+
+
+
 
     def Command_Blaster_Begin(self):
 
@@ -276,3 +281,75 @@ class Test:
             print(err.args[0])
         except Exception as err: #currently a catch all to stop linux from having a conniption when reloading
             print("NETMIKO ERROR {}:{}".format(ipaddr,err.args[0]))
+
+    def Vlan_Namer_Begin(self):
+        # Iterate through addresses List
+        file = open(self.cmdargs.file, "r")
+        for ip in file:
+            self.Vlan_Namer(ip.rstrip())
+        file.close()
+
+    def Vlan_Namer(self, ipaddr):
+        try:
+            vendor = self.subs.snmp_get_vendor_string(ipaddr)
+            # Get CDP information for ports
+            cdp_list = self.subs.snmp_get_neighbour_bulk(ipaddr, vendor)
+
+            connected_uplinks = [cdpEntry for cdpEntry, cdpEntry in enumerate(cdp_list) if "corenet" in cdpEntry["Value"]]
+            if len(connected_uplinks) > 0:
+                vlan_list = self.subs.snmp_get_vlan_database(ipaddr, vendor)
+                for uplinkEntry in connected_uplinks:
+                    uplinkEntry["LocalPort"] = next((cdpEntry['Value'] for cdpEntry in cdp_list if cdpEntry["Id"] == uplinkEntry['Id'] and cdpEntry["Category"] == 7), None)
+                    try:
+                        net_connect = self.subs.create_connection(uplinkEntry['Value'])
+                        if net_connect:
+                            ### ADD ERROR HANDLING FOR FAILED CONNECTION
+                            print("-------- CONNECTED TO {} for {} --------".format(uplinkEntry['Value'], ipaddr))
+                            for vlanEntry in vlan_list:
+                                result = net_connect.send_command("show vlan id {} | include active".format(vlanEntry['ID']))
+                                vlanEntry["CoreName"] = self.regex_parser_var0(r"^\d+\s+(\S+)$", result)
+                            print(" ID:{} Current Name:{} Core Name:{}".format(vlanEntry["ID"], vlanEntry["Name"], vlanEntry["CoreName"]))
+
+
+                            net_connect.disconnect()
+                        else:
+                            print("-------- FAILED TO CONNECTED TO {} --------".format(ipaddr))
+                    except netmiko.ssh_exception.NetMikoAuthenticationException as err:
+                        self.subs.verbose_printer(err.args[0], "Netmiko Authentication Failure")
+                    except netmiko.ssh_exception.NetMikoTimeoutException as err:
+                        self.subs.verbose_printer(err.args[0], "Netmiko Timeout Failure")
+                    except ValueError as err:
+                        print(err.args[0])
+                    except Exception as err:  # currently a catch all to stop linux from having a conniption when reloading
+                        print("NETMIKO ERROR {}:{}".format(ipaddr, err.args[0]))
+
+
+                #login to edge switch to get the remote port of the cdp stuff
+
+                #verify which vlans are actually passed to the edge switch
+                #Log onto connected core now to get names of connected vlans
+
+
+
+            vlan_list =  self.subs.snmp_get_vlan_database(ipaddr, vendor)
+
+
+        except Exception as err:
+            print(err)
+        pass
+
+    def IPAM_REST_TEST(self):
+        url = "https://ipam.ualberta.ca/solid.intranet/rest/vlmvlan_lis"
+        querystring = {"WHERE": "vlmdomain_description like 'GSB' ","ORDERBY":"vlmdomain_description"}
+        # querystring = {"WHERE": "dnszone_is_rpz='0' and dns_state='Y' and dnszone_name like '%.tld'","ORDERBY":"dnszone_name"}
+
+        headers = {
+            'x-ipm-username': "{}=".format(self.config.ipam_un),
+            'x-ipm-password': "{}=".format(self.config.ipam_pw),
+            'cache-control': "no-cache"
+        }
+        try:
+            response = requests.request("GET", url, headers=headers, params=querystring)
+            print(response.text)
+        except Exception as err:
+            print(err)

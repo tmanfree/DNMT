@@ -307,7 +307,7 @@ class Tools:
                                 self.log_array.append("Email processing beginning\n")
                                 email_body = msg.get_payload(decode=True)
                                 dict_str = email_body.decode("UTF-8")
-                                label_dict = ast.literal_eval(dict_str)
+                                label_dict = ast.literal_eval(dict_str) #WILL BALK AT MULTI LINK DESCRIPTIONS
                                 if (self.Apply_Port_Labels(label_dict)):
                                     self.Print_And_Log("Labels applied correctly, message index:{}".format(str(int_msg_index)))
                                     mailconnection.store(msg_index, '+FLAGS', '(\\Seen)')
