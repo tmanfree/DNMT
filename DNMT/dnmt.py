@@ -228,6 +228,7 @@ def dnmt():
 
     vlan_namer_parser = test_parser.add_parser('Vlan_Namer',help="Rename Vlans")
     vlan_namer_parser.add_argument('file', help='The file with IPs to verify vlan names upstream')
+    vlan_namer_parser.add_argument('-v', '--verbose', help="run in verbose mode", default=False, action="store_true")
 
     ipam_rest_parser = test_parser.add_parser("IPAM_REST_TEST", help="rest command testing")
     ipam_rest_parser.add_argument('building', help='The 3 letter code of the building to grab vlans from')
@@ -360,7 +361,9 @@ def dnmt():
         elif cmdargs.test == "Vlan_Namer":
             test.Vlan_Namer_Begin()
         elif cmdargs.test == "IPAM_REST_TEST":
-            test.IPAM_REST_TEST(cmdargs.building, cmdargs.vlanid)
+            temp = test.Ipam_Rest_Get("https://ipam.ualberta.ca/solid.intranet/rest/vlmvlan_list",
+                                                   {"WHERE": "vlmdomain_description like '{}' and vlmvlan_vlan_id = '{}'".format(cmdargs.building,cmdargs.vlanid)})
+            print(temp)
 
 
 

@@ -286,10 +286,83 @@ class Test:
         # Iterate through addresses List
         file = open(self.cmdargs.file, "r")
         for ip in file:
-            self.Vlan_Namer(ip.rstrip())
+            try:
+                self.Vlan_Namer(ip.rstrip())
+            except Exception as err:
+                print(err)
         file.close()
 
     def Vlan_Namer(self, ipaddr):
+        vendor = self.subs.snmp_get_vendor_string(ipaddr)
+        hostname = self.subs.snmp_get_hostname(ipaddr)
+        hostname_split = hostname.split('-')
+        if len(hostname_split) > 0:
+            building_code = hostname_split[0]
+        else:
+            raise Exception("##### ERROR - unable to parse building name for {}: #####".format(ipaddr))
+
+        current_vlan_list = self.subs.snmp_get_vlan_database(ipaddr, vendor)
+        if len(current_vlan_list) > 0:
+            try:
+                new_vlan_list = self.Ipam_Rest_Get("https://ipam.ualberta.ca/solid.intranet/rest/vlmvlan_list",
+                                                   {"WHERE": "vlmdomain_description like '{}'".format(building_code)})
+
+                # for vlanEntry in current_vlan_list:
+                    # vlanEntry["NewName"] = next((newvlanEntry['vlmvlan_name'] for newvlanEntry in new_vlan_list if
+                    #                              newvlanEntry["vlmvlan_vlan_id"] == str(vlanEntry["ID"])), None)
+                    #
+                    # if vlanEntry["NewName"] is not None:
+                    #     if (vlanEntry["NewName"] == vlanEntry["Name"]):
+                    #         self.subs.verbose_printer(" ID:{} ###SAME NAME###\n Current Name:{} New Name:{}".format(vlanEntry["ID"], vlanEntry["Name"],
+                    #                                                       vlanEntry["NewName"]))
+                    #     else:
+                    #         self.subs.verbose_printer(" ID:{} ###NEW NAME###\n Current Name:{} New Name:{}".format(vlanEntry["ID"], vlanEntry["Name"],
+                    #                                                           vlanEntry["NewName"]))
+                            #Change vlan name here now
+                #
+                net_connect = self.subs.create_connection(ipaddr)
+                if net_connect:
+                    ### ADD ERROR HANDLING FOR FAILED CONNECTION
+                    print("-------- CONNECTED TO {}  --------".format( ipaddr))
+                    net_connect.enable()
+
+                    for vlanEntry in current_vlan_list:
+                        vlanEntry["NewName"] = next((newvlanEntry['vlmvlan_name'] for newvlanEntry in new_vlan_list if
+                                                     newvlanEntry["vlmvlan_vlan_id"] == str(vlanEntry["ID"])), None)
+
+                        if vlanEntry["NewName"] is not None and vlanEntry["NewName"] is not "":
+                            if (vlanEntry["NewName"] == vlanEntry["Name"]):
+                                self.subs.verbose_printer(
+                                    " ID:{} ###SAME NAME### Name:{} New Name:{}".format(vlanEntry["ID"],vlanEntry["NewName"]))
+                            else:
+                                self.subs.verbose_printer(
+                                    " ID:{} ###NEW NAME###\n Current Name:{} New Name:{}".format(vlanEntry["ID"],
+                                                                                                 vlanEntry["Name"],
+                                                                                                 vlanEntry["NewName"]))
+                                # result = net_connect.send_config_set(["vlan 1", "name test".format[vlanEntry["NewName"]]])
+                                result = net_connect.send_config_set(["vlan {}".format(vlanEntry["ID"]), "name {}".format(vlanEntry["NewName"])])
+                                self.subs.verbose_printer("###{}###   {}".format(ipaddr,result))
+                                print("###{}### vlan {} changed from {} to {}".format(ipaddr,vlanEntry["ID"],vlanEntry["Name"],vlanEntry["NewName"]))
+                        else:
+                            print("###{}### vlan {} not found in IPAM. Old Name: {}".format(ipaddr,vlanEntry["ID"],vlanEntry["Name"]))
+                    result = net_connect.save_config()
+                    self.subs.verbose_printer("###{}###   {}".format(ipaddr, result))
+
+
+                    net_connect.disconnect()
+                else:
+                    print("-------- FAILED TO CONNECTED TO {} --------".format(ipaddr))
+            except netmiko.ssh_exception.NetMikoAuthenticationException as err:
+                self.subs.verbose_printer(err.args[0], "Netmiko Authentication Failure")
+            except netmiko.ssh_exception.NetMikoTimeoutException as err:
+                self.subs.verbose_printer(err.args[0], "Netmiko Timeout Failure")
+            except ValueError as err:
+                print(err.args[0])
+            except Exception as err:  # currently a catch all to stop linux from having a conniption when reloading
+                print("NETMIKO ERROR {}:{}".format(ipaddr, err.args[0]))
+
+
+    def Core_Mapper(self, ipaddr):
         try:
             vendor = self.subs.snmp_get_vendor_string(ipaddr)
             # Get CDP information for ports
@@ -338,11 +411,11 @@ class Test:
             print(err)
         pass
 
-    def IPAM_REST_TEST(self,buildingcode,vlanid):
-        testid = "4032"
-        url = "https://ipam.ualberta.ca/solid.intranet/rest/vlmvlan_list"
+    def Ipam_Rest_Get(self,url,params):
+
+        # url = "https://ipam.ualberta.ca/solid.intranet/rest/vlmvlan_list"
         # params = {"WHERE":"vlmdomain_description like 'VPL' and vlmvlan_vlan_id = 4031"}
-        params = {"WHERE": "vlmdomain_description like '{}'".format(buildingcode)}
+        # params = {"WHERE": "vlmdomain_description like '{}'".format(buildingcode)}
 
         try:
 
@@ -350,8 +423,12 @@ class Test:
             #Add error handling
             test = response.json()
             if len(test)>0:
-                vlanName = next((vlanEntry['vlmvlan_name'] for vlanEntry in test if vlanEntry["vlmvlan_vlan_id"] == vlanid ), None)
-                print("ID:{} NAME:{}".format(vlanid,vlanName))
+                return test
+                # vlanName = next((vlanEntry['vlmvlan_name'] for vlanEntry in test if vlanEntry["vlmvlan_vlan_id"] == vlanid ), None)
+                # print("ID:{} NAME:{}".format(vlanid,vlanName))
+            else:
+                raise Exception('##### ERROR - no return from IPAM: #####')
 
         except Exception as err:
             print(err)
+            # raise Exception(err)
