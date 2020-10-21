@@ -307,23 +307,10 @@ class Test:
                 new_vlan_list = self.Ipam_Rest_Get("https://ipam.ualberta.ca/solid.intranet/rest/vlmvlan_list",
                                                    {"WHERE": "vlmdomain_description like '{}'".format(building_code)})
 
-                # for vlanEntry in current_vlan_list:
-                    # vlanEntry["NewName"] = next((newvlanEntry['vlmvlan_name'] for newvlanEntry in new_vlan_list if
-                    #                              newvlanEntry["vlmvlan_vlan_id"] == str(vlanEntry["ID"])), None)
-                    #
-                    # if vlanEntry["NewName"] is not None:
-                    #     if (vlanEntry["NewName"] == vlanEntry["Name"]):
-                    #         self.subs.verbose_printer(" ID:{} ###SAME NAME###\n Current Name:{} New Name:{}".format(vlanEntry["ID"], vlanEntry["Name"],
-                    #                                                       vlanEntry["NewName"]))
-                    #     else:
-                    #         self.subs.verbose_printer(" ID:{} ###NEW NAME###\n Current Name:{} New Name:{}".format(vlanEntry["ID"], vlanEntry["Name"],
-                    #                                                           vlanEntry["NewName"]))
-                            #Change vlan name here now
-                #
                 net_connect = self.subs.create_connection(ipaddr)
                 if net_connect:
                     ### ADD ERROR HANDLING FOR FAILED CONNECTION
-                    print("-------- CONNECTED TO {}  --------".format( ipaddr))
+                    self.subs.verbose_printer("-------- CONNECTED TO {}  --------".format( ipaddr))
                     net_connect.enable()
 
                     for vlanEntry in current_vlan_list:
@@ -344,7 +331,7 @@ class Test:
                                 # self.subs.verbose_printer("###{}###   {}".format(ipaddr,result))
                                 print("###{}### vlan {} changed from {} to {}".format(ipaddr,vlanEntry["ID"],vlanEntry["Name"],vlanEntry["NewName"]))
                         else:
-                            self.subs.verbose_printer("###{}### vlan {} not found in IPAM. Old Name: {}".format(ipaddr,vlanEntry["ID"],vlanEntry["Name"]))
+                            print("###{}### vlan {} not found in IPAM. Old Name: {}".format(ipaddr,vlanEntry["ID"],vlanEntry["Name"]))
                     result = net_connect.save_config()
                     # self.subs.verbose_printer("###{}###   {}".format(ipaddr, result))
 
