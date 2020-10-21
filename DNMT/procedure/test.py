@@ -346,7 +346,8 @@ class Test:
         headers = {
             'x-ipm-username': "{}=".format(self.config.ipam_un),
             'x-ipm-password': "{}=".format(self.config.ipam_pw),
-            'cache-control': "no-cache"
+            'cache-control': "no-cache",
+            'verify':'False'
         }
         try:
             response = requests.request("GET", url, headers=headers, params=querystring)
