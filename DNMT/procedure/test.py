@@ -338,19 +338,20 @@ class Test:
             print(err)
         pass
 
-    def IPAM_REST_TEST(self):
-        url = "https://ipam.ualberta.ca/solid.intranet/rest/vlmvlan_lis"
-        querystring = {"WHERE": "vlmdomain_description like 'GSB' ","ORDERBY":"vlmdomain_description"}
-        # querystring = {"WHERE": "dnszone_is_rpz='0' and dns_state='Y' and dnszone_name like '%.tld'","ORDERBY":"dnszone_name"}
+    def IPAM_REST_TEST(self,buildingcode,vlanid):
+        testid = "4032"
+        url = "https://ipam.ualberta.ca/solid.intranet/rest/vlmvlan_list"
+        # params = {"WHERE":"vlmdomain_description like 'VPL' and vlmvlan_vlan_id = 4031"}
+        params = {"WHERE": "vlmdomain_description like '{}'".format(buildingcode)}
 
-        headers = {
-            'x-ipm-username': "{}=".format(self.config.ipam_un),
-            'x-ipm-password': "{}=".format(self.config.ipam_pw),
-            'cache-control': "no-cache",
-            'verify':'False'
-        }
         try:
-            response = requests.request("GET", url, headers=headers, params=querystring)
-            print(response.text)
+
+            response = requests.get(url,params,verify=False,auth=(self.config.ipam_un,self.config.ipam_pw))
+            #Add error handling
+            test = response.json()
+            if len(test)>0:
+                vlanName = next((vlanEntry['vlmvlan_name'] for vlanEntry in test if vlanEntry["vlmvlan_vlan_id"] == vlanid ), None)
+                print("ID:{} NAME:{}".format(vlanid,vlanName))
+
         except Exception as err:
             print(err)
