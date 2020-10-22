@@ -294,7 +294,10 @@ class Test:
         file = open(self.cmdargs.file, "r")
         for ip in file:
             try:
-                self.Vlan_Namer(ip.rstrip())
+                if self.subs.ping_check(ip): #check if reachable first
+                    self.Vlan_Namer(ip.rstrip())
+                else:
+                    print("####{}### ERROR Unable to ping ".format(ip))
             except Exception as err:
                 print(err)
         file.close()
@@ -343,7 +346,7 @@ class Test:
                         print("-------- FINISHED PROCESSING {}  --------".format(ipaddr))
                     else:
                         print("-------- FAILED TO CONNECTED TO {} --------".format(ipaddr))
-                else:
+                else: #just checking
                     for vlanEntry in current_vlan_list:
                         if vlanEntry["NewName"] is not None and vlanEntry["NewName"] is not "":
                             if (vlanEntry["NewName"] == vlanEntry["Name"]):
