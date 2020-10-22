@@ -284,6 +284,10 @@ class Test:
 
     def Vlan_Namer_Begin(self):
         # Iterate through addresses List
+        if 'apply' in self.cmdargs and self.cmdargs.apply:
+            print("Beginning Apply Vlan Naming Operation")
+        else:
+            print("Beginning Check Vlan Naming Operation")
         file = open(self.cmdargs.file, "r")
         for ip in file:
             try:
@@ -307,39 +311,50 @@ class Test:
                 new_vlan_list = self.Ipam_Rest_Get("https://ipam.ualberta.ca/solid.intranet/rest/vlmvlan_list",
                                                    {"WHERE": "vlmdomain_description like '{}'".format(building_code)})
 
-                net_connect = self.subs.create_connection(ipaddr)
-                if net_connect:
-                    ### ADD ERROR HANDLING FOR FAILED CONNECTION
-                    print("-------- CONNECTED TO {}  --------".format( ipaddr))
-                    net_connect.enable()
+                #grab new vlan name if in IPAM
+                for vlanEntry in current_vlan_list:
+                    vlanEntry["NewName"] = next((newvlanEntry['vlmvlan_name'] for newvlanEntry in new_vlan_list if
+                                                 newvlanEntry["vlmvlan_vlan_id"] == str(vlanEntry["ID"])), None)
 
+                if 'apply' in self.cmdargs and self.cmdargs.apply:
+                    net_connect = self.subs.create_connection(ipaddr)
+                    if net_connect:
+                        ### ADD ERROR HANDLING FOR FAILED CONNECTION
+                        print("-------- PROCESSING {}  --------".format( ipaddr))
+                        net_connect.enable()
+
+                        for vlanEntry in current_vlan_list:
+                            if vlanEntry["NewName"] is not None and vlanEntry["NewName"] is not "":
+                                if (vlanEntry["NewName"] == vlanEntry["Name"]):
+                                    self.subs.verbose_printer("###{}### vlan {} is the SAME: {} ".format(ipaddr, vlanEntry["ID"],vlanEntry["Name"]))
+                                else:
+                                    result = net_connect.send_config_set(["vlan {}".format(vlanEntry["ID"]), "name {}".format(vlanEntry["NewName"])])
+                                    print("###{}### vlan {} changed from {} to {}".format(ipaddr, vlanEntry["ID"],
+                                                                                          vlanEntry["Name"],
+                                                                                          vlanEntry["NewName"]))
+                            else:
+                                print("###{}### vlan {} not found in IPAM. Old Name: {}".format(ipaddr,vlanEntry["ID"],vlanEntry["Name"]))
+                        result = net_connect.save_config()
+                        # self.subs.verbose_printer("###{}###   {}".format(ipaddr, result))
+                        net_connect.disconnect()
+                        print("-------- FINISHED PROCESSING {}  --------".format(ipaddr))
+                    else:
+                        print("-------- FAILED TO CONNECTED TO {} --------".format(ipaddr))
+                else:
                     for vlanEntry in current_vlan_list:
-                        vlanEntry["NewName"] = next((newvlanEntry['vlmvlan_name'] for newvlanEntry in new_vlan_list if
-                                                     newvlanEntry["vlmvlan_vlan_id"] == str(vlanEntry["ID"])), None)
-
                         if vlanEntry["NewName"] is not None and vlanEntry["NewName"] is not "":
                             if (vlanEntry["NewName"] == vlanEntry["Name"]):
-                                # self.subs.verbose_printer(
-                                #     " ID:{} ###SAME NAME### Name:{} New Name:{}".format(vlanEntry["ID"],vlanEntry["NewName"]))
-                                self.subs.verbose_printer("###{}### vlan {} is the SAME: {} ".format(ipaddr, vlanEntry["ID"],vlanEntry["Name"]))
+                                self.subs.verbose_printer(
+                                    "###{}### vlan {} is the SAME: {} ".format(ipaddr, vlanEntry["ID"],
+                                                                               vlanEntry["Name"]))
                             else:
-                                # self.subs.verbose_printer(
-                                #     " ID:{} ###NEW NAME###\n Current Name:{} New Name:{}".format(vlanEntry["ID"],
-                                #                                                                  vlanEntry["Name"],
-                                #                                                                  vlanEntry["NewName"]))
-                                result = net_connect.send_config_set(["vlan {}".format(vlanEntry["ID"]), "name {}".format(vlanEntry["NewName"])])
-                                # self.subs.verbose_printer("###{}###   {}".format(ipaddr,result))
-                                print("###{}### vlan {} changed from {} to {}".format(ipaddr,vlanEntry["ID"],vlanEntry["Name"],vlanEntry["NewName"]))
+                                print("###{}### vlan {} is DIFFERENT. OLD: {} NEW {}".format(ipaddr, vlanEntry["ID"],
+                                                                                      vlanEntry["Name"],
+                                                                                      vlanEntry["NewName"]))
                         else:
-                            print("###{}### vlan {} not found in IPAM. Old Name: {}".format(ipaddr,vlanEntry["ID"],vlanEntry["Name"]))
-                    result = net_connect.save_config()
-                    # self.subs.verbose_printer("###{}###   {}".format(ipaddr, result))
+                            print("###{}### vlan {} not found in IPAM. Old Name: {}".format(ipaddr, vlanEntry["ID"],
+                                                                                            vlanEntry["Name"]))
 
-
-                    net_connect.disconnect()
-                    print("-------- FINISHED PROCESSING {}  --------".format(ipaddr))
-                else:
-                    print("-------- FAILED TO CONNECTED TO {} --------".format(ipaddr))
             except netmiko.ssh_exception.NetMikoAuthenticationException as err:
                 self.subs.verbose_printer(err.args[0], "Netmiko Authentication Failure")
             except netmiko.ssh_exception.NetMikoTimeoutException as err:

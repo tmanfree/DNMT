@@ -229,6 +229,7 @@ def dnmt():
     vlan_namer_parser = test_parser.add_parser('Vlan_Namer',help="Rename Vlans")
     vlan_namer_parser.add_argument('file', help='The file with IPs to verify vlan names upstream')
     vlan_namer_parser.add_argument('-v', '--verbose', help="run in verbose mode", default=False, action="store_true")
+    vlan_namer_parser.add_argument('-a', '--apply', help="apply changes", default=False, action="store_true")
 
     ipam_rest_parser = test_parser.add_parser("IPAM_REST_TEST", help="rest command testing")
     ipam_rest_parser.add_argument('building', help='The 3 letter code of the building to grab vlans from')
