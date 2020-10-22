@@ -13,6 +13,8 @@ import zipfile
 from email import encoders
 from email.message import EmailMessage
 import pickle,bz2 #imports for statchecks
+import urllib3
+
 
 import zipfile #imports for summary filescompression imports
 
@@ -42,6 +44,7 @@ class Test:
         self.config = config
         self.subs = SubRoutines(cmdargs, config)
         self.log_path = os.path.abspath(os.path.join(os.sep, 'var', 'log', 'dnmt'))
+        urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning) #Supress the ssl unverified notification
        # self.config.logpath = os.path.join(os.path.expanduser(self.config.logpath), "logs", "UpgradeCheck",
         #                                   datetime.date.today().strftime('%Y%m%d'))
 
