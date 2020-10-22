@@ -297,7 +297,7 @@ class Test:
                 if self.subs.ping_check(ip): #check if reachable first
                     self.Vlan_Namer(ip.rstrip())
                 else:
-                    print("####{}### ERROR Unable to ping ".format(ip))
+                    print("####{}### ERROR Unable to ping ".format(ip.rstrip()))
             except Exception as err:
                 print(err)
         file.close()
