@@ -317,17 +317,31 @@ class Test:
                 new_vlan_list = self.Ipam_Rest_Get("https://ipam.ualberta.ca/solid.intranet/rest/vlmvlan_list",
                                                    {"WHERE": "vlmdomain_description like '{}'".format(building_code)})
 
+                if new_vlan_list is None:
+                    raise Exception("###{}#### ERROR No entries found for building code:{}".format(ipaddr,building_code))
+
                 #grab new vlan name if in IPAM
                 for vlanEntry in current_vlan_list:
                     vlanEntry["NewName"] = next((newvlanEntry['vlmvlan_name'] for newvlanEntry in new_vlan_list if
                                                  newvlanEntry["vlmvlan_vlan_id"] == str(vlanEntry["ID"])), None)
 
                 if 'apply' in self.cmdargs and self.cmdargs.apply:
-                    net_connect = self.subs.create_connection(ipaddr)
+                    if vendor == "Cisco":
+                        net_connect = self.subs.create_connection_vendor(ipaddr, "cisco_ios")
+                        result = net_connect.enable()
+                    elif vendor =="HP":
+                        net_connect = self.subs.create_connection_vendor(ipaddr,"hp_procurve")
+                        result = self.subs.hp_connection_enable(net_connect) #TODO ADD error handling here
+                    else:
+                        net_connect = self.subs.create_connection(ipaddr)
+                        result = net_connect.enable()
+
+
+
                     if net_connect:
                         ### ADD ERROR HANDLING FOR FAILED CONNECTION
                         print("-------- PROCESSING {}  --------".format( ipaddr))
-                        net_connect.enable()
+
 
                         for vlanEntry in current_vlan_list:
                             if vlanEntry["NewName"] is not None and vlanEntry["NewName"] is not "":
@@ -335,6 +349,8 @@ class Test:
                                     self.subs.verbose_printer("###{}### vlan {} is the SAME: {} ".format(ipaddr, vlanEntry["ID"],vlanEntry["Name"]))
                                 else:
                                     result = net_connect.send_config_set(["vlan {}".format(vlanEntry["ID"]), "name {}".format(vlanEntry["NewName"])])
+                                    #self.subs.verbose_printer(result)
+                                    #If the names are too long they won't apply, HP Procurve in ASH reporting a limit of 12 characters
                                     print("###{}### vlan {} changed from {} to {}".format(ipaddr, vlanEntry["ID"],
                                                                                           vlanEntry["Name"],
                                                                                           vlanEntry["NewName"]))

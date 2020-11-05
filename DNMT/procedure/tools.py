@@ -31,6 +31,9 @@ from pathos.multiprocessing import ProcessingPool as Pool
 #local subroutine import
 from DNMT.procedure.subroutines import SubRoutines
 
+#for standardization configparsing
+import configparser
+
 
 
 class Tools:
@@ -431,3 +434,79 @@ class Tools:
             print("Failed to send Email:{}".format(err))
         except Exception as err:
             print(err)
+
+    def Standardize_Begin(self):
+        if 'apply' in self.cmdargs and self.cmdargs.apply:
+            print("Beginning Apply Standards Operation")
+        else:
+            print("Beginning Check Standards Operation")
+            # File will have mandatory first row with at least these fields:  ip, type, user, pass, en, port
+        file = open(self.cmdargs.ipfile, "r")
+
+        row_titles = next(file).split(',') #grab the first row (the titles) use these to make the standardize switch call dynamic
+        row_titles[len(row_titles)-1] = row_titles[len(row_titles)-1].rstrip() #remove the trailing newline
+
+        for ip in file: #{IP][Vendor][UN][PW][EN][PORT.split]
+            ip_entry = ip.split(',')
+            if len(ip_entry) == 6:
+                ip_entry[len(ip_entry)-1] = ip_entry[len(ip_entry)-1].rstrip()
+                try:
+                    if self.subs.ping_check(ip_entry[row_titles.index("ip")]):  # check if reachable first
+                        self.Standardize_Switch(ip_entry[row_titles.index("ip")], ip_entry[row_titles.index("type")],
+                                                ip_entry[row_titles.index("user")], ip_entry[row_titles.index("pass")],
+                                                ip_entry[row_titles.index("en")], ip_entry[row_titles.index("port")])
+                    else:
+                        print("####{}### ERROR Unable to ping ".format(ip_entry[0]))
+                except Exception as err:
+                    print(err)
+        file.close()
+
+    def Standardize_Switch(self,ipaddr,vendor,username,password,enable_pw,port):
+        net_connect = self.subs.create_connection_manual(ipaddr, vendor,username,password,enable_pw,port)
+        if self.subs.vendor_enable(vendor,net_connect):
+            sh_run = net_connect.send_command("show run")
+            # print(sh_run)
+            # cmdfile =  open(self.cmdargs.cmdfile, "r")
+            missingnum = 0
+            foundnum = 0
+            commandlist = self.gather_standard_configs(vendor)
+            for commandline in commandlist:
+                #escape charac
+                escapedcommand = commandline.translate(str.maketrans({"-": r"\-",
+                                                            "]": r"\]",
+                                                            "\\": r"\\",
+                                                            "^": r"\^",
+                                                            "$": r"\$",
+                                                            "*": r"\*",
+                                                            "+": r"\+",
+                                                            ".": r"\."}))
+                #TODO parse command and translate between HP or Cisco?
+                # or provide Cisco/HP files or file with Cisco/HP entries for each heading, like the config files
+                if re.search('^\s*{}'.format(escapedcommand), sh_run,  flags = re.IGNORECASE | re.MULTILINE):
+                    self.subs.verbose_printer("###{}### FOUND: {} ".format(ipaddr,commandline))
+                    foundnum += 1
+                else:
+                    print("###{}### MISSING: {} ".format(ipaddr,commandline))
+                    missingnum += 1
+                    # if 'apply' in self.cmdargs and self.cmdargs.apply:
+                    #     pass
+
+            # cmdfile.close()
+            print ("{} - {} commands already exist {} commands missing".format(ipaddr,foundnum,missingnum))
+
+
+
+        else:
+            print("###{}### ERROR Unable to enable")
+
+    def gather_standard_configs(self,vendor):
+        config = configparser.ConfigParser()
+        # config.read(os.path.abspath(os.path.join(os.sep, 'usr', 'lib', 'capt', 'config.text')))
+        config.read(self.cmdargs.cmdfile)
+        if vendor in ["Cisco", "cisco_ios"]:
+            commands = config['CISCO']['commands'].splitlines()
+        elif vendor in ["HP", "hp_procurve"]:
+            commands = config['HP']['commands'].splitlines()
+
+        return commands
+

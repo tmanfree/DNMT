@@ -1276,6 +1276,79 @@ class SubRoutines:
         # SSH Connection
         net_connect = netmiko.ConnectHandler(**net_sw)
         return net_connect
+
+        # Name: create_connection_vendor
+        # Input:
+        #   ipaddr (string)
+        #      -The ipaddress/hostname to connect to
+        #   vendor (string)
+        #      -The device type:
+        #   username (string)
+        #      -The username to use to login to the switch
+        #   password (string)
+        #      -The password to use to login to the switch
+        #   enable (string)
+        #      -The enable password to login to the switch
+        #   port (string)
+        #      -The port number to use to login to the switch ie 22
+        # Return:
+        #   net_connect (connection handler)
+        # Summary:
+        #   Sets up a connection to the provided ip address. Currently setup to connect to cisco switches
+    def create_connection_manual(self, ipaddr, vendor,username,password,enable,port):
+        if 'verbose' in self.cmdargs and self.cmdargs.verbose:
+            print('------- CONNECTING to switch {}-------'.format(ipaddr))
+
+        # Switch Parameters
+        net_sw = {
+            'device_type': vendor,
+            # 'ip': self.cmdargs.ipaddr,
+            'ip': ipaddr,
+            'username': username,
+            'password': password,
+            'secret': enable,
+            'port': port,
+            'verbose': False,
+        }
+        # SSH Connection
+        net_connect = netmiko.ConnectHandler(**net_sw)
+        return net_connect
+
+        # Name: vendor_enable
+        # Input:
+        #   vendor: (string)
+        #       -The vendor or device type of the connection
+        #   net_connect (connection handler)
+        #      -The active connection to enable
+        # Return:
+        #   success (boolean if successful)
+        # Summary:
+        #   enable mode regardless of vendor
+        #   TODO Add error handling
+
+    def vendor_enable(self,vendor,net_connect):
+        if vendor in ["Cisco", "cisco_ios"]:
+            net_connect.enable()
+        elif vendor in ["HP", "hp_procurve"]:
+            self.hp_connection_enable(net_connect)
+
+        return net_connect.check_enable_mode()
+
+    def hp_connection_enable(self, net_connect):
+
+        # result = net_connect.send_command("enable", expect_string="Username:")
+        # result = net_connect.send_command(self.config.username, expect_string="Password:")
+        # result = net_connect.send_command(self.config.password)
+        try:
+            result = net_connect.send_command_timing("enable")
+            result = net_connect.send_command_timing(self.config.username)
+            result = net_connect.send_command_timing(self.config.password)
+        except Exception as err:
+            print(err)
+
+        return net_connect.check_enable_mode()
+
+
     ####################
     ##GENERAL COMMANDS##
     ####################
