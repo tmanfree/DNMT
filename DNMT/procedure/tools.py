@@ -442,6 +442,7 @@ class Tools:
             print("Beginning Check Standards Operation")
             # File will have mandatory first row with at least these fields:  ip, type, user, pass, en, port
         file = open(self.cmdargs.ipfile, "r")
+        summary_list = []
 
         if 'manual' in self.cmdargs and self.cmdargs.manual:
             row_titles = next(file).split(',') #grab the first row (the titles) use these to make the standardize switch call dynamic
@@ -451,9 +452,9 @@ class Tools:
             if ('manual' in self.cmdargs and self.cmdargs.manual and len(ip_entry) == 6): #{IP][Vendor][UN][PW][EN][PORT.split]
                 ip_entry = ip.split(',')
                 ip_entry[len(ip_entry)-1] = ip_entry[len(ip_entry)-1].rstrip()
-                self.Standardize_Switch(ip_entry[row_titles.index("ip")], ip_entry[row_titles.index("type")],
+                summary_list.append(self.Standardize_Switch(ip_entry[row_titles.index("ip")], ip_entry[row_titles.index("type")],
                                         ip_entry[row_titles.index("user")], ip_entry[row_titles.index("pass")],
-                                        ip_entry[row_titles.index("en")], ip_entry[row_titles.index("port")])
+                                        ip_entry[row_titles.index("en")], ip_entry[row_titles.index("port")]))
             elif 'manual' in self.cmdargs and not self.cmdargs.manual:
                 try:
                     vendor = self.subs.snmp_get_vendor_string(ip.rstrip())
@@ -463,13 +464,16 @@ class Tools:
                         device_type="hp_procurve"
                     else:
                         device_type="generic_termserver"
-                    self.Standardize_Switch(ip.rstrip(),device_type,self.config.username, self.config.password,self.config.enable_pw,22)
-
+                    summary_list.append(self.Standardize_Switch(ip.rstrip(),device_type,self.config.username, self.config.password,self.config.enable_pw,22))
                 except Exception as err:
                     print(err)
         file.close()
+        print("\nSUMMARY:")
+        for entry in summary_list:
+            print(entry)
 
     def Standardize_Switch(self,ipaddr,vendor,username,password,enable_pw,port):
+        print_summary = ""
         if self.subs.ping_check(ipaddr):
             net_connect = self.subs.create_connection_manual(ipaddr, vendor,username,password,enable_pw,port)
             if self.subs.vendor_enable(vendor,net_connect):
@@ -505,20 +509,24 @@ class Tools:
                         #     pass
 
                 # cmdfile.close()
-                print ("{} - {} commands already exist {} commands missing".format(ipaddr,foundnum,missingnum))
-
-
+                self.subs.verbose_printer("{} - {} commands already exist {} commands missing".format(ipaddr,foundnum,missingnum))
+                return "{} - {} commands already exist {} commands missing".format(ipaddr,foundnum,missingnum)
 
             else:
-                print("###{}### ERROR Unable to enable")
+                self.subs.verbose_printer("###{}### ERROR Unable to enable".format(ipaddr))
+                return "{} - Unable to Enable".format(ipaddr)
         else:
-            print("####{}### ERROR Unable to ping ".format(ipaddr))
+            self.subs.verbose_printer("####{}### ERROR Unable to ping ".format(ipaddr))
+            return "{} - No Ping Response".format(ipaddr)
 
 
     def gather_standard_commands(self,vendor,command_heading):
         config = configparser.ConfigParser()
         # config.read(os.path.abspath(os.path.join(os.sep, 'usr', 'lib', 'capt', 'config.text')))
-        config.read(os.path.abspath(os.path.join(os.sep, 'usr', 'lib', 'capt', 'standard.conf')))
+        if 'cmdfile' in self.cmdargs and self.cmdargs.cmdfile is not None:
+            config.read(self.cmdargs.cmdfile)
+        else:
+            config.read(os.path.abspath(os.path.join(os.sep, 'usr', 'lib', 'capt', 'standard.conf')))
         if vendor in ["Cisco", "cisco_ios"]:
             commands = config['CISCO'][command_heading].splitlines()
         elif vendor in ["HP", "hp_procurve"]:

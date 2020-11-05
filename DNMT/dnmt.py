@@ -279,6 +279,8 @@ def dnmt():
     standardize_tool_parser.add_argument('-v', '--verbose', help="run in verbose mode", default=False, action="store_true")
     standardize_tool_parser.add_argument('-a', '--apply', help="apply changes", default=False, action="store_true")
     standardize_tool_parser.add_argument('-m', '--manual', help="IP list file will specify vendors and login creds", default=False, action="store_true")
+    standardize_tool_parser.add_argument('-c', '--cmdfile', help="custom file with standard configs if not default")
+
 
 
     argcomplete.autocomplete(parser)
