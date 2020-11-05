@@ -443,70 +443,86 @@ class Tools:
             # File will have mandatory first row with at least these fields:  ip, type, user, pass, en, port
         file = open(self.cmdargs.ipfile, "r")
 
-        row_titles = next(file).split(',') #grab the first row (the titles) use these to make the standardize switch call dynamic
-        row_titles[len(row_titles)-1] = row_titles[len(row_titles)-1].rstrip() #remove the trailing newline
+        if 'manual' in self.cmdargs and self.cmdargs.manual:
+            row_titles = next(file).split(',') #grab the first row (the titles) use these to make the standardize switch call dynamic
+            row_titles[len(row_titles)-1] = row_titles[len(row_titles)-1].rstrip() #remove the trailing newline
 
-        for ip in file: #{IP][Vendor][UN][PW][EN][PORT.split]
-            ip_entry = ip.split(',')
-            if len(ip_entry) == 6:
+        for ip in file:
+            if ('manual' in self.cmdargs and self.cmdargs.manual and len(ip_entry) == 6): #{IP][Vendor][UN][PW][EN][PORT.split]
+                ip_entry = ip.split(',')
                 ip_entry[len(ip_entry)-1] = ip_entry[len(ip_entry)-1].rstrip()
+                self.Standardize_Switch(ip_entry[row_titles.index("ip")], ip_entry[row_titles.index("type")],
+                                        ip_entry[row_titles.index("user")], ip_entry[row_titles.index("pass")],
+                                        ip_entry[row_titles.index("en")], ip_entry[row_titles.index("port")])
+            elif 'manual' in self.cmdargs and not self.cmdargs.manual:
                 try:
-                    if self.subs.ping_check(ip_entry[row_titles.index("ip")]):  # check if reachable first
-                        self.Standardize_Switch(ip_entry[row_titles.index("ip")], ip_entry[row_titles.index("type")],
-                                                ip_entry[row_titles.index("user")], ip_entry[row_titles.index("pass")],
-                                                ip_entry[row_titles.index("en")], ip_entry[row_titles.index("port")])
+                    vendor = self.subs.snmp_get_vendor_string(ip.rstrip())
+                    if vendor =="Cisco":
+                        device_type = "cisco_ios"
+                    elif vendor =="HP":
+                        device_type="hp_procurve"
                     else:
-                        print("####{}### ERROR Unable to ping ".format(ip_entry[0]))
+                        device_type="generic_termserver"
+                    self.Standardize_Switch(ip.rstrip(),device_type,self.config.username, self.config.password,self.config.enable_pw,22)
+
                 except Exception as err:
                     print(err)
         file.close()
 
     def Standardize_Switch(self,ipaddr,vendor,username,password,enable_pw,port):
-        net_connect = self.subs.create_connection_manual(ipaddr, vendor,username,password,enable_pw,port)
-        if self.subs.vendor_enable(vendor,net_connect):
-            sh_run = net_connect.send_command("show run")
-            # print(sh_run)
-            # cmdfile =  open(self.cmdargs.cmdfile, "r")
-            missingnum = 0
-            foundnum = 0
-            commandlist = self.gather_standard_configs(vendor)
-            for commandline in commandlist:
-                #escape charac
-                escapedcommand = commandline.translate(str.maketrans({"-": r"\-",
-                                                            "]": r"\]",
-                                                            "\\": r"\\",
-                                                            "^": r"\^",
-                                                            "$": r"\$",
-                                                            "*": r"\*",
-                                                            "+": r"\+",
-                                                            ".": r"\."}))
-                #TODO parse command and translate between HP or Cisco?
-                # or provide Cisco/HP files or file with Cisco/HP entries for each heading, like the config files
-                if re.search('^\s*{}'.format(escapedcommand), sh_run,  flags = re.IGNORECASE | re.MULTILINE):
-                    self.subs.verbose_printer("###{}### FOUND: {} ".format(ipaddr,commandline))
-                    foundnum += 1
-                else:
-                    print("###{}### MISSING: {} ".format(ipaddr,commandline))
-                    missingnum += 1
-                    # if 'apply' in self.cmdargs and self.cmdargs.apply:
-                    #     pass
+        if self.subs.ping_check(ipaddr):
+            net_connect = self.subs.create_connection_manual(ipaddr, vendor,username,password,enable_pw,port)
+            if self.subs.vendor_enable(vendor,net_connect):
+                sh_run = net_connect.send_command("show run")
+                # print(sh_run)
+                # cmdfile =  open(self.cmdargs.cmdfile, "r")
+                missingnum = 0
+                foundnum = 0
+                #TODO seperate the commandlist into headings like auth=
+                #   then have seperate check/apply fields for some that can have hashed values
 
-            # cmdfile.close()
-            print ("{} - {} commands already exist {} commands missing".format(ipaddr,foundnum,missingnum))
+                # commandlist = self.gather_standard_commands(vendor,"tacacsshow")
+                commandlist = self.gather_standard_commands(vendor,"checkcommands")
+                for commandline in commandlist:
+                    #escape charac
+                    escapedcommand = commandline.translate(str.maketrans({"-": r"\-",
+                                                                "]": r"\]",
+                                                                "\\": r"\\",
+                                                                "^": r"\^",
+                                                                "$": r"\$",
+                                                                "*": r"\*",
+                                                                "+": r"\+",
+                                                                ".": r"\."}))
+                    #TODO parse command and translate between HP or Cisco?
+                    # or provide Cisco/HP files or file with Cisco/HP entries for each heading, like the config files
+                    if re.search('^\s*{}'.format(escapedcommand), sh_run,  flags = re.IGNORECASE | re.MULTILINE):
+                        self.subs.verbose_printer("###{}### FOUND: {} ".format(ipaddr,commandline))
+                        foundnum += 1
+                    else:
+                        print("###{}### MISSING: {} ".format(ipaddr,commandline))
+                        missingnum += 1
+                        # if 'apply' in self.cmdargs and self.cmdargs.apply:
+                        #     pass
+
+                # cmdfile.close()
+                print ("{} - {} commands already exist {} commands missing".format(ipaddr,foundnum,missingnum))
 
 
 
+            else:
+                print("###{}### ERROR Unable to enable")
         else:
-            print("###{}### ERROR Unable to enable")
+            print("####{}### ERROR Unable to ping ".format(ipaddr))
 
-    def gather_standard_configs(self,vendor):
+
+    def gather_standard_commands(self,vendor,command_heading):
         config = configparser.ConfigParser()
         # config.read(os.path.abspath(os.path.join(os.sep, 'usr', 'lib', 'capt', 'config.text')))
-        config.read(self.cmdargs.cmdfile)
+        config.read(os.path.abspath(os.path.join(os.sep, 'usr', 'lib', 'capt', 'standard.conf')))
         if vendor in ["Cisco", "cisco_ios"]:
-            commands = config['CISCO']['commands'].splitlines()
+            commands = config['CISCO'][command_heading].splitlines()
         elif vendor in ["HP", "hp_procurve"]:
-            commands = config['HP']['commands'].splitlines()
+            commands = config['HP'][command_heading].splitlines()
 
         return commands
 

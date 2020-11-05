@@ -276,9 +276,9 @@ def dnmt():
     #standardizer
     standardize_tool_parser = tools_parser.add_parser("Standardize", help="apply standard configurations")
     standardize_tool_parser.add_argument('ipfile', help='The file with IPs to verify vlan names upstream. Format IP,username,Password')
-    standardize_tool_parser.add_argument('cmdfile',help='The file with standardized commands')
     standardize_tool_parser.add_argument('-v', '--verbose', help="run in verbose mode", default=False, action="store_true")
     standardize_tool_parser.add_argument('-a', '--apply', help="apply changes", default=False, action="store_true")
+    standardize_tool_parser.add_argument('-m', '--manual', help="IP list file will specify vendors and login creds", default=False, action="store_true")
 
 
     argcomplete.autocomplete(parser)
