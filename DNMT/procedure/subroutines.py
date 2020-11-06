@@ -1334,6 +1334,14 @@ class SubRoutines:
 
         return net_connect.check_enable_mode()
 
+        # Name: hp_connection_enable
+        # Input:
+        #   net_connect (connection handler)
+        #      -The active connection to enable
+        # Return:
+        #   success (boolean if successful)
+        # Summary:
+        #   enable mode for HP switches that ask for Username/password for enable
     def hp_connection_enable(self, net_connect):
 
         # result = net_connect.send_command("enable", expect_string="Username:")
@@ -1347,6 +1355,27 @@ class SubRoutines:
             print(err)
 
         return net_connect.check_enable_mode()
+
+    # Name: vendor_enable
+    # Input:
+    #   ipaddr: (string)
+    #       -The IP of the switch
+    #   result: (string)
+    #      -The net_connect result string
+    #   command: (string)
+    #      -The command applied
+    # Return:
+    #   success (boolean if no error)
+    # Summary:
+    #   enable mode regardless of vendor
+    #   TODO Add error handling
+    def print_config_results(self,ipaddr,result,command):
+        if any(word in result.lower() for word in ["invalid input"]):
+            print("###{}### ERROR APPLYING: {} ".format(ipaddr, command))
+            return False
+        else:
+            print("###{}### APPLIED: {} ".format(ipaddr, command))
+            return True
 
 
     ####################

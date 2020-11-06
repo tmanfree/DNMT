@@ -479,58 +479,130 @@ class Tools:
             if self.subs.vendor_enable(vendor,net_connect):
                 sh_run = net_connect.send_command("show run")
                 # print(sh_run)
-                # cmdfile =  open(self.cmdargs.cmdfile, "r")
-                missingnum = 0
-                foundnum = 0
                 #TODO seperate the commandlist into headings like auth=
                 #   then have seperate check/apply fields for some that can have hashed values
 
                 # commandlist = self.gather_standard_commands(vendor,"tacacsshow")
-                commandlist = self.gather_standard_commands(vendor,"checkcommands")
-                for commandline in commandlist:
-                    #escape charac
-                    escapedcommand = commandline.translate(str.maketrans({"-": r"\-",
-                                                                "]": r"\]",
-                                                                "\\": r"\\",
-                                                                "^": r"\^",
-                                                                "$": r"\$",
-                                                                "*": r"\*",
-                                                                "+": r"\+",
-                                                                ".": r"\."}))
-                    #TODO parse command and translate between HP or Cisco?
-                    # or provide Cisco/HP files or file with Cisco/HP entries for each heading, like the config files
-                    if re.search('^\s*{}'.format(escapedcommand), sh_run,  flags = re.IGNORECASE | re.MULTILINE):
-                        self.subs.verbose_printer("###{}### FOUND: {} ".format(ipaddr,commandline))
-                        foundnum += 1
-                    else:
-                        print("###{}### MISSING: {} ".format(ipaddr,commandline))
-                        missingnum += 1
-                        # if 'apply' in self.cmdargs and self.cmdargs.apply:
-                        #     pass
+                foundnum,missingnum,appliednum,errornum = self.gather_standard_commands(ipaddr,vendor,sh_run,net_connect)
+                # for commandline in commandlist:
+                #     #escape charac
+                #     escapedcommand = commandline.translate(str.maketrans({"-": r"\-",
+                #                                                 "]": r"\]",
+                #                                                 "\\": r"\\",
+                #                                                 "^": r"\^",
+                #                                                 "$": r"\$",
+                #                                                 "*": r"\*",
+                #                                                 "+": r"\+",
+                #                                                 ".": r"\."}))
+                #     #TODO parse command and translate between HP or Cisco?
+                #     # or provide Cisco/HP files or file with Cisco/HP entries for each heading, like the config files
+                #     if re.search('^\s*{}'.format(escapedcommand), sh_run,  flags = re.IGNORECASE | re.MULTILINE):
+                #         self.subs.verbose_printer("###{}### FOUND: {} ".format(ipaddr,commandline))
+                #         foundnum += 1
+                #     else:
+                #         print("###{}### MISSING: {} ".format(ipaddr,commandline))
+                #         missingnum += 1
+                #         # if 'apply' in self.cmdargs and self.cmdargs.apply:
+                #         #     pass
 
                 # cmdfile.close()
-                self.subs.verbose_printer("{} - {} commands already exist {} commands missing".format(ipaddr,foundnum,missingnum))
-                return "{} - {} commands already exist {} commands missing".format(ipaddr,foundnum,missingnum)
-
+                self.subs.verbose_printer("{} - {} CMDs exist {} CMDs missing {} CMDs applied {} CMDs Errors".format(ipaddr,foundnum,missingnum,appliednum,errornum))
+                return "{} - {} CMDs exist {} CMDs missing {} CMDs applied {} CMDs Errors".format(ipaddr,foundnum,missingnum,appliednum,errornum)
             else:
                 self.subs.verbose_printer("###{}### ERROR Unable to enable".format(ipaddr))
                 return "{} - Unable to Enable".format(ipaddr)
+            net_connect.disconnect()
+
         else:
             self.subs.verbose_printer("####{}### ERROR Unable to ping ".format(ipaddr))
             return "{} - No Ping Response".format(ipaddr)
 
 
-    def gather_standard_commands(self,vendor,command_heading):
+    def gather_standard_commands(self,ipaddr,vendor,sh_run, net_connect):
         config = configparser.ConfigParser()
-        # config.read(os.path.abspath(os.path.join(os.sep, 'usr', 'lib', 'capt', 'config.text')))
+
+        #Check wehere to grab the config for
         if 'cmdfile' in self.cmdargs and self.cmdargs.cmdfile is not None:
             config.read(self.cmdargs.cmdfile)
         else:
             config.read(os.path.abspath(os.path.join(os.sep, 'usr', 'lib', 'capt', 'standard.conf')))
-        if vendor in ["Cisco", "cisco_ios"]:
-            commands = config['CISCO'][command_heading].splitlines()
-        elif vendor in ["HP", "hp_procurve"]:
-            commands = config['HP'][command_heading].splitlines()
 
-        return commands
+        #set the heading to grab from the custom file
+        if vendor in ["Cisco", "cisco_ios"]:
+            Vendor_Heading = "CISCO"
+        elif vendor in ["HP", "hp_procurve"]:
+            Vendor_Heading = "HP"
+
+        foundnum = 0
+        missingnum = 0
+        appliednum=0
+        errornum=0
+
+        for Heading in (MainHeading for MainHeading in config if Vendor_Heading in MainHeading ):
+            if "BASE" in Heading or "SHOW" in Heading:
+                for Category in config[Heading]:
+                    command_list = config[Heading][Category].splitlines()
+                    if len(command_list) > 1: #for multiline commands
+                        try:
+                            for command in command_list:
+                                if self.check_config_for_command(command, sh_run):
+                                    self.subs.verbose_printer("###{}### FOUND: {} ".format(ipaddr, command))
+                                    foundnum += 1
+                                else:
+                                    print("###{}### MISSING: {} ".format(ipaddr, command))
+                                    missingnum += 1
+                                    if "apply" in self.cmdargs and self.cmdargs.apply:
+                                        if "solo" not in Category:  # exit out and apply all if dependent commands
+                                            raise ValueError
+                                    result = net_connect.send_config_set(command)
+                                    if self.subs.print_config_results(ipaddr,result,command):
+                                        appliednum +=1
+                                    else:
+                                        errornum += 1
+                        except ValueError:  # break out of that for loop if one of the commands are missing and you have apply set
+                            if "BASE" in Heading:
+                                send_command_set = config[Heading][
+                                    Category].splitlines()  # if missing any of the values for the entry, apply them all
+                            elif "SHOW" in Heading:
+                                send_command_set = config["{} APPLY".format(Vendor_Heading)][Category].split(',')
+                            result = net_connect.send_config_set(send_command_set)
+                            if self.subs.print_config_results(ipaddr, result, send_command_set):
+                                appliednum += 1
+                            else:
+                                errornum += 1
+
+                    elif len(command_list) == 1: # for commands with a single entry
+                        if self.check_config_for_command(command_list[0],sh_run):
+                            self.subs.verbose_printer("###{}### FOUND: {} ".format(ipaddr, command_list[0]))
+                            foundnum += 1
+                        else:
+                            print("###{}### MISSING: {} ".format(ipaddr, command_list[0]))
+                            missingnum += 1
+                            if 'apply' in self.cmdargs and self.cmdargs.apply:
+                                if "BASE" in Heading:
+                                    send_command_set = command_list[0]  # if missing any of the values for the entry, apply them all
+                                elif "SHOW" in Heading:
+                                    send_command_set =config["{} APPLY".format(Vendor_Heading)][Category].split(',')
+                                result = net_connect.send_config_set(send_command_set)
+                                if self.subs.print_config_results(ipaddr, result, send_command_set):
+                                        appliednum += 1
+                                else:
+                                    errornum += 1
+
+        return foundnum,missingnum,appliednum,errornum
+
+    def check_config_for_command(self,command,sh_run):
+        escapedcommand = command.translate(str.maketrans({"-": r"\-",
+                                                                  "]": r"\]",
+                                                                  "\\": r"\\",
+                                                                  "^": r"\^",
+                                                                  "$": r"\$",
+                                                                  "*": r"\*",
+                                                                  "+": r"\+",
+                                                                  ".": r"\."}))
+        if re.search('^\s*{}'.format(escapedcommand), sh_run, flags=re.IGNORECASE | re.MULTILINE):
+            return True
+        else:
+            return False
+
 
