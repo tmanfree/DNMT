@@ -451,10 +451,11 @@ class Tools:
         for ip in file:
             if ('manual' in self.cmdargs and self.cmdargs.manual and len(row_titles) == 6): #{IP][Vendor][UN][PW][EN][PORT.split]
                 ip_entry = ip.split(',')
-                ip_entry[len(ip_entry)-1] = ip_entry[len(ip_entry)-1].rstrip()
-                summary_list.append(self.Standardize_Switch(ip_entry[row_titles.index("ip")], ip_entry[row_titles.index("type")],
-                                        ip_entry[row_titles.index("user")], ip_entry[row_titles.index("pass")],
-                                        ip_entry[row_titles.index("en")], ip_entry[row_titles.index("port")]))
+                if (len(ip_entry) == len(row_titles)):
+                    ip_entry[len(ip_entry)-1] = ip_entry[len(ip_entry)-1].rstrip()
+                    summary_list.append(self.Standardize_Switch(ip_entry[row_titles.index("ip")], ip_entry[row_titles.index("type")],
+                                            ip_entry[row_titles.index("user")], ip_entry[row_titles.index("pass")],
+                                            ip_entry[row_titles.index("en")], ip_entry[row_titles.index("port")]))
             elif 'manual' in self.cmdargs and not self.cmdargs.manual:
                 try:
                     vendor = self.subs.snmp_get_vendor_string(ip.rstrip())
