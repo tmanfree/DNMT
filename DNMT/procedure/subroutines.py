@@ -1356,7 +1356,57 @@ class SubRoutines:
 
         return net_connect.check_enable_mode()
 
-    # Name: vendor_enable
+       # Name: vendor_enable
+        # Input:
+        #   vendor: (string)
+        #       -The vendor or device type of the connection
+        #   net_connect (connection handler)
+        #      -The active connection to enable
+        # Return:
+        #   success (boolean if successful)
+        # Summary:
+        #   enable mode regardless of vendor
+        #   TODO Add error handling
+
+    def vendor_enable_manual(self,vendor,net_connect,username,password,enable):
+        if vendor in ["Cisco", "cisco_ios"]:
+            try:
+                result = net_connect.send_command_timing("enable")
+                result = net_connect.send_command_timing(enable)
+            except Exception as err:
+                print(err)
+        elif vendor in ["HP", "hp_procurve"]:
+            self.hp_connection_enable_manual(net_connect,username,password)
+
+        return net_connect.check_enable_mode()
+
+        # Name: hp_connection_enable_manual
+        # Input:
+        #   net_connect (connection handler)
+        #      -The active connection to enable
+        #   username (string)
+        #       username to use
+        #   password (string)
+        #       password to use
+        # Return:
+        #   success (boolean if successful)
+        # Summary:
+        #   enable mode for HP switches that ask for Username/password for enable
+    def hp_connection_enable_manual(self, net_connect,username,password):
+
+        # result = net_connect.send_command("enable", expect_string="Username:")
+        # result = net_connect.send_command(self.config.username, expect_string="Password:")
+        # result = net_connect.send_command(self.config.password)
+        try:
+            result = net_connect.send_command_timing("enable")
+            result = net_connect.send_command_timing(username)
+            result = net_connect.send_command_timing(password)
+        except Exception as err:
+            print(err)
+
+        return net_connect.check_enable_mode()
+
+    # Name: print_config_results
     # Input:
     #   ipaddr: (string)
     #       -The IP of the switch
@@ -1367,7 +1417,7 @@ class SubRoutines:
     # Return:
     #   success (boolean if no error)
     # Summary:
-    #   enable mode regardless of vendor
+    #   simplify printing the results of applying a configuration set
     #   TODO Add error handling
     def print_config_results(self,ipaddr,result,command):
         if any(word in result.lower() for word in ["invalid input"]):

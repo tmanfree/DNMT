@@ -449,7 +449,7 @@ class Tools:
             row_titles[len(row_titles)-1] = row_titles[len(row_titles)-1].rstrip() #remove the trailing newline
 
         for ip in file:
-            if ('manual' in self.cmdargs and self.cmdargs.manual and len(ip_entry) == 6): #{IP][Vendor][UN][PW][EN][PORT.split]
+            if ('manual' in self.cmdargs and self.cmdargs.manual and len(row_titles) == 6): #{IP][Vendor][UN][PW][EN][PORT.split]
                 ip_entry = ip.split(',')
                 ip_entry[len(ip_entry)-1] = ip_entry[len(ip_entry)-1].rstrip()
                 summary_list.append(self.Standardize_Switch(ip_entry[row_titles.index("ip")], ip_entry[row_titles.index("type")],
@@ -476,7 +476,11 @@ class Tools:
         print_summary = ""
         if self.subs.ping_check(ipaddr):
             net_connect = self.subs.create_connection_manual(ipaddr, vendor,username,password,enable_pw,port)
-            if self.subs.vendor_enable(vendor,net_connect):
+            if 'manual' in self.cmdargs and self.cmdargs.manual:
+                enable_success =self.subs.vendor_enable_manual(vendor,net_connect,username,password,enable_pw)
+            else:
+                enable_success =  self.subs.vendor_enable(vendor,net_connect)
+            if enable_success:
                 sh_run = net_connect.send_command("show run")
                 # print(sh_run)
                 #TODO seperate the commandlist into headings like auth=
@@ -484,28 +488,7 @@ class Tools:
 
                 # commandlist = self.gather_standard_commands(vendor,"tacacsshow")
                 foundnum,missingnum,appliednum,errornum = self.gather_standard_commands(ipaddr,vendor,sh_run,net_connect)
-                # for commandline in commandlist:
-                #     #escape charac
-                #     escapedcommand = commandline.translate(str.maketrans({"-": r"\-",
-                #                                                 "]": r"\]",
-                #                                                 "\\": r"\\",
-                #                                                 "^": r"\^",
-                #                                                 "$": r"\$",
-                #                                                 "*": r"\*",
-                #                                                 "+": r"\+",
-                #                                                 ".": r"\."}))
-                #     #TODO parse command and translate between HP or Cisco?
-                #     # or provide Cisco/HP files or file with Cisco/HP entries for each heading, like the config files
-                #     if re.search('^\s*{}'.format(escapedcommand), sh_run,  flags = re.IGNORECASE | re.MULTILINE):
-                #         self.subs.verbose_printer("###{}### FOUND: {} ".format(ipaddr,commandline))
-                #         foundnum += 1
-                #     else:
-                #         print("###{}### MISSING: {} ".format(ipaddr,commandline))
-                #         missingnum += 1
-                #         # if 'apply' in self.cmdargs and self.cmdargs.apply:
-                #         #     pass
 
-                # cmdfile.close()
                 self.subs.verbose_printer("{} - {} CMDs exist {} CMDs missing {} CMDs applied {} CMDs Errors".format(ipaddr,foundnum,missingnum,appliednum,errornum))
                 return "{} - {} CMDs exist {} CMDs missing {} CMDs applied {} CMDs Errors".format(ipaddr,foundnum,missingnum,appliednum,errornum)
             else:
@@ -554,11 +537,11 @@ class Tools:
                                     if "apply" in self.cmdargs and self.cmdargs.apply:
                                         if "solo" not in Category:  # exit out and apply all if dependent commands
                                             raise ValueError
-                                    result = net_connect.send_config_set(command)
-                                    if self.subs.print_config_results(ipaddr,result,command):
-                                        appliednum +=1
-                                    else:
-                                        errornum += 1
+                                        result = net_connect.send_config_set(command)
+                                        if self.subs.print_config_results(ipaddr,result,command):
+                                            appliednum +=1
+                                        else:
+                                            errornum += 1
                         except ValueError:  # break out of that for loop if one of the commands are missing and you have apply set
                             if "BASE" in Heading:
                                 send_command_set = config[Heading][
