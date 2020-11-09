@@ -475,26 +475,35 @@ class Tools:
     def Standardize_Switch(self,ipaddr,vendor,username,password,enable_pw,port):
         print_summary = ""
         if self.subs.ping_check(ipaddr):
-            net_connect = self.subs.create_connection_manual(ipaddr, vendor,username,password,enable_pw,port)
-            if 'manual' in self.cmdargs and self.cmdargs.manual:
-                enable_success =self.subs.vendor_enable_manual(vendor,net_connect,username,password,enable_pw)
-            else:
-                enable_success =  self.subs.vendor_enable(vendor,net_connect)
-            if enable_success:
-                sh_run = net_connect.send_command("show run")
-                # print(sh_run)
-                #TODO seperate the commandlist into headings like auth=
-                #   then have seperate check/apply fields for some that can have hashed values
+            try:
+                net_connect = self.subs.create_connection_manual(ipaddr, vendor,username,password,enable_pw,port)
+                if 'manual' in self.cmdargs and self.cmdargs.manual:
+                    enable_success =self.subs.vendor_enable_manual(vendor,net_connect,username,password,enable_pw)
+                else:
+                    enable_success =  self.subs.vendor_enable(vendor,net_connect)
+                if enable_success:
+                    sh_run = net_connect.send_command("show run")
+                    # print(sh_run)
+                    #TODO seperate the commandlist into headings like auth=
+                    #   then have seperate check/apply fields for some that can have hashed values
 
-                # commandlist = self.gather_standard_commands(vendor,"tacacsshow")
-                foundnum,missingnum,appliednum,errornum = self.gather_standard_commands(ipaddr,vendor,sh_run,net_connect)
+                    # commandlist = self.gather_standard_commands(vendor,"tacacsshow")
+                    foundnum,missingnum,appliednum,errornum = self.gather_standard_commands(ipaddr,vendor,sh_run,net_connect)
 
-                self.subs.verbose_printer("{} - {} CMDs exist {} CMDs missing {} CMDs applied {} CMDs Errors".format(ipaddr,foundnum,missingnum,appliednum,errornum))
-                return "{} - {} CMDs exist {} CMDs missing {} CMDs applied {} CMDs Errors".format(ipaddr,foundnum,missingnum,appliednum,errornum)
-            else:
-                self.subs.verbose_printer("###{}### ERROR Unable to enable".format(ipaddr))
-                return "{} - Unable to Enable".format(ipaddr)
-            net_connect.disconnect()
+                    self.subs.verbose_printer("{} - {} CMDs exist {} CMDs missing {} CMDs applied {} CMDs Errors".format(ipaddr,foundnum,missingnum,appliednum,errornum))
+                    return "{} - {} CMDs exist {} CMDs missing {} CMDs applied {} CMDs Errors".format(ipaddr,foundnum,missingnum,appliednum,errornum)
+                else:
+                    self.subs.verbose_printer("###{}### ERROR Unable to enable".format(ipaddr))
+                    return "{} - Unable to Enable".format(ipaddr)
+                net_connect.disconnect()
+            except netmiko.ssh_exception.NetMikoAuthenticationException as err:
+                self.subs.verbose_printer(err.args[0], "###{}### ERROR Netmiko Authentication Failure".format(ipaddr))
+                sys.exit(1)
+            except netmiko.ssh_exception.NetMikoTimeoutException as err:
+                self.subs.verbose_printer(err.args[0], "###{}### ERROR Netmiko Timeout Failure".format(ipaddr))
+                sys.exit(1)
+            except Exception as err:  # currently a catch all to stop linux from having a conniption when reloading
+                print("###{}### ERROR NETMIKO:{}".format(ipaddr, err.args[0]))
 
         else:
             self.subs.verbose_printer("####{}### ERROR Unable to ping ".format(ipaddr))
