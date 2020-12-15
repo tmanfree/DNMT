@@ -498,13 +498,21 @@ class Tools:
                     return "{} - Unable to Enable".format(ipaddr)
                 net_connect.disconnect()
             except netmiko.ssh_exception.NetMikoAuthenticationException as err:
-                self.subs.verbose_printer(err.args[0], "###{}### ERROR Netmiko Authentication Failure".format(ipaddr))
-                sys.exit(1)
+                self.subs.verbose_printer(err.args[0], "###{}### ERROR Netmiko Authentication Failure ".format(ipaddr))
+                return "{} - {}".format(ipaddr,err.args[0])
             except netmiko.ssh_exception.NetMikoTimeoutException as err:
                 self.subs.verbose_printer(err.args[0], "###{}### ERROR Netmiko Timeout Failure".format(ipaddr))
-                sys.exit(1)
+                return "{} - {}".format(ipaddr,err.args[0])
+            except netmiko.ssh_exception.SSHException as err:
+                if (err.args[0] == "Incompatible version (1.5 instead of 2.0)"):
+                    self.subs.verbose_printer(err.args[0], "###{}### ERROR Netmiko incompatible version".format(ipaddr))
+                    return "{} - {}".format(ipaddr, err.args[0])
+                else:
+                    self.subs.verbose_printer(err.args[0], "###{}### ERROR Netmiko SSH Exception".format(ipaddr))
+                    return "{} - {}".format(ipaddr, err.args[0])
             except Exception as err:  # currently a catch all to stop linux from having a conniption when reloading
-                print("###{}### ERROR NETMIKO:{}".format(ipaddr, err.args[0]))
+                self.subs.verbose_printer("###{}### ERROR NETMIKO:{}".format(ipaddr, err.args[0]))
+                return "{} - {}".format(ipaddr, err.args[0])
 
         else:
             self.subs.verbose_printer("####{}### ERROR Unable to ping ".format(ipaddr))
@@ -521,9 +529,9 @@ class Tools:
             config.read(os.path.abspath(os.path.join(os.sep, 'usr', 'lib', 'capt', 'standard.conf')))
 
         #set the heading to grab from the custom file
-        if vendor in ["Cisco", "cisco_ios"]:
+        if vendor in ["Cisco", "cisco_ios", "cisco_ios_telnet"]:
             Vendor_Heading = "CISCO"
-        elif vendor in ["HP", "hp_procurve"]:
+        elif vendor in ["HP", "hp_procurve", "hp_procurve_telnet"]:
             Vendor_Heading = "HP"
 
         foundnum = 0
@@ -598,4 +606,56 @@ class Tools:
         else:
             return False
 
+    def HP_Pass_Change_Begin(self):
+        if 'apply' in self.cmdargs and self.cmdargs.apply:
+            print("Beginning Apply Standards Operation")
+        else:
+            print("Beginning Check Standards Operation")
+            # File will have mandatory first row with at least these fields:  ip, type, user, pass, en, port
+        file = open(self.cmdargs.ipfile, "r")
+        summary_list = []
 
+        if 'manual' in self.cmdargs and self.cmdargs.manual:
+            row_titles = next(file).split(
+                ',')  # grab the first row (the titles) use these to make the standardize switch call dynamic
+            row_titles[len(row_titles) - 1] = row_titles[len(row_titles) - 1].rstrip()  # remove the trailing newline
+
+        for ip in file:
+            if ('manual' in self.cmdargs and self.cmdargs.manual and len(
+                    row_titles) == 6):  # {IP][Vendor][UN][PW][EN][PORT.split]
+                ip_entry = ip.split(',')
+                if (len(ip_entry) == len(row_titles)):
+                    ip_entry[len(ip_entry) - 1] = ip_entry[len(ip_entry) - 1].rstrip()
+                    summary_list.append(
+                        self.HP_Pass_Change(ip_entry[row_titles.index("ip")], ip_entry[row_titles.index("type")],
+                                                ip_entry[row_titles.index("user")], ip_entry[row_titles.index("pass")],
+                                                ip_entry[row_titles.index("en")], ip_entry[row_titles.index("port")]))
+            elif 'manual' in self.cmdargs and not self.cmdargs.manual:
+                try:
+                    vendor = self.subs.snmp_get_vendor_string(ip.rstrip())
+                    if vendor == "Cisco":
+                        device_type = "cisco_ios"
+                    elif vendor == "HP":
+                        device_type = "hp_procurve"
+                    else:
+                        device_type = "generic_termserver"
+                    summary_list.append(
+                        self.HP_Pass_Change(ip.rstrip(), device_type, self.config.username, self.config.password,
+                                                self.config.enable_pw, 22))
+                except Exception as err:
+                    print(err)
+        file.close()
+        print("\nSUMMARY:")
+        for entry in summary_list:
+            print(entry)
+
+    def HP_Pass_Change(self,ipaddr,vendor,username,password,enable_pw,port):
+        pass
+        # if self.subs.ping_check(ipaddr):
+        #     try:
+        #         net_connect = self.subs.create_connection_manual(ipaddr, vendor,username,password,enable_pw,port)
+        #         if 'manual' in self.cmdargs and self.cmdargs.manual:
+        #             enable_success = self.subs.vendor_enable_manual(vendor,net_connect,username,password,enable_pw)
+        #         else:
+        #             enable_success = self.subs.vendor_enable(vendor,net_connect)
+        #         if enable_success:

@@ -212,6 +212,8 @@ class HostNamer:
 
         file = open(self.cmdargs.iplist, "r")
         #if not self.cmdargs.check:
+        if self.cmdargs.peek:
+            print("IP,Hostname")
         for ipaddr in file:
             #have a check for gethostbyname or addr)
             try:
@@ -221,19 +223,27 @@ class HostNamer:
                     dns_reg_hostname = reg_FQDN.search(dns_fqdn[0])
                     dns_hostname = dns_reg_hostname.group(1)
                     dns_domain = dns_reg_hostname.group(2)
+
                 else:
                     dns_hostname = ipaddr[1]
                     dns_domain = ipaddr[2]
 
+                if self.cmdargs.peek:
+                    print("{},{}.{}".format(ipaddr[0], dns_hostname, dns_domain))
 
                 #success = snmpproc(ipaddr,dns_hostname,dns_domain,snmp_ro,snmp_rw,check_flag)
-                success = self.snmpproc(ipaddr[0], dns_hostname, dns_domain)
+                if not self.cmdargs.peek:
+                    success = self.snmpproc(ipaddr[0], dns_hostname, dns_domain)
 
-                if not success:
-                    print("SNMP failed, attempting through SSH")
-                    self.loginproc(ipaddr,dns_hostname,dns_domain)
+                    if not success:
+                        print("SNMP failed, attempting through SSH")
+                        self.loginproc(ipaddr[0],dns_hostname,dns_domain)
 
             except socket.herror:
-                print("Hostname not found in DNS for IP:{}".format(ipaddr))
+                if self.cmdargs.peek:
+                    print("{},N/A".format(ipaddr[0]))
+                else:
+                    print("Hostname not found in DNS for IP:{}".format(ipaddr))
         file.close()
         return
+

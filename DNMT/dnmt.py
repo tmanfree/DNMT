@@ -98,6 +98,9 @@ def dnmt():
                         help='The list that contains the ip addresses to check. '
                              'specify "IP,hostname,domain" on each line of the file to not check dns for that ip')
     hostnameupdate_parser.add_argument('-c', '--check', help="Compare hostname, do not change", action="store_true")
+    hostnameupdate_parser.add_argument('-p', '--peek', help="Peek at DNS, do not login to switch", action="store_true")
+
+
 
 
     # #parser commands for snmp test (temporary)
@@ -234,6 +237,7 @@ def dnmt():
     ipam_rest_parser = test_parser.add_parser("IPAM_REST_TEST", help="rest command testing")
     ipam_rest_parser.add_argument('building', help='The 3 letter code of the building to grab vlans from')
     ipam_rest_parser.add_argument('vlanid', help='The vlan to get the name of')
+
 
 
 

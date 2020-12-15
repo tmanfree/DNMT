@@ -1302,16 +1302,18 @@ class SubRoutines:
         # Switch Parameters
         net_sw = {
             'device_type': vendor,
-            # 'ip': self.cmdargs.ipaddr,
             'ip': ipaddr,
             'username': username,
             'password': password,
             'secret': enable,
             'port': port,
             'verbose': False,
+            # 'session_log':'SSHLOG.txt',
         }
-        # SSH Connection
+        #net_sw["username_pattern"] = "sername:"
+        # SSH/Telnet Connection
         net_connect = netmiko.ConnectHandler(**net_sw)
+
         return net_connect
 
         # Name: vendor_enable
@@ -1327,9 +1329,9 @@ class SubRoutines:
         #   TODO Add error handling
 
     def vendor_enable(self,vendor,net_connect):
-        if vendor in ["Cisco", "cisco_ios"]:
+        if vendor in ["Cisco", "cisco_ios", "cisco_ios"]:
             net_connect.enable()
-        elif vendor in ["HP", "hp_procurve"]:
+        elif vendor in ["HP", "hp_procurve", "hp_procurve_telnet"]:
             self.hp_connection_enable(net_connect)
 
         return net_connect.check_enable_mode()
