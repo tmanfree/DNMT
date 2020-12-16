@@ -477,7 +477,11 @@ class Tools:
         print_summary = ""
         if self.subs.ping_check(ipaddr):
             try:
-                net_connect = self.subs.create_connection_manual(ipaddr, vendor,username,password,enable_pw,port)
+                if "hp_procurve_telnet" in vendor:
+                    net_connect = self.subs.create_connection_manual(ipaddr, vendor, username, password, enable_pw,
+                                                                     port, "sername", "assword")
+                else:
+                    net_connect = self.subs.create_connection_custom(ipaddr, vendor, username, password, enable_pw, port)
                 if 'manual' in self.cmdargs and self.cmdargs.manual:
                     enable_success =self.subs.vendor_enable_manual(vendor,net_connect,username,password,enable_pw)
                 else:
@@ -506,6 +510,7 @@ class Tools:
             except netmiko.ssh_exception.SSHException as err:
                 if (err.args[0] == "Incompatible version (1.5 instead of 2.0)"):
                     self.subs.verbose_printer(err.args[0], "###{}### ERROR Netmiko incompatible version".format(ipaddr))
+                    self.Standardize_Switch(ipaddr, "{}_telnet".format(vendor), username, password, enable_pw, 23)
                     return "{} - {}".format(ipaddr, err.args[0])
                 else:
                     self.subs.verbose_printer(err.args[0], "###{}### ERROR Netmiko SSH Exception".format(ipaddr))
@@ -589,7 +594,9 @@ class Tools:
                                         appliednum += 1
                                 else:
                                     errornum += 1
-
+        if "apply" in self.cmdargs and self.cmdargs.apply:
+            result = net_connect.save_config()
+            self.subs.verbose_printer("{} - {}".format(ipaddr,result))
         return foundnum,missingnum,appliednum,errornum
 
     def check_config_for_command(self,command,sh_run):
@@ -650,12 +657,49 @@ class Tools:
             print(entry)
 
     def HP_Pass_Change(self,ipaddr,vendor,username,password,enable_pw,port):
-        pass
-        # if self.subs.ping_check(ipaddr):
-        #     try:
-        #         net_connect = self.subs.create_connection_manual(ipaddr, vendor,username,password,enable_pw,port)
-        #         if 'manual' in self.cmdargs and self.cmdargs.manual:
-        #             enable_success = self.subs.vendor_enable_manual(vendor,net_connect,username,password,enable_pw)
-        #         else:
-        #             enable_success = self.subs.vendor_enable(vendor,net_connect)
-        #         if enable_success:
+        print_summary = ""
+        if self.subs.ping_check(ipaddr):
+            try:
+                if "hp_procurve_telnet" in vendor:
+                    net_connect = self.subs.create_connection_manual(ipaddr, vendor, username, password, enable_pw, port, "sername","assword")
+                else:
+                    net_connect = self.subs.create_connection_custom(ipaddr, vendor, username, password, enable_pw,
+                                                                     port)
+                if 'manual' in self.cmdargs and self.cmdargs.manual:
+                    enable_success = self.subs.vendor_enable_manual(vendor, net_connect, username, password, enable_pw)
+                else:
+                    enable_success = self.subs.vendor_enable(vendor, net_connect)
+                if enable_success:
+                    result = net_connect.send_command("conf t","#")
+                    result += net_connect.send_command("pass manager user-name {}".format(self.cmdargs.username), ":")
+                    result += net_connect.send_command("{}".format(self.cmdargs.password), ":")
+                    result += net_connect.send_command("{}".format(self.cmdargs.password), "#")
+                    result += net_connect.save_config()
+                    self.subs.verbose_printer("{} - {}".format(ipaddr,result))
+                    self.subs.verbose_printer("{} - Updated password".format(ipaddr))
+                    return "{} - Updated password".format(ipaddr)
+                else:
+                    self.subs.verbose_printer("###{}### ERROR Unable to enable".format(ipaddr))
+                    return "{} - Unable to Enable".format(ipaddr)
+                net_connect.disconnect()
+            except netmiko.ssh_exception.NetMikoAuthenticationException as err:
+                self.subs.verbose_printer(err.args[0], "###{}### ERROR Netmiko Authentication Failure ".format(ipaddr))
+                return "{} - {}".format(ipaddr, err.args[0])
+            except netmiko.ssh_exception.NetMikoTimeoutException as err:
+                self.subs.verbose_printer(err.args[0], "###{}### ERROR Netmiko Timeout Failure".format(ipaddr))
+                return "{} - {}".format(ipaddr, err.args[0])
+            except netmiko.ssh_exception.SSHException as err:
+                if (err.args[0] == "Incompatible version (1.5 instead of 2.0)"):
+                    self.subs.verbose_printer(err.args[0], "###{}### ERROR Netmiko incompatible version".format(ipaddr))
+                    self.HP_Pass_Change(ipaddr, "{}_telnet".format(vendor), username, password, enable_pw, 23) # try telnet if v1 only
+                    return "{} - {}".format(ipaddr, err.args[0])
+                else:
+                    self.subs.verbose_printer(err.args[0], "###{}### ERROR Netmiko SSH Exception".format(ipaddr))
+                    return "{} - {}".format(ipaddr, err.args[0])
+            except Exception as err:  # currently a catch all to stop linux from having a conniption when reloading
+                self.subs.verbose_printer("###{}### ERROR NETMIKO:{}".format(ipaddr, err.args[0]))
+                return "{} - {}".format(ipaddr, err.args[0])
+
+        else:
+            self.subs.verbose_printer("####{}### ERROR Unable to ping ".format(ipaddr))
+            return "{} - No Ping Response".format(ipaddr)

@@ -1277,7 +1277,7 @@ class SubRoutines:
         net_connect = netmiko.ConnectHandler(**net_sw)
         return net_connect
 
-        # Name: create_connection_vendor
+        # Name: create_connection_custom
         # Input:
         #   ipaddr (string)
         #      -The ipaddress/hostname to connect to
@@ -1295,7 +1295,7 @@ class SubRoutines:
         #   net_connect (connection handler)
         # Summary:
         #   Sets up a connection to the provided ip address. Currently setup to connect to cisco switches
-    def create_connection_manual(self, ipaddr, vendor,username,password,enable,port):
+    def create_connection_custom(self, ipaddr, vendor, username, password, enable, port):
         if 'verbose' in self.cmdargs and self.cmdargs.verbose:
             print('------- CONNECTING to switch {}-------'.format(ipaddr))
 
@@ -1308,11 +1308,84 @@ class SubRoutines:
             'secret': enable,
             'port': port,
             'verbose': False,
+            # 'username_pattern':"sername:"
             # 'session_log':'SSHLOG.txt',
         }
-        #net_sw["username_pattern"] = "sername:"
+        # net_sw["username_pattern"] = "sername:"
         # SSH/Telnet Connection
         net_connect = netmiko.ConnectHandler(**net_sw)
+
+        return net_connect
+
+        # Name: create_connection_manual
+        # Input:
+        #   ipaddr (string)
+        #      -The ipaddress/hostname to connect to
+        #   vendor (string)
+        #      -The device type:
+        #   username (string)
+        #      -The username to use to login to the switch
+        #   password (string)
+        #      -The password to use to login to the switch
+        #   enable (string)
+        #      -The enable password to login to the switch
+        #   port (string)
+        #      -The port number to use to login to the switch ie 22
+        # Return:
+        #   net_connect (connection handler)
+        # Summary:
+        #   Sets up a connection to the provided ip address. manually does all login process and then
+        #       dispatches back to netmiko. Used for ssh v1 switches with weird login promptsprompts
+    def create_connection_manual(self, ipaddr, vendor, username, password, enable, port, un_prompt,pw_prompt):
+        if 'verbose' in self.cmdargs and self.cmdargs.verbose:
+            print('------- CONNECTING to switch {}-------'.format(ipaddr))
+
+        # Switch Parameters
+        ConnectionClass = netmiko.terminal_server.TerminalServerTelnet
+        net_sw = {
+            'device_type': 'terminal_server_telnet',
+            'ip': ipaddr,
+            'username': username,
+            'password': password,
+            'secret': enable,
+            'port': port,
+            'verbose': False,
+            # 'username_pattern':"sername:"
+            # 'session_log':'SSHLOG.txt',
+        }
+        net_connect = ConnectionClass(**net_sw)
+
+        # output = net_connect.read_channel()
+        time.sleep(2)
+        # Manually handle the Username and Password
+        # max_loops = 10
+        # i = 1
+        # while i <= max_loops:
+        for _ in range(10):
+            output = net_connect.read_channel()
+
+            if 'sername' in output:
+                net_connect.write_channel(username + '\r\n')
+                time.sleep(1)
+                output = net_connect.read_channel()
+
+            # Search for password pattern / send password
+            if 'assword' in output:
+                net_connect.write_channel(password + '\r\n')
+                time.sleep(.5)
+                output = net_connect.read_channel()
+                # Did we successfully login
+                if '>' in output or '#' in output:
+                    break
+
+            net_connect.write_channel('\r\n')
+            time.sleep(.5)
+        # We are now logged into the end device
+        # Dynamically reset the class back to the proper Netmiko class
+        netmiko.redispatch(net_connect, device_type=vendor)
+
+        if 'verbose' in self.cmdargs and self.cmdargs.verbose:
+            print('------- Successfully connected to switch {}-------'.format(ipaddr))
 
         return net_connect
 

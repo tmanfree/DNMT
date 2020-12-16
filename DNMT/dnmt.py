@@ -285,6 +285,21 @@ def dnmt():
     standardize_tool_parser.add_argument('-m', '--manual', help="IP list file will specify vendors and login creds", default=False, action="store_true")
     standardize_tool_parser.add_argument('-c', '--cmdfile', help="custom file with standard configs if not default")
 
+    #passchanger
+    # standardizer
+    passchanger_tool_parser = tools_parser.add_parser("HPPassChange", help="change local passwords on hp switches")
+    passchanger_tool_parser.add_argument('ipfile',
+                                         help='The file with IPs to verify vlan names upstream. Format IP,username,Password')
+    passchanger_tool_parser.add_argument('username',help='new username to set as manager')
+    passchanger_tool_parser.add_argument('password', help='new password to set as manager')
+
+    passchanger_tool_parser.add_argument('-v', '--verbose', help="run in verbose mode", default=False,
+                                         action="store_true")
+    passchanger_tool_parser.add_argument('-a', '--apply', help="apply changes", default=False, action="store_true")
+    passchanger_tool_parser.add_argument('-m', '--manual', help="IP list file will specify vendors and login creds",
+                                         default=False, action="store_true")
+
+
 
 
     argcomplete.autocomplete(parser)
@@ -343,6 +358,8 @@ def dnmt():
             tools.Port_Label_Check()
         elif cmdargs.tools =='Standardize':
             tools.Standardize_Begin()
+        elif cmdargs.tools =='HPPassChange':
+            tools.HP_Pass_Change_Begin()
     elif cmdargs.maincommand == 'StatusChecks':
         if cmdargs.statuschecks == "Activity_Tracking":
             statusChecks.Activity_Tracking_Begin()
