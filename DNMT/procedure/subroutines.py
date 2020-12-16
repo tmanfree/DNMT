@@ -1275,6 +1275,9 @@ class SubRoutines:
         }
         # SSH Connection
         net_connect = netmiko.ConnectHandler(**net_sw)
+
+        self.handle_banners(vendor, net_connect)
+
         return net_connect
 
         # Name: create_connection_custom
@@ -1314,6 +1317,7 @@ class SubRoutines:
         # net_sw["username_pattern"] = "sername:"
         # SSH/Telnet Connection
         net_connect = netmiko.ConnectHandler(**net_sw)
+        self.handle_banners(vendor, net_connect)
 
         return net_connect
 
@@ -1384,10 +1388,28 @@ class SubRoutines:
         # Dynamically reset the class back to the proper Netmiko class
         netmiko.redispatch(net_connect, device_type=vendor)
 
+        self.handle_banners(vendor,net_connect)
+
         if 'verbose' in self.cmdargs and self.cmdargs.verbose:
             print('------- Successfully connected to switch {}-------'.format(ipaddr))
 
         return net_connect
+
+        # Name: create_connection_manual
+        # Input:
+        #   net_connect (netmiko connection)
+        #      -The netmiko connection
+        #   vendor (string)
+        #      -The device type:
+        # Return:
+        #   net_connect (connection handler)
+        # Summary:
+        #   Sets up a connection to the provided ip address. manually does all login process and then
+        #       dispatches back to netmiko. Used for ssh v1 switches with weird login promptsprompts
+    def handle_banners(self, vendor, net_connect):
+        if "procurve" in vendor:
+            net_connect.send_command("\n")
+        return
 
         # Name: vendor_enable
         # Input:

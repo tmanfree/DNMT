@@ -487,7 +487,9 @@ class Tools:
                 else:
                     enable_success =  self.subs.vendor_enable(vendor,net_connect)
                 if enable_success:
-                    sh_run = net_connect.send_command("show run")
+                    if "hp_procurve" in vendor: #temporary fix for
+                        net_connect.send_command("term length 1000")
+                    sh_run = net_connect.send_command("show run") # add a check for hp and term length 0?
                     # print(sh_run)
                     #TODO seperate the commandlist into headings like auth=
                     #   then have seperate check/apply fields for some that can have hashed values
@@ -510,8 +512,8 @@ class Tools:
             except netmiko.ssh_exception.SSHException as err:
                 if (err.args[0] == "Incompatible version (1.5 instead of 2.0)"):
                     self.subs.verbose_printer(err.args[0], "###{}### ERROR Netmiko incompatible version".format(ipaddr))
-                    self.Standardize_Switch(ipaddr, "{}_telnet".format(vendor), username, password, enable_pw, 23)
-                    return "{} - {}".format(ipaddr, err.args[0])
+                    result2 = self.Standardize_Switch(ipaddr, "{}_telnet".format(vendor), username, password, enable_pw, 23)
+                    return "{} - {}\n{}".format(ipaddr, err.args[0], result2)
                 else:
                     self.subs.verbose_printer(err.args[0], "###{}### ERROR Netmiko SSH Exception".format(ipaddr))
                     return "{} - {}".format(ipaddr, err.args[0])
@@ -672,14 +674,18 @@ class Tools:
                 else:
                     enable_success = self.subs.vendor_enable(vendor, net_connect)
                 if enable_success:
-                    result = net_connect.send_command("conf t","#")
-                    result += net_connect.send_command("pass manager user-name {}".format(self.cmdargs.username), ":")
-                    result += net_connect.send_command("{}".format(self.cmdargs.password), ":")
-                    result += net_connect.send_command("{}".format(self.cmdargs.password), "#")
-                    result += net_connect.save_config()
-                    self.subs.verbose_printer("{} - {}".format(ipaddr,result))
-                    self.subs.verbose_printer("{} - Updated password".format(ipaddr))
-                    return "{} - Updated password".format(ipaddr)
+                    if 'apply' in self.cmdargs and self.cmdargs.apply:
+                        result = net_connect.send_command("conf t","#")
+                        result += net_connect.send_command("pass manager user-name {}".format(self.cmdargs.username), ":")
+                        result += net_connect.send_command("{}".format(self.cmdargs.password), ":")
+                        result += net_connect.send_command("{}".format(self.cmdargs.password), "#")
+                        result += net_connect.save_config()
+                        self.subs.verbose_printer("{} - {}".format(ipaddr,result))
+                        self.subs.verbose_printer("{} - Updated password".format(ipaddr))
+                        return "{} - Updated password".format(ipaddr)
+                    else:
+                        self.subs.verbose_printer("{} - Logged in successfully, but did not change Password".format(ipaddr))
+                        return "{} - Logged in successfully, but did not change Password".format(ipaddr)
                 else:
                     self.subs.verbose_printer("###{}### ERROR Unable to enable".format(ipaddr))
                     return "{} - Unable to Enable".format(ipaddr)
@@ -693,8 +699,8 @@ class Tools:
             except netmiko.ssh_exception.SSHException as err:
                 if (err.args[0] == "Incompatible version (1.5 instead of 2.0)"):
                     self.subs.verbose_printer(err.args[0], "###{}### ERROR Netmiko incompatible version".format(ipaddr))
-                    self.HP_Pass_Change(ipaddr, "{}_telnet".format(vendor), username, password, enable_pw, 23) # try telnet if v1 only
-                    return "{} - {}".format(ipaddr, err.args[0])
+                    result2 = self.HP_Pass_Change(ipaddr, "{}_telnet".format(vendor), username, password, enable_pw, 23) # try telnet if v1 only
+                    return "{} - {}\n{} - {}".format(ipaddr, err.args[0], ipaddr,result2)
                 else:
                     self.subs.verbose_printer(err.args[0], "###{}### ERROR Netmiko SSH Exception".format(ipaddr))
                     return "{} - {}".format(ipaddr, err.args[0])
