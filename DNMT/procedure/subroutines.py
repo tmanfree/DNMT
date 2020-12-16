@@ -1364,13 +1364,13 @@ class SubRoutines:
         for _ in range(10):
             output = net_connect.read_channel()
 
-            if 'sername' in output:
+            if un_prompt in output:
                 net_connect.write_channel(username + '\r\n')
                 time.sleep(1)
                 output = net_connect.read_channel()
 
             # Search for password pattern / send password
-            if 'assword' in output:
+            if pw_prompt in output:
                 net_connect.write_channel(password + '\r\n')
                 time.sleep(.5)
                 output = net_connect.read_channel()
