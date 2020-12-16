@@ -538,6 +538,8 @@ class Tools:
             Vendor_Heading = "CISCO"
         elif vendor in ["HP", "hp_procurve", "hp_procurve_telnet"]:
             Vendor_Heading = "HP"
+        else:
+            Vendor_Heading = "UNKNOWN"
 
         foundnum = 0
         missingnum = 0
