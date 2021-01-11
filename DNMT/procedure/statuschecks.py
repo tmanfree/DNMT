@@ -75,10 +75,10 @@ class StatusChecks:
         iplist = []
         total_start = time.time()
         if not os.path.exists(os.path.join(self.subs.log_path, "activitycheck", "rawfiles")):
-            self.subs.custom_printer("debug","##### DEBUG - Creating activitycheck/rawfiles directory #####")
+            self.subs.custom_printer("debug","## DBG - Creating activitycheck/rawfiles directory ##")
             os.makedirs(os.path.join(self.subs.log_path, "activitycheck", "rawfiles"))
         if not os.path.exists(os.path.join(self.subs.log_path, "activitycheck", "processedfiles")):
-            self.subs.custom_printer("debug", "##### DEBUG - Creating activitycheck/processedfiles directory #####")
+            self.subs.custom_printer("debug", "## DBG - Creating activitycheck/processedfiles directory ##")
             os.makedirs(os.path.join(self.subs.log_path, "activitycheck", "processedfiles"))
         # Specifying a file only changes what IPs are updated, right now the status check grabs all existing files in
         # the raw data folder
@@ -249,7 +249,7 @@ class StatusChecks:
                     self.successful_files.append("{}-statcheck.bz2".format(ip))
             except Exception as err:  # currently a catch all to stop linux from having a conniption when reloading
                 print("FILE ERROR {}-statcheck:{}".format(ip, err.args[0]))
-                self.subs.custom_printer("debug", "##### DEBUG - Error in create readable activity file #####")
+                self.subs.custom_printer("debug", "## DBG - Error in create readable activity file ##")
                 self.failure_files.append("{}-statcheck.bz2".format(ip))
 
         ## Works, but emailing is a pain
@@ -347,7 +347,9 @@ class StatusChecks:
         try:
             start = time.time()
             self.subs.verbose_printer("##### {} -  Processing #####".format(ipaddr))
+            self.subs.custom_printer("debug", "## DBG - Grabbing switch data through SNMP ##")
             NewSwitchStatus  = self.subs.snmp_get_switch_data_full(ipaddr)
+
 
         #TODO Check if a previous static check exists, and load it if it does, otherwise create it and write it out
             try:
@@ -355,7 +357,9 @@ class StatusChecks:
                     raise ValueError('##### {} ERROR - No Data in switchstruct #####'.format(ipaddr))
 
                 #load archival information (may have removed switches in it)
+                self.subs.custom_printer("debug", "## DBG - Opening statcheck file from legacy ##")
                 with bz2.open(os.path.join(self.subs.log_path, "activitycheck", "rawfiles","legacy","{}-statcheck.bz2".format(ipaddr)), "rb") as myNewFile:
+                    self.subs.custom_printer("debug", "## DBG - Loading legacy into OldSwitchStatus ##")
                     OldSwitchStatus = pickle.load(myNewFile)
 
                 # if len(OldSwitchStatus.switches) != len(NewSwitchStatus.switches):
@@ -365,6 +369,7 @@ class StatusChecks:
                 #TODO Why not use the newswitch status instead? Data may be lost if a switch is down when the new one is there? could fix that by adding any missing data to the new one?
 
                 #update the new switch status with archival info
+                self.subs.custom_printer("debug", "## DBG - Updating switch status with OldSwitchStatus ##")
                 for tempswitch in NewSwitchStatus.switches:
                     #if the switchnumber doesn't exist in the archive status file, add it
                     if OldSwitchStatus.getSwitch(tempswitch.switchnumber) is None:
@@ -407,18 +412,21 @@ class StatusChecks:
 
                 #TODO Compare the two files now
                 #write out active status for combining into statcheck csv
+                self.subs.custom_printer("debug", "## DBG - Opening Active file to save NewSwitchStatus to ##")
                 with bz2.BZ2File(
                         os.path.join(self.subs.log_path, "activitycheck", "rawfiles","active", "{}-statcheck.bz2".format(ipaddr)),
                         'wb') as sfile:
+                    self.subs.custom_printer("debug", "## DBG - Writing NewSwitchStatus to active statcheck ##")
                     pickle.dump(NewSwitchStatus, sfile)
                     sfile.close()
 
                 #Write out archival switchstatus to load again later
+                self.subs.custom_printer("debug", "## DBG - Opening legacy file to save OldSwitchStatus to ##")
                 with bz2.BZ2File(
                         os.path.join(self.subs.log_path, "activitycheck", "rawfiles","legacy", "{}-statcheck.bz2".format(ipaddr)),
                         'wb') as sfile:
+                    self.subs.custom_printer("debug", "## DBG - Writing OldSwitchStatus to legacy statcheck ##")
                     pickle.dump(OldSwitchStatus, sfile)
-
                     sfile.close()
 
                 # self.successful_switches.append(ipaddr)
@@ -455,7 +463,7 @@ class StatusChecks:
                 returnval = (False,ipaddr)
             except Exception as err: #currently a catch all to stop linux from having a conniption when reloading
                 print("##### {} FILE ERROR:{} #####".format(ipaddr,err.args[0]))
-                self.subs.custom_printer("debug", "##### DEBUG - Error in Activity_Tracking #####")
+                self.subs.custom_printer("debug", "## DBG - Error in Activity_Tracking ##")
                 # self.failure_switches.append(ipaddr)
                 returnval = (False, ipaddr)
 
