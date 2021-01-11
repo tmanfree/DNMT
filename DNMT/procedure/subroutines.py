@@ -1571,6 +1571,29 @@ class SubRoutines:
                 print(printvar[1])
             return False
 
+        # Name: custom_printer (will deprecate verbose_printer)
+        # Input:
+        #   printType
+        #      -This variable holds the type of print function, verbose or debug for example
+        #   *printvar
+        #      -This variable(s) will allow the function to be passed two vars, 1 for what to print if verbose,
+        #      and 1 to print if not.
+        # Summary:
+        #   custom printer currently is passed a print type variable (printType) and 1-2 strings to print
+        #   the 1st string is what to print if verbose, the second is what to print if not.
+        #   printvar accepts a variable number of values in case nothing will be printed for not printType
+        #   custom printer will return True if printType is active, and false if not (redundant?)
+
+    def custom_printer(self,printType, *printVar):
+        # if in mode of type printtype, print the first printvar variable and return that it is in verbose mode
+        if printType in self.cmdargs and eval("self.cmdargs.{}".format(printType)):
+            print(printVar[0])
+            return True
+        # if in verbose mode, print the first printvar variable
+        else:
+            if len(printVar) > 1:
+                print(printVar[1])
+            return False
 
     # Name: ping_check
     # Input:

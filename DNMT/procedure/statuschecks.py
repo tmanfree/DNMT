@@ -75,8 +75,10 @@ class StatusChecks:
         iplist = []
         total_start = time.time()
         if not os.path.exists(os.path.join(self.subs.log_path, "activitycheck", "rawfiles")):
+            self.subs.custom_printer("debug","##### DEBUG - Creating activitycheck/rawfiles directory #####")
             os.makedirs(os.path.join(self.subs.log_path, "activitycheck", "rawfiles"))
         if not os.path.exists(os.path.join(self.subs.log_path, "activitycheck", "processedfiles")):
+            self.subs.custom_printer("debug", "##### DEBUG - Creating activitycheck/processedfiles directory #####")
             os.makedirs(os.path.join(self.subs.log_path, "activitycheck", "processedfiles"))
         # Specifying a file only changes what IPs are updated, right now the status check grabs all existing files in
         # the raw data folder
@@ -245,6 +247,7 @@ class StatusChecks:
                     self.successful_files.append("{}-statcheck.bz2".format(ip))
             except Exception as err:  # currently a catch all to stop linux from having a conniption when reloading
                 print("FILE ERROR {}-statcheck:{}".format(ip, err.args[0]))
+                self.subs.custom_printer("debug", "##### DEBUG - Error in create readable activity file #####")
                 self.failure_files.append("{}-statcheck.bz2".format(ip))
 
         ## Works, but emailing is a pain
@@ -450,6 +453,7 @@ class StatusChecks:
                 returnval = (False,ipaddr)
             except Exception as err: #currently a catch all to stop linux from having a conniption when reloading
                 print("##### {} FILE ERROR:{} #####".format(ipaddr,err.args[0]))
+                self.subs.custom_printer("debug", "##### DEBUG - Error in Activity_Tracking #####")
                 # self.failure_switches.append(ipaddr)
                 returnval = (False, ipaddr)
 

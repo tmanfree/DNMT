@@ -164,6 +164,7 @@ def dnmt():
     maintenance_parser.add_argument('-v', '--verbose', help="run in verbose mode", default=False,
                                           action="store_true")
     maintenance_parser.add_argument('-t', '--test', help="don't delete anything, just test", default=False, action="store_true")
+
     activity_tracking_parser = status_checks_parser.add_parser("Activity_Tracking", help="check if port status has changed")
     activity_tracking_parser.add_argument('-f', '--file', help="specify iplist file to use if not using default")
     activity_tracking_parser.add_argument('-e', '--email', help="specify which email to send file to")
@@ -175,6 +176,8 @@ def dnmt():
     activity_tracking_parser.add_argument('-c', '--check', help="Operate on existing statcheck files, no log ins",
                                           default=False, action="store_true")
     activity_tracking_parser.add_argument('-v', '--verbose', help="run in verbose mode", default=False,
+                                          action="store_true")
+    activity_tracking_parser.add_argument('-d', '--debug', help="run in debug mode (extremely verbose)", default=False,
                                           action="store_true")
     activity_tracking_parser.add_argument('-m', '--maxentries', help="modify max number of historical entries")
     activity_tracking_parser.add_argument('-x', '--xecutive', help="print out a modified summary file", default=False,
