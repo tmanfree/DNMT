@@ -237,13 +237,15 @@ class StatusChecks:
             # process
             try:
                 # LOADING Compressed files
+                self.subs.custom_printer("debug", "## DBG - Opening pickled file from active for {} ##".format(ip))
                 with bz2.open(os.path.join(self.subs.log_path, "activitycheck", "rawfiles", "active", ip), "rb") as f:
+                    self.subs.custom_printer("debug", "## DBG - loading pickled file from active for {} ##".format(ip))
                     SwitchStatus = pickle.load(f, encoding='utf-8')
                     if 'xecutive' in self.cmdargs and self.cmdargs.xecutive is True:
                         TotalStatus += SwitchStatus.appendSingleLineExec()
                     else:
                         TotalStatus += SwitchStatus.appendSingleLine()
-
+                    self.subs.custom_printer("debug", "## DBG - Appending {} to successful files ##".format(ip))
                     self.successful_files.append("{}-statcheck.bz2".format(ip))
             except Exception as err:  # currently a catch all to stop linux from having a conniption when reloading
                 print("FILE ERROR {}-statcheck:{}".format(ip, err.args[0]))
