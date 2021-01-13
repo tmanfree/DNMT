@@ -905,6 +905,27 @@ class SubRoutines:
 
         return interfaceVlanList
 
+    # Name: snmp_get_port_security_violations_bulk
+    # Input:
+    #   ipaddr (string)
+    #      -The ipaddress/hostname to grab info from
+    # Return:
+    #  port security violations list
+    # Summary:
+    #   grabs the a list of port security violations on ports
+    def snmp_get_port_security_violations_bulk(self, ipaddr):
+        oidstring = '1.3.6.1.4.1.9.9.315.1.2.1.1.9 '
+        varBinds = self.snmp_walk(ipaddr, ObjectType(ObjectIdentity(oidstring)))
+        interfaceViolationsList = []
+
+        for varBind in varBinds:
+            interfaceViolations = varBind._ObjectType__args[1]._value
+            # if '/' in interfaceDescription:
+            oidTuple = varBind._ObjectType__args[0]._ObjectIdentity__oid._value
+            intId = oidTuple[len(oidTuple) - 1]
+            interfaceViolationsList.append({'Id': intId, 'Violations': interfaceViolations})
+
+        return interfaceViolationsList
 
         # Name: snmp_get_input_errors_bulk
         # Input:
@@ -1169,6 +1190,11 @@ class SubRoutines:
                         elif port['Category'] == 8: #for Dell, could include 10 as a type?
                             foundport.cdptype = port['Value']
 
+            for port in self.snmp_get_port_security_violations_bulk(ipaddr):
+                if port is not None:  # ignore vlan interfaces and non existent interfaces
+                    foundport = switchStruct.getPortById(port['Id'])
+                    if foundport is not None:
+                        foundport.psviolations = port['Violations']
 
 
             # Get input Errors for ports
