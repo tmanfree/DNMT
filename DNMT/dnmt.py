@@ -209,17 +209,21 @@ def dnmt():
     db_cmds_find_mac_parser.add_argument('-n', '--name', help=" name of switch to search (can be partial)")
     db_cmds_find_mac_parser.add_argument('-i', '--ipfile', help="file to grap IPs from if not default")
 
+    #dbcmds reports
     db_cmds_reports_parser = db_cmds_parser.add_parser("reports", help="create various reports from statcheck files").add_subparsers(dest="reports")
-    db_cmds_reports_fmnet_parser = db_cmds_reports_parser.add_parser("fmnet", help="reports for fmnet").add_subparsers(dest="fmnet")
-    db_cmds_reports_fmnet_psviolation_parser = db_cmds_reports_fmnet_parser.add_parser("psviolations", help="report on port security violations")
 
-    # db_cmds_find_fmnet_parser.add_argument('-c', '--csv', help="Output as CSV", default=False,
-    #                                       action="store_true")
-    db_cmds_reports_fmnet_psviolation_parser.add_argument('-v', '--verbose', help="verbose output", default=False, action="store_true")
-    db_cmds_reports_fmnet_psviolation_parser.add_argument('-f', '--file', help="limit processing to ips contained in file")
-    db_cmds_reports_fmnet_psviolation_parser.add_argument('-d', '--debug', help="run in debug mode (extremely verbose)", default=False,
+    #dbcmds reports fmnet
+    db_cmds_reports_fmnet_parser = db_cmds_reports_parser.add_parser("fmnet", help="reports for fmnet").add_subparsers(dest="fmnet")
+
+    # dbcmds reports fmnet psviolations
+    db_cmds_reports_fmnet_psviolations_parser = db_cmds_reports_fmnet_parser.add_parser("psviolations", help="report on port security violations")
+    db_cmds_reports_fmnet_psviolations_parser.add_argument('-v', '--verbose', help="verbose output", default=False, action="store_true")
+    db_cmds_reports_fmnet_psviolations_parser.add_argument('-f', '--file', help="limit processing to ips contained in file")
+    db_cmds_reports_fmnet_psviolations_parser.add_argument('-d', '--debug', help="run in debug mode (extremely verbose)", default=False,
                   action="store_true")
-    db_cmds_reports_fmnet_psviolation_parser.add_argument('-e', '--email', help="specify email to send file to")
+    db_cmds_reports_fmnet_psviolations_parser.add_argument('-e', '--email', help="specify email to send file to")
+    db_cmds_reports_fmnet_psviolations_parser.add_argument('-x', '--xecutive', help="print out a modified summary file", default=False,
+                                          action="store_true")
 
 
 
