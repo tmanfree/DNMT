@@ -11,6 +11,17 @@ from pysnmp.proto import rfc1902
 
 
 class StackStruct:
+    #External Variables/Methods
+    CSVHeader = "IP,Vendor,Hostname,SwitchNum,Model,Serial,SoftwareVer,ModuleNum,PortNum,PortName,PortDesc,PoE,Neighbour name,Neighbour port,Neighbour Info,Status (1=Up),DataVlan,VoiceVlan,Mode (1=Trunk),IntID,PsViolations,InputErrors,OutputErrors,InputCounters,OutputCounters,LastTimeUpdated,DeltaInputCounters,DeltaOutputCounters"
+
+    def getHeader(flags):
+        if 'xecutive' in flags and eval("flags.xecutive"):
+            return "IP,Vendor,Hostname,SwitchNum,Model,Serial,SoftwareVer,ModuleNum,PortNum,PortName,PortDesc,PoE draw (1=Yes),Status (1=Up),DataVlan,DataVlan name,VoiceVlan,Mode (1=Trunk),PsViolations,InputErrors,OutputErrors,InputCounters,OutputCounters,LastTimeUpdated,DeltaInputCounters,DeltaOutputCounters\n"
+        else:
+            return "{}\n".format(StackStruct.CSVHeader)
+
+    #Finish External Methods
+
     def __init__(self,ipaddr,vendor):
         # initialize values
         self.ip = ipaddr
@@ -18,7 +29,9 @@ class StackStruct:
         self.hostname = None
         self.switches = []
         self.vlanList = []
-        self.CSVHeader = "IP,Vendor,Hostname,SwitchNum,Model,Serial,SoftwareVer,ModuleNum,PortNum,PortName,PortDesc,PoE,Neighbour name,Neighbour port,Neighbour Info,Status (1=Up),DataVlan,VoiceVlan,Mode (1=Trunk),IntID,PsViolations,InputErrors,OutputErrors,InputCounters,OutputCounters,LastTimeUpdated,DeltaInputCounters,DeltaOutputCounters"
+        # self.CSVHeader = "IP,Vendor,Hostname,SwitchNum,Model,Serial,SoftwareVer,ModuleNum,PortNum,PortName,PortDesc,PoE,Neighbour name,Neighbour port,Neighbour Info,Status (1=Up),DataVlan,VoiceVlan,Mode (1=Trunk),IntID,PsViolations,InputErrors,OutputErrors,InputCounters,OutputCounters,LastTimeUpdated,DeltaInputCounters,DeltaOutputCounters"
+
+
 
     def addSwitch(self,switchNum):
         self.switches.append(SwitchStruct(switchNum))
@@ -67,7 +80,7 @@ class StackStruct:
             switch.printSwitch()
 
     def printSingleLine(self):
-        print(self.CSVHeader)
+        print(StackStruct.CSVHeader)
         for switch in self.switches:
             switch.printSingleLine(self.ip, self.vendor, self.hostname)
 
@@ -84,10 +97,16 @@ class StackStruct:
             totalString += switch.appendSingleLineExec((self.ip,self.vendor, self.hostname))
         return totalString
 
+    def appendSingleLineCustom(self,**kwargs):
+        totalString = ""
+        for switch in self.switches:
+            totalString += switch.appendSingleLineCustom((self.ip,self.vendor, self.hostname),**kwargs)
+        return totalString
+
     def exportCSV(self,filename):
         with open(filename, 'w', encoding='utf-8') as filePointer:
 
-            print(self.CSVHeader,file=filePointer)
+            print(StackStruct.CSVHeader,file=filePointer)
 
             for switch in self.switches:
                 switch.exportCSV(self.ip,self.vendor, self.hostname,filePointer)
@@ -141,6 +160,12 @@ class SwitchStruct:
             totalString += module.appendSingleLineExec(passedTup+(self.switchnumber, self.model, self.serialnumber, self.version))
         return totalString
 
+    def appendSingleLineCustom(self, passedTup, **kwargs):
+        totalString =""
+        for module in self.modules:
+            totalString += module.appendSingleLineCustom(passedTup+(self.switchnumber, self.model, self.serialnumber, self.version),**kwargs)
+        return totalString
+
     def exportCSV(self,ip,vendor, hostname, filePointer):
         for module in self.modules:
             module.exportCSV((ip,vendor,hostname,self.switchnumber,self.model,self.serialnumber,self.version),filePointer)
@@ -181,6 +206,12 @@ class ModuleStruct:
         totalString = ""
         for port in self.ports:
             totalString += port.appendSingleLineExec(passedTup+(self.modulenumber,))
+        return totalString
+
+    def appendSingleLineCustom(self, passedTup, **kwargs):
+        totalString = ""
+        for port in self.ports:
+            totalString += port.appendSingleLineCustom(passedTup+(self.modulenumber,),**kwargs)
         return totalString
 
     def exportCSV(self, passedTup, filePointer):
@@ -253,6 +284,64 @@ class PortStruct:
 
     # def checkForVars(self,varList):
     #    list_of_existing_vars = [a for a in dir(self) if not a.startswith('__')]
+
+    def appendSingleLineCustom(self,passedTup,**kwargs):
+        if "remove_empty_filter" in kwargs: #currently works on single filters
+            if hasattr(self,kwargs['remove_empty_filter']): # check for existence of field
+                if eval("self.{} == 0".format(kwargs['remove_empty_filter'])): #check if field is empty
+                    return ""
+        if("executive_mode" in kwargs and kwargs['executive_mode']):
+            poePrinting = 0
+            dataVlanName = ""
+            voiceVlanName = ""
+
+            if self.poe is not None and self.poe > 0:
+                poePrinting = 1  # to act as a binary poe or no
+            # dataVlanName = [vlanEntry['Name'] for vlanEntry in vlanList if 'ID' in vlanEntry and vlanEntry["ID"  == self.datavlan]]
+
+            while True:
+                try:
+                    return "{},{},{},\"{}\",{},{},{},\"{}\",{},{},{},{},{},{},{},{},{},{}\n".format(
+                        str(passedTup).translate({ord(i): None for i in '()\''}),
+                        self.portnumber, self.portname, self.description, poePrinting,
+                        self.status, self.datavlan, self.datavlanname, self.voicevlan,
+                        self.portmode, self.psviolations, self.inputerrors, self.outputerrors,
+                        self.inputcounters, self.outputcounters,
+                        self.lastupdate, self.deltalastin, self.deltalastout)
+                except AttributeError as errmsg:
+                    # test = re.findall(r'^\*\s+(\d)', errmsg,re.MULTILINE)
+                    regsearch = re.findall(r"object has no attribute '(\S+)'$", errmsg.args[0], re.MULTILINE)
+                    if len(regsearch) > 0:
+                        exec("self." + regsearch[0] + "= None")
+                    else:
+                        raise Exception(
+                            '##### ERROR - missing required Data to print: {} #####'.format(errmsg.args[0]))
+        else:
+            while True:
+                try:
+                    return "{},{},{},\"{}\",{},\"{}\",{},\"{}\",{},{},{},{},{},{},{},{},{},{},{},{},{},{},\"{}\",\"{}\",\"{}\",\"{}\"\n".format(
+                        str(passedTup).translate({ord(i): None for i in '()\''}),
+                        self.portnumber, self.portname, self.description, self.poe,
+                        self.cdpname, self.cdpport, self.cdptype, self.status, self.datavlan,
+                        self.datavlanname, self.voicevlan,
+                        self.portmode, self.intID, self.psviolations,
+                        self.inputerrors, self.outputerrors,
+                        self.inputcounters, self.outputcounters,
+                        self.lastupdate, self.deltalastin, self.deltalastout, self.historicalinputerrors,
+                        self.historicaloutputerrors,
+                        self.historicalinputcounters, self.historicaloutputcounters)
+                except AttributeError as errmsg:
+                    # test = re.findall(r'^\*\s+(\d)', errmsg,re.MULTILINE)
+                    regsearch = re.findall(r"object has no attribute '(\S+)'$", errmsg.args[0], re.MULTILINE)
+                    if len(regsearch) > 0:
+                        exec("self." + regsearch[0] + "= None")
+                    else:
+                        raise Exception(
+                            '##### ERROR - missing required Data to print: {} #####'.format(errmsg.args[0]))
+
+
+
+
 
 
     def appendSingleLine (self,passedTup):

@@ -9,6 +9,17 @@ from pysnmp.hlapi import *
 from pysnmp.entity.rfc3413.oneliner import cmdgen
 from pysnmp.proto import rfc1902
 
+#for Emails
+import smtplib
+from email.mime.base import MIMEBase
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from email import encoders
+
+#for readable activity files
+import zipfile #imports for summary filescompression imports
+import pickle,bz2 #imports for statchecks
+
 from DNMT.procedure.switchstruct import StackStruct
 
 
@@ -315,6 +326,7 @@ class SubRoutines:
     #  MacList (a list of the macs that are  on the switch)
     # Summary:
     #   grabs all mac addresses in the table assignments, on vlan 1...
+    #       for macs on other vlans need to specify by appending @vlan_id to the snmp RO
     def snmp_get_mac_id_bulk(self, ipaddr):
         MacList = []
         #1.3.6.1.2.1.17.4.3.1.2  will give the port the ID is on X.X.X.X.X.X = Port (Integer)
@@ -1090,7 +1102,6 @@ class SubRoutines:
         # Summary:
         #   grabs information from the switch to put in a datastructure
 
-
     def snmp_get_switch_data_full(self, ipaddr):
         # test = self.snmp_get_switch_id_bulk(ipaddr)
 
@@ -1235,7 +1246,6 @@ class SubRoutines:
                         foundport.voicevlan = port['Vlan']
 
         if len(switchStruct.switches) == 0:
-            # self.subs.verbose_printer("No information found for {}".format(ipaddr))
             print("##### {} - No SwitchStruct information found (SNMP issue?) #####".format(ipaddr))
 
         return switchStruct
@@ -1615,7 +1625,7 @@ class SubRoutines:
         if printType in self.cmdargs and eval("self.cmdargs.{}".format(printType)):
             print(printVar[0])
             return True
-        # if in verbose mode, print the first printvar variable
+        # if in specified mode, print the first printvar variable
         else:
             if len(printVar) > 1:
                 print(printVar[1])
@@ -1675,6 +1685,64 @@ class SubRoutines:
         else:
             return None
 
+    # def switchstruct_get_header(self, flags):
+    #     return StackStruct.getHeader(flags)
+
+    # Name: email_zip_file
+    # Input:
+    #   msg_to
+    #      -String containing address to send message to
+    #   msg_body
+    #      -String containing the message body
+    #   zipfilename
+    #      -String containing the filename of the zipped file to send (currently sending from activitycheck/processedfiles/
+    # Summary:
+    #  email a zipped summary file
+    def email_zip_file(self,msg_to,msg_body,zipfilename):
+        try:
+            self.verbose_printer("##### Emailing now #####")
+
+            zf = open(os.path.join(self.log_path, "activitycheck", "processedfiles", "{}.zip".format(zipfilename)), 'rb')
+
+            # Create the message
+            themsg = MIMEMultipart()
+            themsg["From"] = "admin@localhost"
+            themsg["Subject"] = "updated activitycheck - {}".format(datetime.date.today().strftime('%Y-%m-%d'))
+            themsg["To"] = msg_to
+            # themsg["Body"]="Processing completed in {} seconds\n{} switches SUCCESSFULLY processed\n{} switches FAILED during processing\n ".format(
+            #      int((time.time() - total_start) * 100) / 100, len(self.successful_switches),len(self.failure_switches) )
+
+            themsg.preamble = 'I am not using a MIME-aware mail reader.\n'
+            msg = MIMEBase('application', 'zip')
+            msg.set_payload(zf.read())
+            encoders.encode_base64(msg)
+            msg.add_header('Content-Disposition', 'attachment',
+                           filename=zipfilename + '.zip')
+
+
+            themsg.attach(msg)
+
+            #create the body of the email
+
+
+            themsg.attach(MIMEText(msg_body, 'plain'))
+
+            themsg = themsg.as_string()
+
+            # send the message
+            smtp = smtplib.SMTP()
+            smtp.connect()
+            smtp.sendmail("admin@localhost", msg_to, themsg)
+            smtp.close()
+
+        except smtplib.SMTPException:
+            print("Failed to send Email")
+        except Exception as err:
+            print(err)
+
+    ############################
+    ###SwitchStruct COMMANDS####
+    ############################
     # Name: Create_Readable_Activity_File
     # Input:
     #   status_filename (raw string)
@@ -1685,46 +1753,60 @@ class SubRoutines:
     #   Nothing (change to boolean for success)
     # Summary:
     #   Create readable activity file will create a csv file out of the ips in the provided
-    # def Create_Readable_Activity_File(self,status_filename,iplist):
-    #     if 'xecutive' in self.cmdargs and self.cmdargs.xecutive is True:
-    #         TotalStatus = "IP,Vendor,Hostname,SwitchNum,Model,Serial,SoftwareVer,ModuleNum,PortNum,PortName,PortDesc,PoE draw (1=Yes),Status (1=Up),DataVlan,DataVlan name,VoiceVlan,Mode (1=Trunk),InputErrors,OutputErrors,InputCounters,OutputCounters,LastTimeUpdated,DeltaInputCounters,DeltaOutputCounters\n"
-    #     else:
-    #         TotalStatus = "IP,Vendor,Hostname,SwitchNum,Model,Serial,SoftwareVer,ModuleNum,PortNum,PortName,PortDesc,PoE,Neighbour name,Neighbour port,Neighbour type,Status (1=Up),DataVlan,DataVlan name,VoiceVlan,Mode (1=Trunk),IntID,InputErrors,OutputErrors,InputCounters,OutputCounters,LastTimeUpdated,DeltaInputCounters,DeltaOutputCounters,HistoricalInputErrors,HistoricalOutputErrors,HistoricalInputCounters,HistoricalOutputCounters\n"
-    #     #By default grabs all existing statcheck files, this could be changed to only act on the iplist provided
-    #
-    #
-    #     if 'limit' in self.cmdargs and self.cmdargs.limit is True:
-    #         self.verbose_printer("##### Creating Limited Summary List #####")
-    #         fileList = [f+"-statcheck.bz2" for f in iplist]
-    #     else:
-    #         self.verbose_printer("##### Creating Full Summary List #####")
-    #         fileList = [f for f in os.listdir(os.path.join(self.log_path,"activitycheck", "rawfiles","active")) if f.endswith('-statcheck.bz2')]
-    #     for ip in fileList:
-    #         # process
-    #         try:
-    #             # LOADING Compressed files
-    #             with bz2.open(os.path.join(self.log_path, "activitycheck", "rawfiles", "active", ip), "rb") as f:
-    #                 SwitchStatus = pickle.load(f, encoding='utf-8')
-    #                 if 'xecutive' in self.cmdargs and self.cmdargs.xecutive is True:
-    #                     TotalStatus += SwitchStatus.appendSingleLineExec()
-    #                 else:
-    #                     TotalStatus += SwitchStatus.appendSingleLine()
-    #
-    #                 self.successful_files.append("{}".format(ip))
-    #         except Exception as err:  # currently a catch all to stop linux from having a conniption when reloading
-    #             print("FILE ERROR {}-statcheck:{}".format(ip, err.args[0]))
-    #             self.failure_files.append("{}".format(ip))
-    #
-    #     ## Works, but emailing is a pain
-    #     # with bz2.BZ2File(os.path.join(self.log_path, "activitycheck", "processedfiles", "{}.bz2".format(status_filename)),
-    #     #                  'wb') as sfile:
-    #     #     sfile.write(TotalStatus.encode("utf-8"))
-    #
-    #     zf = zipfile.ZipFile(os.path.join(self.log_path, "activitycheck", "processedfiles", "{}.zip".format(status_filename)),
-    #                          mode='w',
-    #                          compression=zipfile.ZIP_DEFLATED,
-    #                          )
-    #     try:
-    #         zf.writestr(status_filename, TotalStatus)
-    #     finally:
-    #         zf.close()
+    def create_readable_activity_file(self,status_filename,**kwargs):
+        try:
+            successful_files = []
+            failure_files = []
+            if 'file' in kwargs and kwargs['file'] is not None:
+                file = open(os.path.join(kwargs['file']), "r")
+                self.custom_printer("verbose","##### ip file opened:{} #####".format(file))
+                iplist = []
+                for ip in file:
+                    iplist.append(ip.rstrip())
+                file.close()
+        except FileNotFoundError:
+            print("##### ERROR iplist files not found #####")
+        except Exception as err:
+            print("##### ERROR with processing:{} #####".format(err))
+
+        TotalStatus = StackStruct.getHeader(self.cmdargs)
+
+        # By default grabs all existing statcheck files, this could be changed to only act on the iplist provided
+
+        if 'file' in self.cmdargs and self.cmdargs.file is not None:
+            self.custom_printer("verbose","##### Creating Limited Summary List #####")
+            fileList = [f + "-statcheck.bz2" for f in iplist]
+        else:
+            self.custom_printer("verbose","##### Creating Full Summary List #####")
+            fileList = [f for f in os.listdir(os.path.join(self.log_path, "activitycheck", "rawfiles", "active"))
+                        if f.endswith('-statcheck.bz2')]
+        for ip in fileList:
+            # process
+            try:
+                # LOADING Compressed files
+                self.custom_printer("debug", "## DBG - Opening pickled file from active for {} ##".format(ip))
+                with bz2.open(os.path.join(self.log_path, "activitycheck", "rawfiles", "active", ip), "rb") as f:
+                    self.custom_printer("debug", "## DBG - loading pickled file from active for {} ##".format(ip))
+                    SwitchStatus = pickle.load(f, encoding='utf-8')
+
+                    TotalStatus += SwitchStatus.appendSingleLineCustom(
+                        executive_mode=('xecutive' in self.cmdargs and self.cmdargs.xecutive is True),
+                        remove_empty_filter="psviolations")
+
+                    self.custom_printer("debug", "## DBG - Appending {} to successful files ##".format(ip))
+                    successful_files.append("{}-statcheck.bz2".format(ip))
+            except Exception as err:  # currently a catch all to stop linux from having a conniption when reloading
+                print("FILE ERROR {}-statcheck:{}".format(ip, err.args[0]))
+                self.custom_printer("debug", "## DBG - Error in create readable activity file ##")
+                failure_files.append("{}-statcheck.bz2".format(ip))
+
+        zf = zipfile.ZipFile(
+            os.path.join(self.log_path, "activitycheck", "processedfiles", "{}.zip".format(status_filename)),
+            mode='w',
+            compression=zipfile.ZIP_DEFLATED,
+        )
+        try:
+            zf.writestr(status_filename, TotalStatus)
+        finally:
+            zf.close()
+        return successful_files,failure_files

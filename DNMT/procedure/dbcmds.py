@@ -9,6 +9,7 @@ import sys
 import subprocess,platform,os,time,datetime
 import difflib
 import pickle,bz2
+import zipfile #imports for summary filescompression imports
 import collections
 
 
@@ -17,9 +18,10 @@ import collections
 import netmiko
 from pathos.multiprocessing import ProcessingPool as Pool
 
+
 #local subroutine import
 from DNMT.procedure.subroutines import SubRoutines
-
+from DNMT.procedure.switchstruct import StackStruct
 
 
 class DBcmds:
@@ -134,5 +136,93 @@ class DBcmds:
                                                                        match["InterfaceID"], match["Vlan"]))
                     else:
                         self.subs.verbose_printer("{} - {} matches to \"{}\" found".format(ipaddr, len(match_entry_list), self.subs.normalize_mac(self.cmdargs.searchstring)))
+        except Exception as err:
+            print(err)
+
+    def createPSViolationReport(self): # similar to create readable activity file in statuschecks, combine both?
+        # try:
+        #     successful_files = []
+        #     failure_files = []
+        #     if 'file' in self.cmdargs and self.cmdargs.file is not None:
+        #         file = open(os.path.join(self.cmdargs.file), "r")
+        #     else:
+        #         file = open(os.path.abspath(os.path.join(os.sep, 'usr', 'lib', 'capt', "activitycheckIPlist")), "r")
+        #     self.subs.verbose_printer("##### file opened:{} #####".format(file))
+        #
+        #     iplist =[]
+        #
+        #     for ip in file:
+        #         iplist.append(ip.rstrip())
+        #
+        #     file.close()
+        #
+        # except FileNotFoundError:
+        #     print("##### ERROR iplist files not found #####")
+        # except Exception as err:
+        #     print("##### ERROR with processing:{} #####".format(err))
+        #
+        # status_filename = "{}-FullStatus.csv".format(datetime.datetime.now().strftime('%Y-%m-%d-%H%M'))
+        # TotalStatus = StackStruct.getHeader(self.cmdargs)
+        #
+        # # By default grabs all existing statcheck files, this could be changed to only act on the iplist provided
+        #
+        # if 'file' in self.cmdargs and self.cmdargs.file is not None:
+        #     self.subs.verbose_printer("##### Creating Limited Summary List #####")
+        #     fileList = [f + "-statcheck.bz2" for f in iplist]
+        # else:
+        #     self.subs.verbose_printer("##### Creating Full Summary List #####")
+        #     fileList = [f for f in os.listdir(os.path.join(self.subs.log_path, "activitycheck", "rawfiles", "active"))
+        #                 if f.endswith('-statcheck.bz2')]
+        # for ip in fileList:
+        #     # process
+        #     try:
+        #         # LOADING Compressed files
+        #         self.subs.custom_printer("debug", "## DBG - Opening pickled file from active for {} ##".format(ip))
+        #         with bz2.open(os.path.join(self.subs.log_path, "activitycheck", "rawfiles", "active", ip), "rb") as f:
+        #             self.subs.custom_printer("debug", "## DBG - loading pickled file from active for {} ##".format(ip))
+        #             SwitchStatus = pickle.load(f, encoding='utf-8')
+        #
+        #             TotalStatus += SwitchStatus.appendSingleLineCustom(executive_mode=('xecutive' in self.cmdargs and self.cmdargs.xecutive is True), remove_empty_filter="psviolations")
+        #
+        #             self.subs.custom_printer("debug", "## DBG - Appending {} to successful files ##".format(ip))
+        #             successful_files.append("{}-statcheck.bz2".format(ip))
+        #     except Exception as err:  # currently a catch all to stop linux from having a conniption when reloading
+        #         print("FILE ERROR {}-statcheck:{}".format(ip, err.args[0]))
+        #         self.subs.custom_printer("debug", "## DBG - Error in create readable activity file ##")
+        #         failure_files.append("{}-statcheck.bz2".format(ip))
+        #
+        # ## Works, but emailing is a pain
+        # # with bz2.BZ2File(os.path.join(self.log_path, "activitycheck", "processedfiles", "{}.bz2".format(status_filename)),
+        # #                  'wb') as sfile:
+        # #     sfile.write(TotalStatus.encode("utf-8"))
+        #
+        # zf = zipfile.ZipFile(
+        #     os.path.join(self.subs.log_path, "activitycheck", "processedfiles", "{}.zip".format(status_filename)),
+        #     mode='w',
+        #     compression=zipfile.ZIP_DEFLATED,
+        #     )
+        # try:
+        #     zf.writestr(status_filename, TotalStatus)
+        # finally:
+        #     zf.close()
+        try:
+            status_filename = "{}-FullStatus.csv".format(datetime.datetime.now().strftime('%Y-%m-%d-%H%M'))
+            successful_files,failure_files = self.subs.create_readable_activity_file(status_filename,**vars(self.cmdargs))
+
+            if 'email' in self.cmdargs and self.cmdargs.email is not None:
+                body = "{} switches SUCCESSFULLY added to the summary file\n".format(len(successful_files))
+                body += "{} switches FAILED to add to the summary file\n".format(len(failure_files))
+                body += "\n--------------------------------------------------------------------------------------\n\n"
+
+
+                if len(successful_files) > 0:
+                    body += "--- List of files SUCCESSFULLY added to summary file ---\n"
+                    for entry in successful_files:
+                        body += "{}\n".format(entry)
+                if len(failure_files) > 0:
+                    body += "--- List of files FAILED to be added to summary file ---\n"
+                    for entry in failure_files:
+                        body += "{}\n".format(entry)
+                self.subs.email_zip_file(self.cmdargs.email,body,status_filename)
         except Exception as err:
             print(err)
