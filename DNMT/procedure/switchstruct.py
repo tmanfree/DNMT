@@ -288,7 +288,7 @@ class PortStruct:
     def appendSingleLineCustom(self,passedTup,**kwargs):
         if "remove_empty_filter" in kwargs: #currently works on single filters
             if hasattr(self,kwargs['remove_empty_filter']): # check for existence of field
-                if eval("self.{} == 0".format(kwargs['remove_empty_filter'])): #check if field is empty
+                if eval("self.{} == 0 or self.{} == None".format(kwargs['remove_empty_filter'],kwargs['remove_empty_filter'])): #check if field is empty
                     return ""
         if("executive_mode" in kwargs and kwargs['executive_mode']):
             poePrinting = 0
