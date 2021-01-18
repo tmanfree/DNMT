@@ -290,6 +290,8 @@ class PortStruct:
             if hasattr(self,kwargs['remove_empty_filter']): # check for existence of field
                 if eval("self.{} == 0 or self.{} == None".format(kwargs['remove_empty_filter'],kwargs['remove_empty_filter'])): #check if field is empty
                     return ""
+            else: #return blank if the field to filter out does not exist
+                return ""
         if("executive_mode" in kwargs and kwargs['executive_mode']):
             poePrinting = 0
             dataVlanName = ""
