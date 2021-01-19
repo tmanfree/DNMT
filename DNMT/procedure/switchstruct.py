@@ -84,18 +84,18 @@ class StackStruct:
         for switch in self.switches:
             switch.printSingleLine(self.ip, self.vendor, self.hostname)
 
-    def appendSingleLine(self):
-        totalString = ""
-        for switch in self.switches:
-            totalString += switch.appendSingleLine(self.ip,self.vendor, self.hostname)
-        return totalString
-
-    def appendSingleLineExec(self):
-        totalString = ""
-        # if self.vlanList
-        for switch in self.switches:
-            totalString += switch.appendSingleLineExec((self.ip,self.vendor, self.hostname))
-        return totalString
+    # def appendSingleLine(self):
+    #     totalString = ""
+    #     for switch in self.switches:
+    #         totalString += switch.appendSingleLine(self.ip,self.vendor, self.hostname)
+    #     return totalString
+    #
+    # def appendSingleLineExec(self):
+    #     totalString = ""
+    #     # if self.vlanList
+    #     for switch in self.switches:
+    #         totalString += switch.appendSingleLineExec((self.ip,self.vendor, self.hostname))
+    #     return totalString
 
     def appendSingleLineCustom(self,**kwargs):
         totalString = ""
@@ -148,17 +148,17 @@ class SwitchStruct:
             #print("{},{},{}".format(self.switchnumber,self.model,self.serialnumber), end = ",")
             module.printSingleLine((ip,vendor,hostname,self.switchnumber,self.model,self.serialnumber,self.version))
 
-    def appendSingleLine(self, ip,vendor, hostname):
-        totalString =""
-        for module in self.modules:
-            totalString += module.appendSingleLine((ip,vendor,hostname, self.switchnumber, self.model, self.serialnumber, self.version))
-        return totalString
-
-    def appendSingleLineExec(self, passedTup):
-        totalString =""
-        for module in self.modules:
-            totalString += module.appendSingleLineExec(passedTup+(self.switchnumber, self.model, self.serialnumber, self.version))
-        return totalString
+    # def appendSingleLine(self, ip,vendor, hostname):
+    #     totalString =""
+    #     for module in self.modules:
+    #         totalString += module.appendSingleLine((ip,vendor,hostname, self.switchnumber, self.model, self.serialnumber, self.version))
+    #     return totalString
+    #
+    # def appendSingleLineExec(self, passedTup):
+    #     totalString =""
+    #     for module in self.modules:
+    #         totalString += module.appendSingleLineExec(passedTup+(self.switchnumber, self.model, self.serialnumber, self.version))
+    #     return totalString
 
     def appendSingleLineCustom(self, passedTup, **kwargs):
         totalString =""
@@ -196,17 +196,17 @@ class ModuleStruct:
             #print("{}".format(self.modulenumber), end = ",")
             port.printSingleLine(passedTup+(self.modulenumber,))
 
-    def appendSingleLine(self,passedTup):
-        totalString = ""
-        for port in self.ports:
-            totalString += port.appendSingleLine(passedTup+(self.modulenumber,))
-        return totalString
-
-    def appendSingleLineExec(self,passedTup):
-        totalString = ""
-        for port in self.ports:
-            totalString += port.appendSingleLineExec(passedTup+(self.modulenumber,))
-        return totalString
+    # def appendSingleLine(self,passedTup):
+    #     totalString = ""
+    #     for port in self.ports:
+    #         totalString += port.appendSingleLine(passedTup+(self.modulenumber,))
+    #     return totalString
+    #
+    # def appendSingleLineExec(self,passedTup):
+    #     totalString = ""
+    #     for port in self.ports:
+    #         totalString += port.appendSingleLineExec(passedTup+(self.modulenumber,))
+    #     return totalString
 
     def appendSingleLineCustom(self, passedTup, **kwargs):
         totalString = ""
@@ -346,53 +346,53 @@ class PortStruct:
 
 
 
-    def appendSingleLine (self,passedTup):
-        while True:
-            try:
-                return "{},{},{},\"{}\",{},\"{}\",{},\"{}\",{},{},{},{},{},{},{},{},{},{},{},{},{},{},\"{}\",\"{}\",\"{}\",\"{}\"\n".format(
-                    str(passedTup).translate({ord(i): None for i in '()\''}),
-                    self.portnumber, self.portname, self.description, self.poe,
-                    self.cdpname, self.cdpport, self.cdptype, self.status, self.datavlan,
-                    self.datavlanname,self.voicevlan,
-                    self.portmode, self.intID, self.psviolations,
-                    self.inputerrors, self.outputerrors,
-                    self.inputcounters, self.outputcounters,
-                    self.lastupdate, self.deltalastin, self.deltalastout,self.historicalinputerrors,self.historicaloutputerrors,
-                    self.historicalinputcounters,self.historicaloutputcounters)
-            except AttributeError as errmsg:
-                # test = re.findall(r'^\*\s+(\d)', errmsg,re.MULTILINE)
-                regsearch = re.findall(r"object has no attribute '(\S+)'$", errmsg.args[0], re.MULTILINE)
-                if len(regsearch) > 0:
-                    exec("self."+regsearch[0] + "= None")
-                else:
-                    raise Exception('##### ERROR - missing required Data to print: {} #####'.format(errmsg.args[0]))
-
-    def appendSingleLineExec (self,passedTup):
-        # self.checkForVars(["portnumber","portname","description",""])
-        poePrinting = 0
-        dataVlanName = ""
-        voiceVlanName = ""
-
-        if self.poe is not None and self.poe > 0:
-            poePrinting = 1 #to act as a binary poe or no
-        # dataVlanName = [vlanEntry['Name'] for vlanEntry in vlanList if 'ID' in vlanEntry and vlanEntry["ID"  == self.datavlan]]
-
-        while True:
-            try:
-                return "{},{},{},\"{}\",{},{},{},\"{}\",{},{},{},{},{},{},{},{},{},{}\n".format(
-                    str(passedTup).translate({ord(i): None for i in '()\''}),
-                    self.portnumber, self.portname, self.description, poePrinting,
-                    self.status, self.datavlan, self.datavlanname,self.voicevlan,
-                    self.portmode,self.psviolations, self.inputerrors, self.outputerrors,
-                    self.inputcounters, self.outputcounters,
-                    self.lastupdate, self.deltalastin, self.deltalastout)
-            except AttributeError as errmsg:
-                # test = re.findall(r'^\*\s+(\d)', errmsg,re.MULTILINE)
-                regsearch = re.findall(r"object has no attribute '(\S+)'$", errmsg.args[0], re.MULTILINE)
-                if len(regsearch) > 0:
-                    exec("self."+regsearch[0] + "= None")
-                else:
-                    raise Exception('##### ERROR - missing required Data to print: {} #####'.format(errmsg.args[0]))
+    # def appendSingleLine (self,passedTup):
+    #     while True:
+    #         try:
+    #             return "{},{},{},\"{}\",{},\"{}\",{},\"{}\",{},{},{},{},{},{},{},{},{},{},{},{},{},{},\"{}\",\"{}\",\"{}\",\"{}\"\n".format(
+    #                 str(passedTup).translate({ord(i): None for i in '()\''}),
+    #                 self.portnumber, self.portname, self.description, self.poe,
+    #                 self.cdpname, self.cdpport, self.cdptype, self.status, self.datavlan,
+    #                 self.datavlanname,self.voicevlan,
+    #                 self.portmode, self.intID, self.psviolations,
+    #                 self.inputerrors, self.outputerrors,
+    #                 self.inputcounters, self.outputcounters,
+    #                 self.lastupdate, self.deltalastin, self.deltalastout,self.historicalinputerrors,self.historicaloutputerrors,
+    #                 self.historicalinputcounters,self.historicaloutputcounters)
+    #         except AttributeError as errmsg:
+    #             # test = re.findall(r'^\*\s+(\d)', errmsg,re.MULTILINE)
+    #             regsearch = re.findall(r"object has no attribute '(\S+)'$", errmsg.args[0], re.MULTILINE)
+    #             if len(regsearch) > 0:
+    #                 exec("self."+regsearch[0] + "= None")
+    #             else:
+    #                 raise Exception('##### ERROR - missing required Data to print: {} #####'.format(errmsg.args[0]))
+    #
+    # def appendSingleLineExec (self,passedTup):
+    #     # self.checkForVars(["portnumber","portname","description",""])
+    #     poePrinting = 0
+    #     dataVlanName = ""
+    #     voiceVlanName = ""
+    #
+    #     if self.poe is not None and self.poe > 0:
+    #         poePrinting = 1 #to act as a binary poe or no
+    #     # dataVlanName = [vlanEntry['Name'] for vlanEntry in vlanList if 'ID' in vlanEntry and vlanEntry["ID"  == self.datavlan]]
+    #
+    #     while True:
+    #         try:
+    #             return "{},{},{},\"{}\",{},{},{},\"{}\",{},{},{},{},{},{},{},{},{},{}\n".format(
+    #                 str(passedTup).translate({ord(i): None for i in '()\''}),
+    #                 self.portnumber, self.portname, self.description, poePrinting,
+    #                 self.status, self.datavlan, self.datavlanname,self.voicevlan,
+    #                 self.portmode,self.psviolations, self.inputerrors, self.outputerrors,
+    #                 self.inputcounters, self.outputcounters,
+    #                 self.lastupdate, self.deltalastin, self.deltalastout)
+    #         except AttributeError as errmsg:
+    #             # test = re.findall(r'^\*\s+(\d)', errmsg,re.MULTILINE)
+    #             regsearch = re.findall(r"object has no attribute '(\S+)'$", errmsg.args[0], re.MULTILINE)
+    #             if len(regsearch) > 0:
+    #                 exec("self."+regsearch[0] + "= None")
+    #             else:
+    #                 raise Exception('##### ERROR - missing required Data to print: {} #####'.format(errmsg.args[0]))
 
 
 

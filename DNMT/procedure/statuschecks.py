@@ -140,7 +140,8 @@ class StatusChecks:
         # After all processes return, read in each pickle and create a single output file?
         status_filename = "{}-FullStatus.csv".format(datetime.datetime.now().strftime('%Y-%m-%d-%H%M'))
         try:
-            self.Create_Readable_Activity_File(status_filename,iplist)
+            # self.Create_Readable_Activity_File(status_filename,iplist)
+            self.successful_files,self.failure_files = self.subs.create_readable_activity_file(status_filename,**vars(self.cmdargs))
         except Exception as err:
             print("##### ERROR creating Summary File: {} #####".format(err))
 
@@ -150,126 +151,91 @@ class StatusChecks:
         #         shutil.copyfileobj(f_in, f_out)
         #EMail finished file:
         try:
-            self.subs.verbose_printer("##### Emailing now #####")
-
-            zf = open(os.path.join(self.subs.log_path, "activitycheck", "processedfiles", "{}.zip".format(status_filename)), 'rb')
 
 
-            temp_from = "admin@localhost"
+            ##################
             if 'email' in self.cmdargs and self.cmdargs.email is not None:
-               temp_to = self.cmdargs.email
-            else:
-                temp_to = "admin@localhost" #placeholder
+                msg_subject = "updated activitycheck - {}".format(datetime.date.today().strftime('%Y-%m-%d'))
 
-            # Create the message
-            themsg = MIMEMultipart()
-            themsg["From"] = temp_from
-            themsg["Subject"] = "updated activitycheck - {}".format(datetime.date.today().strftime('%Y-%m-%d'))
-            themsg["To"] = temp_to
-            # themsg["Body"]="Processing completed in {} seconds\n{} switches SUCCESSFULLY processed\n{} switches FAILED during processing\n ".format(
-            #      int((time.time() - total_start) * 100) / 100, len(self.successful_switches),len(self.failure_switches) )
+                body = "Processing completed in {} seconds\n".format(int((time.time() - total_start) * 100) / 100)
+                body += "{} switch state files SUCCESSFULLY updated\n".format(len(self.successful_switches))
+                body += "{} switch state files FAILED to update\n".format(len(self.failure_switches))
+                body += "{} switch states SUCCESSFULLY added to the summary file\n".format(len(self.successful_files))
+                body += "{} switch states FAILED to add to the summary file\n".format(len(self.failure_files))
+                body += "\n--------------------------------------------------------------------------------------\n\n"
 
-
-            themsg.preamble = 'I am not using a MIME-aware mail reader.\n'
-            msg = MIMEBase('application', 'zip')
-            msg.set_payload(zf.read())
-            encoders.encode_base64(msg)
-            msg.add_header('Content-Disposition', 'attachment',
-                           filename=status_filename + '.zip')
-
-
-            themsg.attach(msg)
-
-            #create the body of the email
-            body = "Processing completed in {} seconds\n".format(int((time.time() - total_start) * 100) / 100)
-            body += "{} switch state files SUCCESSFULLY updated\n".format(len(self.successful_switches))
-            body += "{} switch state files FAILED to update\n" .format(len(self.failure_switches))
-            body += "{} switch states SUCCESSFULLY added to the summary file\n".format(len(self.successful_files))
-            body += "{} switch states FAILED to add to the summary file\n".format( len(self.failure_files))
-            body += "\n--------------------------------------------------------------------------------------\n\n"
-
-            if len(self.successful_switches) > 0:
-                body += "--- List of switch statuses SUCCESSFULLY updated ---\n"
-                for entry in self.successful_switches:
-                    body += "{}\n".format(entry)
-            if len(self.failure_switches) > 0:
-                body += "--- List of switch statuses that FAILED to update ---\n"
-                for entry in self.failure_switches:
-                    body += "{}\n".format(entry)
-            if len(self.successful_files) > 0:
-                body += "--- List of files SUCCESSFULLY added to summary file ---\n"
-                for entry in self.successful_files:
-                    body += "{}\n".format(entry)
-            if len(self.failure_files) > 0:
-                body += "--- List of files FAILED to be added to summary file ---\n"
-                for entry in self.failure_files:
-                    body += "{}\n".format(entry)
-
-            themsg.attach(MIMEText(body, 'plain'))
-
-            themsg = themsg.as_string()
-
-            # send the message
-            smtp = smtplib.SMTP()
-            smtp.connect()
-            smtp.sendmail(temp_from, temp_to, themsg)
-            smtp.close()
-
-        except smtplib.SMTPException:
-            print("Failed to send Email")
+                if len(self.successful_switches) > 0:
+                    body += "--- List of switch statuses SUCCESSFULLY updated ---\n"
+                    for entry in self.successful_switches:
+                        body += "{}\n".format(entry)
+                if len(self.failure_switches) > 0:
+                    body += "--- List of switch statuses that FAILED to update ---\n"
+                    for entry in self.failure_switches:
+                        body += "{}\n".format(entry)
+                if len(self.successful_files) > 0:
+                    body += "--- List of files SUCCESSFULLY added to summary file ---\n"
+                    for entry in self.successful_files:
+                        body += "{}\n".format(entry)
+                if len(self.failure_files) > 0:
+                    body += "--- List of files FAILED to be added to summary file ---\n"
+                    for entry in self.failure_files:
+                        body += "{}\n".format(entry)
+                # self.subs.email_zip_file(msg_subject,self.cmdargs.email,body,status_filename)
+                self.subs.email_zip_file(msg_subject, self.cmdargs.email, body, status_filename)
+            #######################
         except Exception as err:
             print(err)
 
-    def Create_Readable_Activity_File(self,status_filename,iplist):
-
-        TotalStatus = StackStruct.getHeader(self.cmdargs)
-        # if 'xecutive' in self.cmdargs and self.cmdargs.xecutive is True:
-        #     TotalStatus = "IP,Vendor,Hostname,SwitchNum,Model,Serial,SoftwareVer,ModuleNum,PortNum,PortName,PortDesc,PoE draw (1=Yes),Status (1=Up),DataVlan,DataVlan name,VoiceVlan,Mode (1=Trunk),PsViolations,InputErrors,OutputErrors,InputCounters,OutputCounters,LastTimeUpdated,DeltaInputCounters,DeltaOutputCounters\n"
-        # else:
-        #     TotalStatus = "IP,Vendor,Hostname,SwitchNum,Model,Serial,SoftwareVer,ModuleNum,PortNum,PortName,PortDesc,PoE,Neighbour name,Neighbour port,Neighbour type,Status (1=Up),DataVlan,DataVlan name,VoiceVlan,Mode (1=Trunk),IntID,PsViolations,InputErrors,OutputErrors,InputCounters,OutputCounters,LastTimeUpdated,DeltaInputCounters,DeltaOutputCounters,HistoricalInputErrors,HistoricalOutputErrors,HistoricalInputCounters,HistoricalOutputCounters\n"
-        #By default grabs all existing statcheck files, this could be changed to only act on the iplist provided
-
-
-        if 'limit' in self.cmdargs and self.cmdargs.limit is True:
-            self.subs.verbose_printer("##### Creating Limited Summary List #####")
-            fileList = [f+"-statcheck.bz2" for f in iplist]
-        else:
-            self.subs.verbose_printer("##### Creating Full Summary List #####")
-            fileList = [f for f in os.listdir(os.path.join(self.subs.log_path,"activitycheck", "rawfiles","active")) if f.endswith('-statcheck.bz2')]
-        for ip in fileList:
-            # process
-            try:
-                # LOADING Compressed files
-                self.subs.custom_printer("debug", "## DBG - Opening pickled file from active for {} ##".format(ip))
-                with bz2.open(os.path.join(self.subs.log_path, "activitycheck", "rawfiles", "active", ip), "rb") as f:
-                    self.subs.custom_printer("debug", "## DBG - loading pickled file from active for {} ##".format(ip))
-                    SwitchStatus = pickle.load(f, encoding='utf-8')
-                    TotalStatus += SwitchStatus.appendSingleLineCustom(
-                        executive_mode=('xecutive' in self.cmdargs and self.cmdargs.xecutive is True))
-                    # if 'xecutive' in self.cmdargs and self.cmdargs.xecutive is True:
-                    #     TotalStatus += SwitchStatus.appendSingleLineExec()
-                    # else:
-                    #     TotalStatus += SwitchStatus.appendSingleLine()
-                    self.subs.custom_printer("debug", "## DBG - Appending {} to successful files ##".format(ip))
-                    self.successful_files.append("{}-statcheck.bz2".format(ip))
-            except Exception as err:  # currently a catch all to stop linux from having a conniption when reloading
-                print("FILE ERROR {}-statcheck:{}".format(ip, err.args[0]))
-                self.subs.custom_printer("debug", "## DBG - Error in create readable activity file ##")
-                self.failure_files.append("{}-statcheck.bz2".format(ip))
-
-        ## Works, but emailing is a pain
-        # with bz2.BZ2File(os.path.join(self.log_path, "activitycheck", "processedfiles", "{}.bz2".format(status_filename)),
-        #                  'wb') as sfile:
-        #     sfile.write(TotalStatus.encode("utf-8"))
-
-        zf = zipfile.ZipFile(os.path.join(self.subs.log_path, "activitycheck", "processedfiles", "{}.zip".format(status_filename)),
-                             mode='w',
-                             compression=zipfile.ZIP_DEFLATED,
-                             )
-        try:
-            zf.writestr(status_filename, TotalStatus)
-        finally:
-            zf.close()
+    # def Create_Readable_Activity_File(self,status_filename,iplist):
+    #
+    #     TotalStatus = StackStruct.getHeader(self.cmdargs)
+    #     # if 'xecutive' in self.cmdargs and self.cmdargs.xecutive is True:
+    #     #     TotalStatus = "IP,Vendor,Hostname,SwitchNum,Model,Serial,SoftwareVer,ModuleNum,PortNum,PortName,PortDesc,PoE draw (1=Yes),Status (1=Up),DataVlan,DataVlan name,VoiceVlan,Mode (1=Trunk),PsViolations,InputErrors,OutputErrors,InputCounters,OutputCounters,LastTimeUpdated,DeltaInputCounters,DeltaOutputCounters\n"
+    #     # else:
+    #     #     TotalStatus = "IP,Vendor,Hostname,SwitchNum,Model,Serial,SoftwareVer,ModuleNum,PortNum,PortName,PortDesc,PoE,Neighbour name,Neighbour port,Neighbour type,Status (1=Up),DataVlan,DataVlan name,VoiceVlan,Mode (1=Trunk),IntID,PsViolations,InputErrors,OutputErrors,InputCounters,OutputCounters,LastTimeUpdated,DeltaInputCounters,DeltaOutputCounters,HistoricalInputErrors,HistoricalOutputErrors,HistoricalInputCounters,HistoricalOutputCounters\n"
+    #     #By default grabs all existing statcheck files, this could be changed to only act on the iplist provided
+    #
+    #
+    #     if 'limit' in self.cmdargs and self.cmdargs.limit is True:
+    #         self.subs.verbose_printer("##### Creating Limited Summary List #####")
+    #         fileList = [f+"-statcheck.bz2" for f in iplist]
+    #     else:
+    #         self.subs.verbose_printer("##### Creating Full Summary List #####")
+    #         fileList = [f for f in os.listdir(os.path.join(self.subs.log_path,"activitycheck", "rawfiles","active")) if f.endswith('-statcheck.bz2')]
+    #     for ip in fileList:
+    #         # process
+    #         try:
+    #             # LOADING Compressed files
+    #             self.subs.custom_printer("debug", "## DBG - Opening pickled file from active for {} ##".format(ip))
+    #             with bz2.open(os.path.join(self.subs.log_path, "activitycheck", "rawfiles", "active", ip), "rb") as f:
+    #                 self.subs.custom_printer("debug", "## DBG - loading pickled file from active for {} ##".format(ip))
+    #                 SwitchStatus = pickle.load(f, encoding='utf-8')
+    #                 TotalStatus += SwitchStatus.appendSingleLineCustom(
+    #                     executive_mode=('xecutive' in self.cmdargs and self.cmdargs.xecutive is True))
+    #                 # if 'xecutive' in self.cmdargs and self.cmdargs.xecutive is True:
+    #                 #     TotalStatus += SwitchStatus.appendSingleLineExec()
+    #                 # else:
+    #                 #     TotalStatus += SwitchStatus.appendSingleLine()
+    #                 self.subs.custom_printer("debug", "## DBG - Appending {} to successful files ##".format(ip))
+    #                 self.successful_files.append("{}-statcheck.bz2".format(ip))
+    #         except Exception as err:  # currently a catch all to stop linux from having a conniption when reloading
+    #             print("FILE ERROR {}-statcheck:{}".format(ip, err.args[0]))
+    #             self.subs.custom_printer("debug", "## DBG - Error in create readable activity file ##")
+    #             self.failure_files.append("{}-statcheck.bz2".format(ip))
+    #
+    #     ## Works, but emailing is a pain
+    #     # with bz2.BZ2File(os.path.join(self.log_path, "activitycheck", "processedfiles", "{}.bz2".format(status_filename)),
+    #     #                  'wb') as sfile:
+    #     #     sfile.write(TotalStatus.encode("utf-8"))
+    #
+    #     zf = zipfile.ZipFile(os.path.join(self.subs.log_path, "activitycheck", "processedfiles", "{}.zip".format(status_filename)),
+    #                          mode='w',
+    #                          compression=zipfile.ZIP_DEFLATED,
+    #                          )
+    #     try:
+    #         zf.writestr(status_filename, TotalStatus)
+    #     finally:
+    #         zf.close()
 
 
 #Activity_Tracking_Comparison(porttwo.inputerrors,portone.historicalinputerrors,portone.maxhistoricalentries)

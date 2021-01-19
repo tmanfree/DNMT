@@ -1698,7 +1698,7 @@ class SubRoutines:
     #      -String containing the filename of the zipped file to send (currently sending from activitycheck/processedfiles/
     # Summary:
     #  email a zipped summary file
-    def email_zip_file(self,msg_to,msg_body,zipfilename):
+    def email_zip_file(self,msg_subject,msg_to,msg_body,zipfilename):
         try:
             self.verbose_printer("##### Emailing now #####")
 
@@ -1707,7 +1707,7 @@ class SubRoutines:
             # Create the message
             themsg = MIMEMultipart()
             themsg["From"] = "admin@localhost"
-            themsg["Subject"] = "updated activitycheck - {}".format(datetime.date.today().strftime('%Y-%m-%d'))
+            themsg["Subject"] = msg_subject
             themsg["To"] = msg_to
             # themsg["Body"]="Processing completed in {} seconds\n{} switches SUCCESSFULLY processed\n{} switches FAILED during processing\n ".format(
             #      int((time.time() - total_start) * 100) / 100, len(self.successful_switches),len(self.failure_switches) )
@@ -1757,13 +1757,17 @@ class SubRoutines:
         try:
             successful_files = []
             failure_files = []
-            if 'file' in kwargs and kwargs['file'] is not None:
-                file = open(os.path.join(kwargs['file']), "r")
+            if 'file' in kwargs and kwargs['file'] is not None or kwargs['maincommand'] == "StatusChecks": #have default of all IPS with statusChecks
+                if 'file' in kwargs and kwargs['file'] is not None:
+                    file = open(os.path.join(kwargs['file']), "r")
+                else:
+                    file = open(os.path.abspath(os.path.join(os.sep, 'usr', 'lib', 'capt', "activitycheckIPlist")), "r")
                 self.custom_printer("verbose","##### ip file opened:{} #####".format(file))
                 iplist = []
                 for ip in file:
                     iplist.append(ip.rstrip())
                 file.close()
+
         except FileNotFoundError:
             print("##### ERROR iplist files not found #####")
         except Exception as err:
@@ -1773,7 +1777,8 @@ class SubRoutines:
 
         # By default grabs all existing statcheck files, this could be changed to only act on the iplist provided
 
-        if 'file' in self.cmdargs and self.cmdargs.file is not None:
+        if 'file' in self.cmdargs and self.cmdargs.file is not None and kwargs['maincommand'] =='DBcmds' or kwargs[
+            'maincommand'] == "StatusChecks" and 'limit' in self.cmdargs and self.cmdargs.limit:
             self.custom_printer("verbose","##### Creating Limited Summary List #####")
             fileList = [f + "-statcheck.bz2" for f in iplist]
         else:
@@ -1789,9 +1794,13 @@ class SubRoutines:
                     self.custom_printer("debug", "## DBG - loading pickled file from active for {} ##".format(ip))
                     SwitchStatus = pickle.load(f, encoding='utf-8')
 
-                    TotalStatus += SwitchStatus.appendSingleLineCustom(
-                        executive_mode=('xecutive' in self.cmdargs and self.cmdargs.xecutive is True),
-                        remove_empty_filter="psviolations")
+                    SL_keywords = {'executive_mode': ('xecutive' in self.cmdargs and self.cmdargs.xecutive is True)}
+                    if 'fmnet' in kwargs and kwargs['fmnet'] is not None:
+                        SL_keywords['remove_empty_filter'] = kwargs['fmnet']
+
+
+
+                    TotalStatus += SwitchStatus.appendSingleLineCustom(**SL_keywords)
 
                     self.custom_printer("debug", "## DBG - Appending {} to successful files ##".format(ip))
                     successful_files.append("{}-statcheck.bz2".format(ip))
