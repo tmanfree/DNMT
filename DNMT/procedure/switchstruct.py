@@ -285,13 +285,16 @@ class PortStruct:
     # def checkForVars(self,varList):
     #    list_of_existing_vars = [a for a in dir(self) if not a.startswith('__')]
 
+
     def appendSingleLineCustom(self,passedTup,**kwargs):
-        if "remove_empty_filter" in kwargs: #currently works on single filters
-            if hasattr(self,kwargs['remove_empty_filter']): # check for existence of field
-                if eval("self.{} == 0 or self.{} == None".format(kwargs['remove_empty_filter'],kwargs['remove_empty_filter'])): #check if field is empty
+        if "remove_empty_filter" in kwargs: #currently works on comma seperated filters, recursively call a function that will return  on all after a split if multiples?
+            filterList = kwargs['remove_empty_filter'].split(',')
+            for removalFilter in filterList:
+                if hasattr(self,removalFilter): # check for existence of field
+                    if eval("self.{} == 0 or self.{} == None".format(removalFilter,removalFilter)): #check if field is empty
+                        return ""
+                else: #return blank if the field to filter out does not exist
                     return ""
-            else: #return blank if the field to filter out does not exist
-                return ""
         if("executive_mode" in kwargs and kwargs['executive_mode']):
             poePrinting = 0
             dataVlanName = ""

@@ -168,6 +168,7 @@ def dnmt():
     activity_tracking_parser = status_checks_parser.add_parser("Activity_Tracking", help="check if port status has changed")
     activity_tracking_parser.add_argument('-f', '--file', help="specify iplist file to use if not using default")
     activity_tracking_parser.add_argument('-e', '--email', help="specify which email to send file to")
+    activity_tracking_parser.add_argument('-i', '--ignorefield', help="specify which field(s) to ignore if empty")
     activity_tracking_parser.add_argument('-n', '--numprocs', help="specify how many concurrent processes")
     activity_tracking_parser.add_argument('-p', '--parallel', help="run grab processes in parallel", default=False,
                                           action="store_true")

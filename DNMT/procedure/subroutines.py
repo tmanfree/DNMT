@@ -1797,6 +1797,8 @@ class SubRoutines:
                     SL_keywords = {'executive_mode': ('xecutive' in self.cmdargs and self.cmdargs.xecutive is True)}
                     if 'fmnet' in kwargs and kwargs['fmnet'] is not None:
                         SL_keywords['remove_empty_filter'] = kwargs['fmnet']
+                    elif 'ignorefield' in kwargs and kwargs['ignorefield']:
+                        SL_keywords['remove_empty_filter'] = kwargs['ignorefield']
 
 
 
