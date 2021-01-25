@@ -216,7 +216,7 @@ def dnmt():
     #dbcmds reports fmnet
     db_cmds_reports_fmnet_parser = db_cmds_reports_parser.add_parser("fmnet", help="reports for fmnet").add_subparsers(dest="fmnet")
 
-    # dbcmds reports fmnet psviolations
+    # dbcmds reports fmnet psviolations  TODO Change to an argument for email title and ignorefield flag to be more generic
     db_cmds_reports_fmnet_psviolations_parser = db_cmds_reports_fmnet_parser.add_parser("psviolations", help="report on port security violations")
     db_cmds_reports_fmnet_psviolations_parser.add_argument('-v', '--verbose', help="verbose output", default=False, action="store_true")
     db_cmds_reports_fmnet_psviolations_parser.add_argument('-f', '--file', help="limit processing to ips contained in file")

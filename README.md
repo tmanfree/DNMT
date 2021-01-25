@@ -13,7 +13,7 @@ Current functionality:
 * **MAC Search** - *dnmt.py MACSearch  -m MAC START_IP*. Based on the previous "Lefty" program,
  this is currently operational
 
-* **Hostname Updater** - *dnmt.py HostnameUpdate FILENAME*. This will compare switch hostnames
+* **Hostname Update** - *dnmt.py HostnameUpdate FILENAME*. This will compare switch hostnames
 with dns hostnames, updating the switch hostname if they are different.
 
 * **WriteTest** - *dnmt.py WriteTest IP*. This performs a "write mem" through snmp. **May not trigger archival in 

@@ -1732,7 +1732,7 @@ class SubRoutines:
             # send the message
             smtp = smtplib.SMTP()
             smtp.connect()
-            smtp.sendmail("admin@localhost", msg_to, themsg)
+            smtp.sendmail("admin@localhost", msg_to.split(","), themsg)
             smtp.close()
 
         except smtplib.SMTPException:
@@ -1799,8 +1799,6 @@ class SubRoutines:
                         SL_keywords['remove_empty_filter'] = kwargs['fmnet']
                     elif 'ignorefield' in kwargs and kwargs['ignorefield']:
                         SL_keywords['remove_empty_filter'] = kwargs['ignorefield']
-
-
 
                     TotalStatus += SwitchStatus.appendSingleLineCustom(**SL_keywords)
 
