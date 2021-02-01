@@ -1685,8 +1685,7 @@ class SubRoutines:
         else:
             return None
 
-    # def switchstruct_get_header(self, flags):
-    #     return StackStruct.getHeader(flags)
+
 
     # Name: email_zip_file
     # Input:
@@ -1739,6 +1738,54 @@ class SubRoutines:
             print("Failed to send Email")
         except Exception as err:
             print(err)
+
+        # Name: email_with_attachment
+        # Input:
+        #   msg_to
+        #      -String containing address to send message to
+        #   msg_body
+        #      -String containing the message body
+        #   zipfilename
+        #      -String containing the filename of the zipped file to send (currently sending from activitycheck/processedfiles/
+        # Summary:
+        #  email a zipped summary file
+        def email_with_attachment(self, msg_subject, msg_to, msg_body, filename):
+            try:
+                self.verbose_printer("##### Emailing now #####")
+                file = open(filename,'rb')
+
+                # Create the message
+                themsg = MIMEMultipart()
+                themsg["From"] = "admin@localhost"
+                themsg["Subject"] = msg_subject
+                themsg["To"] = msg_to
+                # themsg["Body"]="Processing completed in {} seconds\n{} switches SUCCESSFULLY processed\n{} switches FAILED during processing\n ".format(
+                #      int((time.time() - total_start) * 100) / 100, len(self.successful_switches),len(self.failure_switches) )
+
+                themsg.preamble = 'I am not using a MIME-aware mail reader.\n'
+                msg = MIMEBase('application', 'zip')
+                msg.set_payload(zf.read())
+                encoders.encode_base64(msg)
+                msg.add_header('Content-Disposition', 'attachment', filename=file)
+
+                themsg.attach(msg)
+
+                # create the body of the email
+
+                themsg.attach(MIMEText(msg_body, 'plain'))
+
+                themsg = themsg.as_string()
+
+                # send the message
+                smtp = smtplib.SMTP()
+                smtp.connect()
+                smtp.sendmail("admin@localhost", msg_to.split(","), themsg)
+                smtp.close()
+
+            except smtplib.SMTPException:
+                print("Failed to send Email")
+            except Exception as err:
+                print(err)
 
     ############################
     ###SwitchStruct COMMANDS####

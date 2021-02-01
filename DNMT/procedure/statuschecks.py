@@ -151,8 +151,6 @@ class StatusChecks:
         #         shutil.copyfileobj(f_in, f_out)
         #EMail finished file:
         try:
-
-
             ##################
             if 'email' in self.cmdargs and self.cmdargs.email is not None:
                 msg_subject = "updated activitycheck - {}".format(datetime.date.today().strftime('%Y-%m-%d'))

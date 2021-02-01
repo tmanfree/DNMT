@@ -17,6 +17,7 @@ from DNMT.procedure.check import Check
 from DNMT.procedure import config
 from DNMT.procedure.hostnamer import HostNamer
 from DNMT.procedure.dbcmds import DBcmds
+from DNMT.procedure.mapper import Mapper
 
 from DNMT.procedure.statuschecks import StatusChecks
 # from DNMT.procedure.SnmpFuncs import SnmpFuncs
@@ -226,9 +227,18 @@ def dnmt():
     db_cmds_reports_fmnet_psviolations_parser.add_argument('-x', '--xecutive', help="print out a modified summary file", default=False,
                                           action="store_true")
 
-
-
-
+    #Mapper Parser
+    mapper_parser = subparsers.add_parser("mapper",
+                                                 help="functions to map out connections").add_subparsers(dest="mapper")
+    mapout_mapper_parser = mapper_parser.add_parser("mapout", help="map connections out")
+    mapout_mapper_parser.add_argument('ipaddr', help="address to start from")
+    mapout_mapper_parser.add_argument('-v', '--verbose', help="run in verbose mode", default=False,
+                                    action="store_true")
+    mapout_mapper_parser.add_argument('-t', '--test', help="don't delete anything, just test", default=False,
+                                    action="store_true")
+    mapout_mapper_parser.add_argument('-d', '--debug', help="run in debug mode (extremely verbose)", default=False,
+                                          action="store_true")
+    mapout_mapper_parser.add_argument('-e', '--email', help="specify email to send graph to")
 
     #Tests Begin
     test_parser = subparsers.add_parser("test", help="various tests").add_subparsers(dest="test")
@@ -333,6 +343,7 @@ def dnmt():
     hostnamer = HostNamer(cmdargs,config)
     upgradeCheck = Check(cmdargs, config)
     statusChecks = StatusChecks(cmdargs,config)
+    mapper = Mapper(cmdargs,config)
     tools = Tools(cmdargs, config)
     dbcmds = DBcmds(cmdargs,config)
     # functions = Functions(cmdargs,config)
@@ -403,7 +414,9 @@ def dnmt():
             if cmdargs.reports == 'fmnet':
                 if cmdargs.fmnet == 'psviolations':
                     dbcmds.createPSViolationReport();
-
+    elif cmdargs.maincommand == 'mapper':
+        if cmdargs.mapper == 'mapout':
+            mapper.iterate(cmdargs.ipaddr)
     elif cmdargs.maincommand == 'test':
         if cmdargs.test == 'Command_Blaster':
             test.Command_Blaster_Begin()
