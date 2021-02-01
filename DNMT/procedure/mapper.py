@@ -51,60 +51,81 @@ class Mapper:
         self.graphObject = Graph(format='png')
 
 
-    def iterate(self,ipaddr):
+    def iterate(self):
         # os.environ["PATH"] += os.pathsep + "C:\\Program Files\\Graphviz\\bin\\"  # required for testing on PC
+        iplist = []
 
-        neigh_ip = socket.gethostbyname(ipaddr)
-        if neigh_ip not in self.pendingNeighbours and neigh_ip not in self.visitedNeighbours:
-            self.pendingNeighbours.append(ipaddr)
-
-        while len(self.pendingNeighbours) > 0:
-            self.checkNeighbours(self.pendingNeighbours.pop())
-
-        graphFileName = "Graph-{}".format(datetime.datetime.now().strftime('%Y-%m-%d-%H%M'))
-        self.graphObject.render(graphFileName,view=False,cleanup=True)
+        total_start = time.time()
 
         try:
-            ##################
-            if 'email' in self.cmdargs and self.cmdargs.email is not None:
-                msg_subject = "updated activitycheck - {}".format(datetime.date.today().strftime('%Y-%m-%d'))
+            file = open(os.path.join(self.cmdargs.filename), "r")
+            self.subs.verbose_printer("##### file opened:{} #####".format(file))
 
-                body = "Testing email"
-                # body = "Processing completed in {} seconds\n".format(int((time.time() - total_start) * 100) / 100)
-                # body += "{} switch state files SUCCESSFULLY updated\n".format(len(self.successful_switches))
-                # body += "{} switch state files FAILED to update\n".format(len(self.failure_switches))
-                # body += "{} switch states SUCCESSFULLY added to the summary file\n".format(len(self.successful_files))
-                # body += "{} switch states FAILED to add to the summary file\n".format(len(self.failure_files))
-                # body += "\n--------------------------------------------------------------------------------------\n\n"
+            for ip in file:
+                iplist.append(ip.rstrip())
+            file.close()
 
-                # if len(self.successful_switches) > 0:
-                #     body += "--- List of switch statuses SUCCESSFULLY updated ---\n"
-                #     for entry in self.successful_switches:
-                #         body += "{}\n".format(entry)
-                # if len(self.failure_switches) > 0:
-                #     body += "--- List of switch statuses that FAILED to update ---\n"
-                #     for entry in self.failure_switches:
-                #         body += "{}\n".format(entry)
-                # if len(self.successful_files) > 0:
-                #     body += "--- List of files SUCCESSFULLY added to summary file ---\n"
-                #     for entry in self.successful_files:
-                #         body += "{}\n".format(entry)
-                # if len(self.failure_files) > 0:
-                #     body += "--- List of files FAILED to be added to summary file ---\n"
-                #     for entry in self.failure_files:
-                #         body += "{}\n".format(entry)
-                # self.subs.email_zip_file(msg_subject,self.cmdargs.email,body,status_filename)
-                self.subs.email_with_attachment(msg_subject, self.cmdargs.email, body, "{}.png".format(graphFileName))
-            else:
-                print(self.graphObject.source)
-                #######################
+            for ipaddr in iplist:
+
+                neigh_ip = socket.gethostbyname(ipaddr)
+                if neigh_ip not in self.pendingNeighbours and neigh_ip not in self.visitedNeighbours:
+                    self.pendingNeighbours.append(ipaddr)
+
+                while len(self.pendingNeighbours) > 0:
+                    self.checkNeighbours(self.pendingNeighbours.pop())
+
+            graphFileName = "Graph-{}".format(datetime.datetime.now().strftime('%Y-%m-%d-%H%M'))
+            self.graphObject.render(graphFileName, view=False, cleanup=True)
+
+            try:
+                ##################
+                if 'email' in self.cmdargs and self.cmdargs.email is not None:
+                    msg_subject = "updated activitycheck - {}".format(datetime.date.today().strftime('%Y-%m-%d'))
+
+                    body = "Testing email"
+                    # body = "Processing completed in {} seconds\n".format(int((time.time() - total_start) * 100) / 100)
+                    # body += "{} switch state files SUCCESSFULLY updated\n".format(len(self.successful_switches))
+                    # body += "{} switch state files FAILED to update\n".format(len(self.failure_switches))
+                    # body += "{} switch states SUCCESSFULLY added to the summary file\n".format(len(self.successful_files))
+                    # body += "{} switch states FAILED to add to the summary file\n".format(len(self.failure_files))
+                    # body += "\n--------------------------------------------------------------------------------------\n\n"
+
+                    # if len(self.successful_switches) > 0:
+                    #     body += "--- List of switch statuses SUCCESSFULLY updated ---\n"
+                    #     for entry in self.successful_switches:
+                    #         body += "{}\n".format(entry)
+                    # if len(self.failure_switches) > 0:
+                    #     body += "--- List of switch statuses that FAILED to update ---\n"
+                    #     for entry in self.failure_switches:
+                    #         body += "{}\n".format(entry)
+                    # if len(self.successful_files) > 0:
+                    #     body += "--- List of files SUCCESSFULLY added to summary file ---\n"
+                    #     for entry in self.successful_files:
+                    #         body += "{}\n".format(entry)
+                    # if len(self.failure_files) > 0:
+                    #     body += "--- List of files FAILED to be added to summary file ---\n"
+                    #     for entry in self.failure_files:
+                    #         body += "{}\n".format(entry)
+                    # self.subs.email_zip_file(msg_subject,self.cmdargs.email,body,status_filename)
+                    self.subs.email_with_attachment(msg_subject, self.cmdargs.email, body,
+                                                    "{}.png".format(graphFileName))
+                else:
+                    print(self.graphObject.source)
+                    #######################
+            except Exception as err:
+                print(err)
+            if 'remove' in self.cmdargs and self.cmdargs.remove:
+                if os.path.exists("{}.png".format(graphFileName)):
+                    os.remove("{}.png".format(graphFileName))
+                else:
+                    print("The file does not exist")
+
+        except FileNotFoundError:
+            print("##### ERROR iplist files not found #####")
         except Exception as err:
-            print(err)
-        if 'remove' in self.cmdargs and self.cmdargs.remove:
-            if os.path.exists("{}.png".format(graphFileName)):
-                os.remove("{}.png".format(graphFileName))
-            else:
-                print("The file does not exist")
+            print ("##### ERROR with processing:{} #####".format(err))
+
+
 
 
 
@@ -135,7 +156,7 @@ class Mapper:
                         if (neigh_ip not in self.visitedNeighbours and neigh_ip not in self.pendingNeighbours):
                             self.pendingNeighbours.append(neigh_ip)
                     except socket.gaierror as err:
-                        print("### ERROR ### {} for {}".format(err,port['Value']))
+                        print("### ERROR on {} ### {} for {}".format(ipaddr,err,port['Value']))
                     except Exception as err:
                         print(err)
 

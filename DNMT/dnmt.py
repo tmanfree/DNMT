@@ -231,7 +231,7 @@ def dnmt():
     mapper_parser = subparsers.add_parser("mapper",
                                                  help="functions to map out connections").add_subparsers(dest="mapper")
     mapout_mapper_parser = mapper_parser.add_parser("mapout", help="map connections out")
-    mapout_mapper_parser.add_argument('ipaddr', help="address to start from")
+    mapout_mapper_parser.add_argument('filename', help="file containing ip address to map")
     mapout_mapper_parser.add_argument('-v', '--verbose', help="run in verbose mode", default=False,
                                     action="store_true")
     mapout_mapper_parser.add_argument('-t', '--test', help="don't delete anything, just test", default=False,
@@ -419,7 +419,7 @@ def dnmt():
                     dbcmds.createPSViolationReport();
     elif cmdargs.maincommand == 'mapper':
         if cmdargs.mapper == 'mapout':
-            mapper.iterate(cmdargs.ipaddr)
+            mapper.iterate()
     elif cmdargs.maincommand == 'test':
         if cmdargs.test == 'Command_Blaster':
             test.Command_Blaster_Begin()
