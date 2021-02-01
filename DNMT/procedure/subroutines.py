@@ -12,6 +12,7 @@ from pysnmp.proto import rfc1902
 #for Emails
 import smtplib
 from email.mime.base import MIMEBase
+from email.mime.image import MIMEImage
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email import encoders
@@ -1752,7 +1753,7 @@ class SubRoutines:
     def email_with_attachment(self, msg_subject, msg_to, msg_body, filename):
         try:
             self.verbose_printer("##### Emailing now #####")
-            file = open(filename,'rb')
+            image_data = open(filename,'rb').read()
 
             # Create the message
             themsg = MIMEMultipart()
@@ -1763,12 +1764,13 @@ class SubRoutines:
             #      int((time.time() - total_start) * 100) / 100, len(self.successful_switches),len(self.failure_switches) )
 
             themsg.preamble = 'I am not using a MIME-aware mail reader.\n'
-            msg = MIMEBase('application', 'zip')
-            msg.set_payload(zf.read())
-            encoders.encode_base64(msg)
-            msg.add_header('Content-Disposition', 'attachment', filename=file)
+            image = MIMEImage(image_data,name=os.path.basename(filename))
+            # msg = MIMEBase('application', 'zip')
+            # msg.set_payload(file.read())
+            # encoders.encode_base64(msg)
+            # msg.add_header('Content-Disposition', 'attachment', filename=file)
 
-            themsg.attach(msg)
+            themsg.attach(image)
 
             # create the body of the email
 
