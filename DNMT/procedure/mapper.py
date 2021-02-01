@@ -35,18 +35,6 @@ from DNMT.procedure.switchstruct import StackStruct
 from graphviz import Graph
 
 
-class CDPNode:
-    def __init__(self,ID,interfaces):
-        self.parents
-        self.id = ID
-        self.interfaces = interfaces
-        self.visited = False
-
-class CDPTree:
-    def __init__(self):
-        self.root = CDPNode("ROOT",[])
-
-
 class Mapper:
     def __init__(self, cmdargs, config):
         # initialize values
@@ -64,7 +52,7 @@ class Mapper:
 
 
     def iterate(self,ipaddr):
-        os.environ["PATH"] += os.pathsep + "C:\\Program Files\\Graphviz\\bin\\"  # required for testing on PC
+        # os.environ["PATH"] += os.pathsep + "C:\\Program Files\\Graphviz\\bin\\"  # required for testing on PC
 
         neigh_ip = socket.gethostbyname(ipaddr)
         if neigh_ip not in self.pendingNeighbours and neigh_ip not in self.visitedNeighbours:
@@ -106,15 +94,17 @@ class Mapper:
                 #     for entry in self.failure_files:
                 #         body += "{}\n".format(entry)
                 # self.subs.email_zip_file(msg_subject,self.cmdargs.email,body,status_filename)
-                self.subs.email_zip_file(msg_subject, self.cmdargs.email, body, "{}.png".format(graphFileName))
-            #######################
+                self.subs.email_with_attachment(msg_subject, self.cmdargs.email, body, "{}.png".format(graphFileName))
+            else:
+                print(self.graphObject.source)
+                #######################
         except Exception as err:
             print(err)
-
-        if os.path.exists("{}.png".format(graphFileName)):
-            os.remove("{}.png".format(graphFileName))
-        else:
-            print("The file does not exist")
+        if 'remove' in self.cmdargs and self.cmdargs.remove:
+            if os.path.exists("{}.png".format(graphFileName)):
+                os.remove("{}.png".format(graphFileName))
+            else:
+                print("The file does not exist")
 
 
 

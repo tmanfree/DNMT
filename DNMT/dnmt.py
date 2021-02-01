@@ -239,6 +239,9 @@ def dnmt():
     mapout_mapper_parser.add_argument('-d', '--debug', help="run in debug mode (extremely verbose)", default=False,
                                           action="store_true")
     mapout_mapper_parser.add_argument('-e', '--email', help="specify email to send graph to")
+    mapout_mapper_parser.add_argument('-r', '--remove', help="remove file afterwards", default=False,
+                                      action="store_true")
+
 
     #Tests Begin
     test_parser = subparsers.add_parser("test", help="various tests").add_subparsers(dest="test")
