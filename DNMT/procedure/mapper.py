@@ -44,6 +44,8 @@ class Mapper:
         self.subs = SubRoutines(cmdargs, config)
         # self.log_path = os.path.abspath(os.path.join(os.sep, 'var', 'log', 'dnmt'))
         # self.subs.log_path = os.path.abspath(os.path.join(os.sep, 'var', 'log', 'dnmt'))
+        self.successful_switches = [] #used for activity tracking
+        self.failure_switches = [] #used for activity tracking
         self.visitedNeighbours = []
         self.pendingNeighbours = []
         self.coreFacingNodes = []
@@ -82,31 +84,20 @@ class Mapper:
                 if 'email' in self.cmdargs and self.cmdargs.email is not None:
                     msg_subject = "updated activitycheck - {}".format(datetime.date.today().strftime('%Y-%m-%d'))
 
-                    body = "Testing email"
-                    # body = "Processing completed in {} seconds\n".format(int((time.time() - total_start) * 100) / 100)
-                    # body += "{} switch state files SUCCESSFULLY updated\n".format(len(self.successful_switches))
-                    # body += "{} switch state files FAILED to update\n".format(len(self.failure_switches))
-                    # body += "{} switch states SUCCESSFULLY added to the summary file\n".format(len(self.successful_files))
-                    # body += "{} switch states FAILED to add to the summary file\n".format(len(self.failure_files))
-                    # body += "\n--------------------------------------------------------------------------------------\n\n"
+                    # body = "Testing email"
+                    body = "Processing completed in {} seconds\n".format(int((time.time() - total_start) * 100) / 100)
+                    body += "{} switch state files SUCCESSFULLY updated\n".format(len(self.successful_switches))
+                    body += "{} switch state files FAILED to update\n".format(len(self.failure_switches))
+                    body += "\n--------------------------------------------------------------------------------------\n\n"
 
-                    # if len(self.successful_switches) > 0:
-                    #     body += "--- List of switch statuses SUCCESSFULLY updated ---\n"
-                    #     for entry in self.successful_switches:
-                    #         body += "{}\n".format(entry)
-                    # if len(self.failure_switches) > 0:
-                    #     body += "--- List of switch statuses that FAILED to update ---\n"
-                    #     for entry in self.failure_switches:
-                    #         body += "{}\n".format(entry)
-                    # if len(self.successful_files) > 0:
-                    #     body += "--- List of files SUCCESSFULLY added to summary file ---\n"
-                    #     for entry in self.successful_files:
-                    #         body += "{}\n".format(entry)
-                    # if len(self.failure_files) > 0:
-                    #     body += "--- List of files FAILED to be added to summary file ---\n"
-                    #     for entry in self.failure_files:
-                    #         body += "{}\n".format(entry)
-                    # self.subs.email_zip_file(msg_subject,self.cmdargs.email,body,status_filename)
+                    if len(self.successful_switches) > 0:
+                        body += "--- List of switch statuses SUCCESSFULLY updated ---\n"
+                        for entry in self.successful_switches:
+                            body += "{}\n".format(entry)
+                    if len(self.failure_switches) > 0:
+                        body += "--- List of switch statuses that FAILED to update ---\n"
+                        for entry in self.failure_switches:
+                            body += "{}\n".format(entry)
                     self.subs.email_with_attachment(msg_subject, self.cmdargs.email, body,
                                                     "{}.png".format(graphFileName))
                 else:
@@ -132,7 +123,11 @@ class Mapper:
     def checkNeighbours(self, ipaddr):
         self.subs.custom_printer("debug","##DEBUG - Processing {} ##".format(ipaddr))
         node_ip = socket.gethostbyname(ipaddr)
-        node_name = socket.gethostbyaddr(ipaddr)
+        try:
+            node_name = socket.gethostbyaddr(ipaddr)
+        except Exception as err: # if failure in resolving hostname, make it the passed ip
+            print("### ERROR on {} ### {}".format(ipaddr,err,))
+            node_name = ipaddr
 
         vendor = self.subs.snmp_get_vendor_string(node_ip)
         for port in self.subs.snmp_get_neighbour_bulk(node_ip, vendor):
@@ -142,7 +137,7 @@ class Mapper:
                     try:
                         neigh_node_name = socket.gethostbyaddr(port['Value'])
                     except socket.gaierror as err:
-                        print("### ERROR ### {} for {}".format(err,port['Value']))
+                        print("### ERROR on {} ### {} for {}".format(ipaddr,err,port['Value']))
                         neigh_node_name = [port['Value']] # if it cannot resolve the name, just apply the name to the graph
                     self.graphObject.edge(node_name[0],neigh_node_name[0]) # will add an edge by name
                 if "orenet.ualberta.ca" in port['Value']: #if core just add the name for later creation of a tree, don't search the core device
@@ -161,4 +156,5 @@ class Mapper:
                         print(err)
 
         self.visitedNeighbours.append(node_ip)
+        self.successful_switches.append(node_ip)
 
