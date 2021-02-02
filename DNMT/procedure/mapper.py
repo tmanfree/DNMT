@@ -54,7 +54,7 @@ class Mapper:
 
 
     def iterate(self):
-        # os.environ["PATH"] += os.pathsep + "C:\\Program Files\\Graphviz\\bin\\"  # required for testing on PC
+        os.environ["PATH"] += os.pathsep + "C:\\Program Files\\Graphviz\\bin\\"  # required for testing on PC
         iplist = []
 
         total_start = time.time()
@@ -122,39 +122,51 @@ class Mapper:
 
     def checkNeighbours(self, ipaddr):
         self.subs.custom_printer("debug","##DEBUG - Processing {} ##".format(ipaddr))
-        node_ip = socket.gethostbyname(ipaddr)
+        # node_ip = socket.gethostbyname(ipaddr)
         try:
             node_name = socket.gethostbyaddr(ipaddr)
         except Exception as err: # if failure in resolving hostname, make it the passed ip
             print("### ERROR on {} ### {}".format(ipaddr,err,))
-            node_name = ipaddr
+            node_name = [ipaddr,"",[ipaddr]]
 
-        vendor = self.subs.snmp_get_vendor_string(node_ip)
-        for port in self.subs.snmp_get_neighbour_bulk(node_ip, vendor):
-            self.subs.custom_printer("debug", "##DEBUG - {} - port {} ##".format(node_ip,port))
-            if port['Category'] in [6, 9]:  # 6 for Cisco, 9 for Dell
-                if "net.ualberta.ca" in port['Value']:
-                    try:
-                        neigh_node_name = socket.gethostbyaddr(port['Value'])
-                    except socket.gaierror as err:
-                        print("### ERROR on {} ### {} for {}".format(ipaddr,err,port['Value']))
-                        neigh_node_name = [port['Value']] # if it cannot resolve the name, just apply the name to the graph
-                    self.graphObject.edge(node_name[0],neigh_node_name[0]) # will add an edge by name
-                if "orenet.ualberta.ca" in port['Value']: #if core just add the name for later creation of a tree, don't search the core device
-                    if node_ip not in self.coreFacingNodes:
-                        self.coreFacingNodes.append(node_ip)
-                    if port['Value'] not in self.coreNodes:
-                        self.coreNodes.append(port['Value'])
-                elif "net.ualberta.ca" in port['Value']:
-                    try:
-                        neigh_ip = socket.gethostbyname(port['Value'])
-                        if (neigh_ip not in self.visitedNeighbours and neigh_ip not in self.pendingNeighbours):
-                            self.pendingNeighbours.append(neigh_ip)
-                    except socket.gaierror as err:
-                        print("### ERROR on {} ### {} for {}".format(ipaddr,err,port['Value']))
-                    except Exception as err:
-                        print(err)
+        # test = self.subs.snmp_get_uptime(ipaddr)
 
-        self.visitedNeighbours.append(node_ip)
-        self.successful_switches.append(node_ip)
+
+
+        vendor = self.subs.snmp_get_vendor_string(ipaddr)
+
+        #TODO combine get_neighbour results to have type & ip in the same entry for filtering
+        for port in self.subs.snmp_get_neighbour_bulk(ipaddr, vendor):
+            self.subs.custom_printer("debug", "##DEBUG - {} - port {} ##".format(ipaddr,port))
+            if port['Category'] == "IP":  # 6 for Cisco, 9 for Dell
+                try:
+                    neigh_node_name = socket.gethostbyaddr(port['Value'])
+                # except socket.gaierror as err:
+                #     print("### ERROR on {} ### {} for {}".format(ipaddr, err, port['Value']))
+                #     neigh_node_name = [port['Value']]  # if it cannot resolve the name, just apply the name to the graph
+                except Exception as err:
+                    print("### ERROR on {} ### {} for {}".format(ipaddr, err, port['Value']))
+                    neigh_node_name = [port['Value'],"",[port['Value']]]  # if the host is not found
+
+
+                if "net.ualberta.ca" in neigh_node_name[0]: # TODO  missing switches if dns doesn't resolve
+                    self.graphObject.edge("{}({})".format(node_name[0],node_name[2][0]),"{}({})".format(neigh_node_name[0],neigh_node_name[2][0])) # will add an edge by name
+                    if "orenet.ualberta.ca" not in neigh_node_name:
+                        if (port["Value"] not in self.visitedNeighbours and port["Value"] not in self.pendingNeighbours):
+                            self.pendingNeighbours.append(port["Value"])
+
+
+
+                # if "orenet.ualberta.ca" not in neigh_node_name and "net.ualberta.ca" in neigh_node_name: #if core just add the name for later creation of a tree, don't search the core device
+                #     try:
+                #         neigh_ip = socket.gethostbyname(port['Value'])
+                #         if (neigh_ip not in self.visitedNeighbours and neigh_ip not in self.pendingNeighbours):
+                #             self.pendingNeighbours.append(neigh_ip)
+                #     except socket.gaierror as err:
+                #         print("### ERROR on {} ### {} for {}".format(ipaddr,err,port['Value']))
+                #     except Exception as err:
+                #         print(err)
+
+        self.visitedNeighbours.append(ipaddr)
+        self.successful_switches.append(ipaddr)
 

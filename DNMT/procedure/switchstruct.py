@@ -12,7 +12,7 @@ from pysnmp.proto import rfc1902
 
 class StackStruct:
     #External Variables/Methods
-    CSVHeader = "IP,Vendor,Hostname,SwitchNum,Model,Serial,SoftwareVer,ModuleNum,PortNum,PortName,PortDesc,PoE,Neighbour name,Neighbour port,Neighbour type,Status (1=Up),DataVlan,DataVlan name,VoiceVlan,Mode (1=Trunk),IntID,PsViolations,InputErrors,OutputErrors,InputCounters,OutputCounters,LastTimeUpdated,DeltaInputCounters,DeltaOutputCounters,HistoricalInputErrors,HistoricalOutputErrors,HistoricalInputCounters,HistoricalOutputCounters"
+    CSVHeader = "IP,Vendor,Hostname,SwitchNum,Model,Serial,SoftwareVer,ModuleNum,PortNum,PortName,PortDesc,PoE,Neighbour name,Neighbour port,Neighbour type, Neighbour IP, Status (1=Up),DataVlan,DataVlan name,VoiceVlan,Mode (1=Trunk),IntID,PsViolations,InputErrors,OutputErrors,InputCounters,OutputCounters,LastTimeUpdated,DeltaInputCounters,DeltaOutputCounters,HistoricalInputErrors,HistoricalOutputErrors,HistoricalInputCounters,HistoricalOutputCounters"
 
     def getHeader(flags):
         if 'xecutive' in flags and eval("flags.xecutive"):
@@ -230,6 +230,7 @@ class PortStruct:
         self.cdpname = None
         self.cdpport = None
         self.cdptype = None
+        self.cdpip = None
         self.status = None
         self.datavlan = None
         self.datavlanname = None
@@ -324,10 +325,10 @@ class PortStruct:
         else:
             while True:
                 try:
-                    return "{},{},{},\"{}\",{},\"{}\",{},\"{}\",{},{},{},{},{},{},{},{},{},{},{},{},{},{},\"{}\",\"{}\",\"{}\",\"{}\"\n".format(
+                    return "{},{},{},\"{}\",{},\"{}\",{},\"{}\",{}, {},{},{},{},{},{},{},{},{},{},{},{},{},{},\"{}\",\"{}\",\"{}\",\"{}\"\n".format(
                         str(passedTup).translate({ord(i): None for i in '()\''}),
                         self.portnumber, self.portname, self.description, self.poe,
-                        self.cdpname, self.cdpport, self.cdptype, self.status, self.datavlan,
+                        self.cdpname, self.cdpport, self.cdptype, self.cdpip, self.status, self.datavlan,
                         self.datavlanname, self.voicevlan,
                         self.portmode, self.intID, self.psviolations,
                         self.inputerrors, self.outputerrors,
@@ -401,17 +402,17 @@ class PortStruct:
 
 
     def printSingleLine(self,passedTup):
-        print("{},{},{},\"{}\",{},\"{}\",{},\"{}\",{},{},{},{},{},{},{},{},{},{},{},{},{},{}".format(str(passedTup).translate({ord(i): None for i in '()\''}),
+        print("{},{},{},\"{}\",{},\"{}\",{},\"{}\",{},{},{},{},{},{},{},{},{},{},{},{},{},{},{}".format(str(passedTup).translate({ord(i): None for i in '()\''}),
                                                         self.portnumber, self.portname, self.description, self.poe,
-                                                        self.cdpname, self.cdpport, self.cdptype, self.status,
+                                                        self.cdpname, self.cdpport, self.cdptype, self.cdpip, self.status,
                                                         self.datavlan, self.datavlanname, self.voicevlan,
                                                         self.portmode, self.intID, self.psviolations, self.inputerrors, self.outputerrors,
                                                               self.inputcounters, self.outputcounters,
                                                               self.lastupdate,self.deltalastin,self.deltalastout))
     def exportCSV(self,passedTup,filePointer):
-        print("{},{},{},\"{}\",{},\"{}\",{},\"{}\",{},{},{},{},{},{},{},{},{},{},{},{},{},{}".format(str(passedTup).translate({ord(i): None for i in '()\''}),
+        print("{},{},{},\"{}\",{},\"{}\",{},\"{}\",{},{},{},{},{},{},{},{},{},{},{},{},{},{},{}".format(str(passedTup).translate({ord(i): None for i in '()\''}),
                                                         self.portnumber, self.portname, self.description, self.poe,
-                                                        self.cdpname, self.cdpport, self.cdptype, self.status,
+                                                        self.cdpname, self.cdpport, self.cdptype, self.cdpip, self.status,
                                                         self.datavlan,self.datavlanname,self.voicevlan,
                                                         self.portmode, self.intID, self.psviolations, self.inputerrors, self.outputerrors,
                                                               self.inputcounters, self.outputcounters,
@@ -429,6 +430,7 @@ class PortStruct:
         print("port CDP name:{}".format(self.cdpname))
         print("port CDP remote port:{}".format(self.cdpport))
         print("port CDP device type:{}".format(self.cdptype))
+        print("port CDP remote IP:{}".format(self.cdpip))
         print("port Status (1=up,2=down):{}".format(self.status))
         print("port DataVlan:{}".format(self.datavlan))
         print("port DataVlan Name:{}".format(self.datavlanname))

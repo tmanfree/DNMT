@@ -111,6 +111,36 @@ class SubRoutines:
         return snmpList
 
     ###ADVANCED SNMP COMMANDS####
+
+
+    #1.3.6.1.2.1.1.3
+
+    # Name: snmp_get_uptime
+    # Input:
+    #   ipaddr (string)
+    #      -The ipaddress/hostname to grab info from
+    #
+    # Return:
+    #  interfaceDescription (a string of the interface description)
+    # Summary:
+    #   grabs the interface id of a supplied interface.
+    #   currently using 1.3.6.1.2.1.31.1.1.1.1, OiD could be updated to 1.3.6.1.2.1.2.2.1.2 for full name checking
+    #     (ie GigabitEthernet X/X)
+    def snmp_get_uptime(self, ipaddr):
+        intId = 0  # intitalize as 0 as not found
+        varBinds = self.snmp_walk(ipaddr, ObjectType(ObjectIdentity(
+            '1.3.6.1.2.1.1.3')))
+        #'1.3.6.1.2.1.2.2.1.2')))
+
+        for varBind in varBinds:
+            ticks = int(varBind._ObjectType__args[1])
+            seconds = ticks / 100
+            uptime = datetime.timedelta(seconds=seconds)
+
+        return uptime
+
+
+
     # Name: snmp_get_interface_id
     # Input:
     #   ipaddr (string)
@@ -870,7 +900,7 @@ class SubRoutines:
 
         if vendor == "Cisco" or vendor == "HP":
             oidString = '1.3.6.1.4.1.9.9.23.1.2.1.1'
-            typeList = [6,7,8]
+            typeList = [4,6,7,8]
             categoryIndex = 13
         elif vendor =="Dell":
             oidString = '1.0.8802.1.1.2.1.4.1.1'
@@ -879,17 +909,45 @@ class SubRoutines:
         else:
             return interfaceCdpList
         varBinds = self.snmp_walk(ipaddr, ObjectType(ObjectIdentity(oidString)))
+
+        # add separate call to get IP, since Cisco doesn't like to give it with everything else
+        if vendor == "Cisco":
+            varBinds = varBinds + self.snmp_walk(ipaddr, ObjectType(ObjectIdentity("{}.4".format(oidString))))
+
+
         for varBind in varBinds:
             # Category labels (6 = Name, 7 = Remote Port, 8 = Type of device)
             oidCategory = varBind._ObjectType__args[0]._ObjectIdentity__oid._value[categoryIndex]
+            if vendor == "Cisco" or vendor == "HP":
+                if oidCategory == 6:
+                    cdpCategory = "Name"
+                elif oidCategory == 7:
+                    cdpCategory = "RemotePort"
+                elif oidCategory == 8:
+                    cdpCategory = "Type"
+                elif oidCategory == 4:
+                    cdpCategory = "IP"
+
+            elif vendor =="Dell":
+                if oidCategory == 9:
+                    cdpCategory = "Name"
+                elif oidCategory ==7 :
+                    cdpCategory = "RemotePort"
+                # elif oidCategory == 8:
+                #     cdpCategory = "Type"
+                # elif oidCategory == 9:
+                #     cdpCategory = "IP"
 
             if oidCategory  in typeList:  # only care about oids of 6,7 or 8
                 try:
-                    cdpValue = varBind._ObjectType__args[1]._value.decode("utf-8")
+                    if cdpCategory == "IP":
+                        cdpValue = socket.inet_ntoa(varBind._ObjectType__args[1]._value)
+                    else:
+                        cdpValue = varBind._ObjectType__args[1]._value.decode("utf-8")
                     oidTuple = varBind._ObjectType__args[0]._ObjectIdentity__oid._value
                     intId = oidTuple[len(oidTuple) - 2]
 
-                    interfaceCdpList.append({'Category': oidCategory, 'Id': intId, 'Value': cdpValue})
+                    interfaceCdpList.append({'Category': cdpCategory, 'Id': intId, 'Value': cdpValue})
                 except Exception as err: #UnicodeDecodeError on hex values when presenting a mac address
                     self.verbose_printer("{} Error assigning Neighbour Value:{}".format(ipaddr,err))
 
@@ -901,7 +959,7 @@ class SubRoutines:
         #   ipaddr (string)
         #      -The ipaddress/hostname to grab info from
         # Return:
-        #  cdp neighbour list
+        #  voice vlan list
         # Summary:
         #   grabs the voice vlan that is connected to each interface
     def snmp_get_voice_vlan_bulk(self, ipaddr):
@@ -1195,12 +1253,14 @@ class SubRoutines:
                 if port is not None:  # ignore vlan interfaces and non existent interfaces
                     foundport = switchStruct.getPortById(port['Id'])
                     if foundport is not None:
-                        if port['Category'] in [6,9]: # 6 for Cisco, 9 for Dell
+                        if port['Category'] == "Name": # 6 for Cisco, 9 for Dell
                             foundport.cdpname = port['Value']
-                        elif port['Category'] == 7:
+                        elif port['Category'] == "RemotePort":
                             foundport.cdpport = port['Value']
-                        elif port['Category'] == 8: #for Dell, could include 10 as a type?
+                        elif port['Category'] == "Type": #for Dell, could include 10 as a type?
                             foundport.cdptype = port['Value']
+                        elif port['Category'] == "IP": #
+                            foundport.cdpip = port['Value']
 
             for port in self.snmp_get_port_security_violations_bulk(ipaddr):
                 if port is not None:  # ignore vlan interfaces and non existent interfaces
