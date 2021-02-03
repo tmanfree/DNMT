@@ -55,7 +55,7 @@ class Mapper:
 
 
     def iterate(self):
-        os.environ["PATH"] += os.pathsep + "C:\\Program Files\\Graphviz\\bin\\"  # required for testing on PC
+        # os.environ["PATH"] += os.pathsep + "C:\\Program Files\\Graphviz\\bin\\"  # required for testing on PC
         iplist = []
 
         total_start = time.time()
@@ -160,14 +160,27 @@ class Mapper:
                         neigh_node_name = [port['Name'],"",[port['IP']]]  # if the host is not found
 
 
+
+                    if any(x in port['Name'].lower() for x in
+                           ['-ba-', '-ef-', '-ds-', '-cs-']) and "orenet.ualberta.ca" in port['Name']:
+                        neigh_node_name[2][0] = port[
+                            'Name']  # assign the IP to be the core hostname for checking with mapped edges
+
                     # if "net.ualberta.ca" in neigh_node_name[0] and all(x not in self.mappedEdges for x in [(node_name[2][0],neigh_node_name[2][0]), (neigh_node_name[2][0],node_name[2][0])]):
                     if all(x not in self.mappedEdges for x in[(node_name[2][0], neigh_node_name[2][0]),(neigh_node_name[2][0], node_name[2][0])]): #map all edges (turn off other types like linux?)
-                        self.graphObject.edge("{}({})".format(node_name[0],node_name[2][0]),"{}({})".format(neigh_node_name[0],neigh_node_name[2][0])) # will add an edge by name
-                        self.mappedEdges.append((node_name[2][0],neigh_node_name[2][0]))
-                        if "orenet.ualberta.ca" not in neigh_node_name and "orenet.ualberta.ca" not in port['Name']: #avoid going into core devices
+
+                        if any(x in port['Name'].lower() for x in ['-ba-','-ef-','-ds-','-cs-']) and "orenet.ualberta.ca" in port['Name']:
+                            self.graphObject.edge("{}({})".format(node_name[0], node_name[2][0]),"{}".format(neigh_node_name[2][0]))  # will add a core edge
+                        else:
+                            self.graphObject.edge("{}({})".format(node_name[0],node_name[2][0]),"{}({})".format(neigh_node_name[0],neigh_node_name[2][0])) # will add an edge by name
                             if (port["IP"] not in self.visitedNeighbours and port["IP"] not in self.pendingNeighbours):
                                 self.pendingNeighbours.append(port["IP"])
 
+                        self.mappedEdges.append((node_name[2][0],neigh_node_name[2][0]))
+
+                        # if "orenet.ualberta.ca" not in neigh_node_name and "orenet.ualberta.ca" not in port['Name']: #avoid going into core devices
+                        #     if (port["IP"] not in self.visitedNeighbours and port["IP"] not in self.pendingNeighbours):
+                        #         self.pendingNeighbours.append(port["IP"])
 
             self.successful_switches.append(ipaddr)
         else:
