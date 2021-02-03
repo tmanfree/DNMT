@@ -942,6 +942,8 @@ class SubRoutines:
                 try:
                     if cdpCategory == "IP":
                         cdpValue = socket.inet_ntoa(varBind._ObjectType__args[1]._value)
+                    elif cdpCategory == 'Name' and vendor == 'HP':
+                        cdpValue = str(varBind._ObjectType__args[1]._value)
                     else:
                         cdpValue = varBind._ObjectType__args[1]._value.decode("utf-8")
                     oidTuple = varBind._ObjectType__args[0]._ObjectIdentity__oid._value
