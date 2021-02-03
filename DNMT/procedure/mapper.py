@@ -155,9 +155,6 @@ class Mapper:
                 if 'IP' in port.keys() and (not any(x in port['Type'] for x in ['Phone','AIR','VG','ATA'])):  # ignore phones,APs,VGs
                     try:
                         neigh_node_name = socket.gethostbyaddr(port['IP'])
-                    # except socket.gaierror as err:
-                    #     print("### ERROR on {} ### {} for {}".format(ipaddr, err, port['Value']))
-                    #     neigh_node_name = [port['Value']]  # if it cannot resolve the name, just apply the name to the graph
                     except Exception as err:
                         print("### ERROR on {} ### {} for {}".format(ipaddr, err, port['IP']))
                         neigh_node_name = [port['Name'],"",[port['IP']]]  # if the host is not found
@@ -167,7 +164,7 @@ class Mapper:
                     if all(x not in self.mappedEdges for x in[(node_name[2][0], neigh_node_name[2][0]),(neigh_node_name[2][0], node_name[2][0])]): #map all edges (turn off other types like linux?)
                         self.graphObject.edge("{}({})".format(node_name[0],node_name[2][0]),"{}({})".format(neigh_node_name[0],neigh_node_name[2][0])) # will add an edge by name
                         self.mappedEdges.append((node_name[2][0],neigh_node_name[2][0]))
-                        if "orenet.ualberta.ca" not in neigh_node_name:
+                        if "orenet.ualberta.ca" not in neigh_node_name and "orenet.ualberta.ca" not in port['Name']: #avoid going into core devices
                             if (port["IP"] not in self.visitedNeighbours and port["IP"] not in self.pendingNeighbours):
                                 self.pendingNeighbours.append(port["IP"])
 
