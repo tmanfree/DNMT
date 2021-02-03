@@ -228,18 +228,16 @@ def dnmt():
                                           action="store_true")
 
     #Mapper Parser
-    mapper_parser = subparsers.add_parser("mapper",
-                                                 help="functions to map out connections").add_subparsers(dest="mapper")
-    mapout_mapper_parser = mapper_parser.add_parser("mapout", help="map connections out")
-    mapout_mapper_parser.add_argument('filename', help="file containing ip address to map")
-    mapout_mapper_parser.add_argument('-v', '--verbose', help="run in verbose mode", default=False,
+    mapper_parser = subparsers.add_parser("mapper", help="functions to map out connections")
+    mapper_parser.add_argument('filename', help="file containing ip address to map")
+    mapper_parser.add_argument('-v', '--verbose', help="run in verbose mode", default=False,
                                     action="store_true")
-    mapout_mapper_parser.add_argument('-t', '--test', help="don't delete anything, just test", default=False,
+    mapper_parser.add_argument('-t', '--test', help="don't delete anything, just test", default=False,
                                     action="store_true")
-    mapout_mapper_parser.add_argument('-d', '--debug', help="run in debug mode (extremely verbose)", default=False,
+    mapper_parser.add_argument('-d', '--debug', help="run in debug mode (extremely verbose)", default=False,
                                           action="store_true")
-    mapout_mapper_parser.add_argument('-e', '--email', help="specify email to send graph to")
-    mapout_mapper_parser.add_argument('-r', '--remove', help="remove file afterwards", default=False,
+    mapper_parser.add_argument('-e', '--email', help="specify email to send graph to")
+    mapper_parser.add_argument('-r', '--remove', help="remove file afterwards", default=False,
                                       action="store_true")
 
 
@@ -418,7 +416,6 @@ def dnmt():
                 if cmdargs.fmnet == 'psviolations':
                     dbcmds.createPSViolationReport();
     elif cmdargs.maincommand == 'mapper':
-        if cmdargs.mapper == 'mapout':
             mapper.iterate()
     elif cmdargs.maincommand == 'test':
         if cmdargs.test == 'Command_Blaster':

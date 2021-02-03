@@ -96,7 +96,7 @@ class Mapper:
                         for entry in self.successful_switches:
                             body += "{}\n".format(entry)
                     if len(self.failure_switches) > 0:
-                        body += "--- List of switch statuses that FAILED to update ---\n"
+                        body += "--- List of switch statuses that FAILED to update or found no neighbours ---\n"
                         for entry in self.failure_switches:
                             body += "{}\n".format(entry)
                     self.subs.email_with_attachment(msg_subject, self.cmdargs.email, body,
@@ -139,49 +139,42 @@ class Mapper:
 
         #TODO combine get_neighbour results to have type & ip in the same entry for filtering
         bulkCDPList = self.subs.snmp_get_neighbour_bulk(ipaddr, vendor)
-        formattedCDPList = []
-        for entry in bulkCDPList:
-            if not any(d['Id'] == entry['Id'] for d in formattedCDPList):
-                formattedCDPList.append({"Id":entry["Id"]})
-            for d in formattedCDPList:
-                if d['Id'] == entry['Id']:
-                    d[entry['Category']] = entry['Value']
+        if len(bulkCDPList) > 0:
+            formattedCDPList = []
+            for entry in bulkCDPList:
+                if not any(d['Id'] == entry['Id'] for d in formattedCDPList):
+                    formattedCDPList.append({"Id":entry["Id"]})
+                for d in formattedCDPList:
+                    if d['Id'] == entry['Id']:
+                        d[entry['Category']] = entry['Value']
 
 
 
-        for port in formattedCDPList:
-            self.subs.custom_printer("debug", "##DEBUG - {} - port {} ##".format(ipaddr,port))
-            if 'IP' in port.keys() and (not any(x in port['Type'] for x in ['Phone','AIR','VG','ATA'])):  # ignore phones,APs,VGs
-                try:
-                    neigh_node_name = socket.gethostbyaddr(port['IP'])
-                # except socket.gaierror as err:
-                #     print("### ERROR on {} ### {} for {}".format(ipaddr, err, port['Value']))
-                #     neigh_node_name = [port['Value']]  # if it cannot resolve the name, just apply the name to the graph
-                except Exception as err:
-                    print("### ERROR on {} ### {} for {}".format(ipaddr, err, port['IP']))
-                    neigh_node_name = [port['Name'],"",[port['IP']]]  # if the host is not found
+            for port in formattedCDPList:
+                self.subs.custom_printer("debug", "##DEBUG - {} - port {} ##".format(ipaddr,port))
+                if 'IP' in port.keys() and (not any(x in port['Type'] for x in ['Phone','AIR','VG','ATA'])):  # ignore phones,APs,VGs
+                    try:
+                        neigh_node_name = socket.gethostbyaddr(port['IP'])
+                    # except socket.gaierror as err:
+                    #     print("### ERROR on {} ### {} for {}".format(ipaddr, err, port['Value']))
+                    #     neigh_node_name = [port['Value']]  # if it cannot resolve the name, just apply the name to the graph
+                    except Exception as err:
+                        print("### ERROR on {} ### {} for {}".format(ipaddr, err, port['IP']))
+                        neigh_node_name = [port['Name'],"",[port['IP']]]  # if the host is not found
 
 
-                # if "net.ualberta.ca" in neigh_node_name[0] and all(x not in self.mappedEdges for x in [(node_name[2][0],neigh_node_name[2][0]), (neigh_node_name[2][0],node_name[2][0])]):
-                if all(x not in self.mappedEdges for x in[(node_name[2][0], neigh_node_name[2][0]),(neigh_node_name[2][0], node_name[2][0])]): #map all edges (turn off other types like linux?)
-                    self.graphObject.edge("{}({})".format(node_name[0],node_name[2][0]),"{}({})".format(neigh_node_name[0],neigh_node_name[2][0])) # will add an edge by name
-                    self.mappedEdges.append((node_name[2][0],neigh_node_name[2][0]))
-                    if "orenet.ualberta.ca" not in neigh_node_name:
-                        if (port["IP"] not in self.visitedNeighbours and port["IP"] not in self.pendingNeighbours):
-                            self.pendingNeighbours.append(port["IP"])
+                    # if "net.ualberta.ca" in neigh_node_name[0] and all(x not in self.mappedEdges for x in [(node_name[2][0],neigh_node_name[2][0]), (neigh_node_name[2][0],node_name[2][0])]):
+                    if all(x not in self.mappedEdges for x in[(node_name[2][0], neigh_node_name[2][0]),(neigh_node_name[2][0], node_name[2][0])]): #map all edges (turn off other types like linux?)
+                        self.graphObject.edge("{}({})".format(node_name[0],node_name[2][0]),"{}({})".format(neigh_node_name[0],neigh_node_name[2][0])) # will add an edge by name
+                        self.mappedEdges.append((node_name[2][0],neigh_node_name[2][0]))
+                        if "orenet.ualberta.ca" not in neigh_node_name:
+                            if (port["IP"] not in self.visitedNeighbours and port["IP"] not in self.pendingNeighbours):
+                                self.pendingNeighbours.append(port["IP"])
 
 
-
-                # if "orenet.ualberta.ca" not in neigh_node_name and "net.ualberta.ca" in neigh_node_name: #if core just add the name for later creation of a tree, don't search the core device
-                #     try:
-                #         neigh_ip = socket.gethostbyname(port['Value'])
-                #         if (neigh_ip not in self.visitedNeighbours and neigh_ip not in self.pendingNeighbours):
-                #             self.pendingNeighbours.append(neigh_ip)
-                #     except socket.gaierror as err:
-                #         print("### ERROR on {} ### {} for {}".format(ipaddr,err,port['Value']))
-                #     except Exception as err:
-                #         print(err)
+            self.successful_switches.append(ipaddr)
+        else:
+            self.failure_switches.append(ipaddr)
 
         self.visitedNeighbours.append(ipaddr)
-        self.successful_switches.append(ipaddr)
 
