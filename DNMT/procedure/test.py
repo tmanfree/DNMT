@@ -50,7 +50,7 @@ class Test:
 
 
 
-    def Error_Check(self):
+    def error_check(self):
         error_dict = {"ip": self.cmdargs.ipaddr}
         intId = self.subs.snmp_get_interface_id(self.cmdargs.ipaddr,self.cmdargs.interface)
         self.subs.verbose_printer("interface ID:{}".format(intId))
@@ -63,7 +63,7 @@ class Test:
 
 
 
-    def Command_Blaster_Begin(self):
+    def command_blaster_begin(self):
 
         #Make Command List
         commandlist = []
@@ -104,7 +104,7 @@ class Test:
         except Exception as err:  # currently a catch all to stop linux from having a conniption when reloading
             print("NETMIKO ERROR {}:{}".format(ipaddr, err.args[0]))
 
-    def BadPhoneBegin(self):
+    def bad_phone_search_begin(self):
         iplist = []
         file = open(self.cmdargs.file, "r")
         for ip in file:
@@ -166,7 +166,7 @@ class Test:
 
 
 
-    def connectcount_begin(self):
+    def connection_count_begin(self):
         #Iterate through addresses List
         file = open(self.cmdargs.file, "r")
         for ip in file:

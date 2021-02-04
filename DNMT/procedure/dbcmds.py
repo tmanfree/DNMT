@@ -34,7 +34,7 @@ class DBcmds:
         self.config.logpath = os.path.join(os.path.expanduser(self.config.logpath), "logs", "UpgradeCheck",
                                            datetime.date.today().strftime('%Y%m%d'))
 
-    def Find_Desc(self):
+    def find_description(self):
         matchlist = []
         print("##### Beginning to search for \"{}\" #####".format(self.cmdargs.searchstring))
         fileList = [f for f in os.listdir(os.path.join(self.subs.log_path,"activitycheck", "rawfiles","legacy")) if f.endswith('-statcheck.bz2')]
@@ -96,7 +96,7 @@ class DBcmds:
                 print("ERROR ### Something went wrong writing to file")
 
 
-    def Find_Mac(self):
+    def find_mac_address(self):
         totalstart = time.process_time()
         if 'ipfile' in self.cmdargs and self.cmdargs.ipfile is not None:
             ipList = open(os.path.join(self.cmdargs.ipfile), "r")
@@ -139,7 +139,7 @@ class DBcmds:
         except Exception as err:
             print(err)
 
-    def createPSViolationReport(self): # similar to create readable activity file in statuschecks, combine both?
+    def create_port_security_report(self): # similar to create readable activity file in statuschecks, combine both?
         try:
             status_filename = "{}-FullStatus.csv".format(datetime.datetime.now().strftime('%Y-%m-%d-%H%M'))
             successful_files,failure_files = self.subs.create_readable_activity_file(status_filename,**vars(self.cmdargs))

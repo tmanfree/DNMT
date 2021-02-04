@@ -72,7 +72,7 @@ class StatusChecks:
         else:
             self.subs.verbose_printer("total files:{} are less than max value:{}".format(len(filelist), maxfiles))
 
-    def Activity_Tracking_Begin(self):
+    def activity_tracking_begin(self):
         iplist = []
         total_start = time.time()
         if not os.path.exists(os.path.join(self.subs.log_path, "activitycheck", "rawfiles")):
@@ -455,7 +455,7 @@ class StatusChecks:
 
 
 
-    def Switch_Check(self):
+    def switch_check(self):
             #3560X with ten gig uplink doesn't show gi 1/1-2 only ten 1/1-2.
             if 'load' in self.cmdargs and self.cmdargs.load is not None:
                 try:

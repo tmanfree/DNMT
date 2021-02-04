@@ -60,7 +60,7 @@ class Tools:
 
 
 
-    def Ap_Poke(self):
+    def ap_poke(self):
         #cmdargs.interface
         #cmdargs.ipaddr
 
@@ -176,7 +176,7 @@ class Tools:
 #
 #
 
-    def Change_Port_Vlan(self):
+    def change_port_vlan(self):
       #TODO update to have batch file act on csv with format <IP,interface,vlan,desc> desc optional?
       # have csv in format of <KEY=VAL,KEY=VAL,KEY=VAL, need IP,interface as first two EX <A.A.A.A,Gi1/0/1,DESC=blah>
         vendor = self.subs.snmp_get_vendor_string(self.cmdargs.ipaddr)
@@ -279,7 +279,7 @@ class Tools:
         else:
             print(" Job complete, NO matches found")
 
-    def Port_Label_Check(self):
+    def port_label_check(self):
         # self.read_email_from_gmail()
         try:
             #login and grab mail from
@@ -435,7 +435,7 @@ class Tools:
         except Exception as err:
             print(err)
 
-    def Standardize_Begin(self):
+    def standardize_begin(self):
         if 'apply' in self.cmdargs and self.cmdargs.apply:
             print("Beginning Apply Standards Operation")
         else:
@@ -617,7 +617,7 @@ class Tools:
         else:
             return False
 
-    def HP_Pass_Change_Begin(self):
+    def hp_password_change_begin(self):
         if 'apply' in self.cmdargs and self.cmdargs.apply:
             print("Beginning Apply Standards Operation")
         else:

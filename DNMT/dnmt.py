@@ -159,14 +159,14 @@ def dnmt():
 
 
     #Status Checking parsers
-    status_checks_parser = subparsers.add_parser("StatusChecks", help="functions regarding checking the status of switches").add_subparsers(dest="statuschecks")
+    status_checks_parser = subparsers.add_parser("status_checks", help="functions regarding checking the status of switches").add_subparsers(dest="status_checks")
     maintenance_parser = status_checks_parser.add_parser("maintenance",help="perform maintenance (clean up)")
     maintenance_parser.add_argument('maxfiles', help="Max number of statuscheck files to keep")
     maintenance_parser.add_argument('-v', '--verbose', help="run in verbose mode", default=False,
                                           action="store_true")
     maintenance_parser.add_argument('-t', '--test', help="don't delete anything, just test", default=False, action="store_true")
 
-    activity_tracking_parser = status_checks_parser.add_parser("Activity_Tracking", help="check if port status has changed")
+    activity_tracking_parser = status_checks_parser.add_parser("activity_tracking", help="check if port status has changed")
     activity_tracking_parser.add_argument('-f', '--file', help="specify iplist file to use if not using default")
     activity_tracking_parser.add_argument('-e', '--email', help="specify which email to send file to")
     activity_tracking_parser.add_argument('-i', '--ignorefield', help="specify which field(s) to ignore if empty")
@@ -185,15 +185,15 @@ def dnmt():
     activity_tracking_parser.add_argument('-x', '--xecutive', help="print out a modified summary file", default=False,
                                           action="store_true")
 
-    switch_check_parser = status_checks_parser.add_parser("Switch_Check", help="check switch info")
+    switch_check_parser = status_checks_parser.add_parser("switch_check", help="check switch info")
     switch_check_parser.add_argument('-i', '--ipaddr', metavar='IP', help='Switch Address interface is on')
     switch_check_parser.add_argument('-c', '--csv', help="save to a specified csv file")
     switch_check_parser.add_argument('-v', '--verbose', help="run in verbose mode", default=False, action="store_true")
     switch_check_parser.add_argument('-l', '--load', help="load switchstruct from a specified file")
 
     #DB commands - subset of status checking
-    db_cmds_parser = subparsers.add_parser("DBcmds",
-                                                 help="functions simulating databases").add_subparsers(dest="DBcmds")
+    db_cmds_parser = subparsers.add_parser("database_commands",
+                                                 help="functions simulating databases").add_subparsers(dest="database_commands")
     db_cmds_find_parser = db_cmds_parser.add_parser("find", help="search for items").add_subparsers(dest="find")
     db_cmds_find_desc_parser = db_cmds_find_parser.add_parser("desc", help="search for descriptions")
     db_cmds_find_desc_parser.add_argument('searchstring', help='text to search for')
@@ -218,7 +218,7 @@ def dnmt():
     db_cmds_reports_fmnet_parser = db_cmds_reports_parser.add_parser("fmnet", help="reports for fmnet").add_subparsers(dest="fmnet")
 
     # dbcmds reports fmnet psviolations  TODO Change to an argument for email title and ignorefield flag to be more generic
-    db_cmds_reports_fmnet_psviolations_parser = db_cmds_reports_fmnet_parser.add_parser("psviolations", help="report on port security violations")
+    db_cmds_reports_fmnet_psviolations_parser = db_cmds_reports_fmnet_parser.add_parser("port_security_violations", help="report on port security violations")
     db_cmds_reports_fmnet_psviolations_parser.add_argument('-v', '--verbose', help="verbose output", default=False, action="store_true")
     db_cmds_reports_fmnet_psviolations_parser.add_argument('-f', '--file', help="limit processing to ips contained in file")
     db_cmds_reports_fmnet_psviolations_parser.add_argument('-d', '--debug', help="run in debug mode (extremely verbose)", default=False,
@@ -243,21 +243,21 @@ def dnmt():
 
     #Tests Begin
     test_parser = subparsers.add_parser("test", help="various tests").add_subparsers(dest="test")
-    command_blaster_parser = test_parser.add_parser("Command_Blaster", help="send some non-enabled commands")
+    command_blaster_parser = test_parser.add_parser("command_blaster", help="send some non-enabled commands")
     command_blaster_parser.add_argument('ipaddrfile', help='text file with switch addresses to run commands on')
     command_blaster_parser.add_argument('commandfile', help='text file with commands to run')
-    error_counter_parser = test_parser.add_parser("Error_Counter", help="check the errors of an interface")
+    error_counter_parser = test_parser.add_parser("error_counter", help="check the errors of an interface")
     error_counter_parser.add_argument('ipaddr', help='address of switch to check')
     error_counter_parser.add_argument('interface', help='string to grab error counts of example:8/10')
     error_counter_parser.add_argument('-v', '--verbose', help="run in verbose mode", default=False, action="store_true")
-    bad_phone_parser = test_parser.add_parser("BadPhone", help="look for bad phones")
+    bad_phone_parser = test_parser.add_parser("bad_phone_check", help="look for bad phones")
     bad_phone_parser.add_argument('file', metavar='file',help='The file with IPs to check')
     bad_phone_parser.add_argument('-s', '--skip', help="skip verification", default=False, action="store_true")
     dell_snmp_parser = test_parser.add_parser("dellsnmp", help="add snmp ro string")
     dell_snmp_parser.add_argument('file', metavar='file', help='The file with IPs to check')
     dell_snmp_parser.add_argument('snmpstring', metavar='snmpstring', help="snmp string to add")
 
-    connect_count_parser = test_parser.add_parser("connectcount", help="count not connect")
+    connect_count_parser = test_parser.add_parser("connection_count", help="count not connected ports")
     connect_count_parser.add_argument('file', help='The file with IPs to check')
 
     batch_run_wrapper_parser = test_parser.add_parser("batchrunwrapper", help="run batches of command line scripts")
@@ -284,7 +284,7 @@ def dnmt():
     # create subcategory for tools
     tools_parser = subparsers.add_parser("tools", help="various tools").add_subparsers(dest="tools")
 
-    port_change_parser = tools_parser.add_parser("Port_Change", help="update a port")
+    port_change_parser = tools_parser.add_parser("port_change", help="update a port")
     port_change_parser.add_argument('ipaddr', metavar='IP', help='Switch Address interface is on')
     port_change_parser.add_argument('interface', metavar='interface', help='interface to update')
     # vlan_parser.add_argument('-v', '--verbose', help="run in verbose mode", default=False, action="store_true")
@@ -306,13 +306,13 @@ def dnmt():
     dig_tool_parser.add_argument('-a', '--advanced', help="Gather more info about hosts", default=False, action="store_true")
 
     #portlabel grab/send functionality
-    port_label_tool_parser = tools_parser.add_parser("Port_Label", help="check for port label files in email")
+    port_label_tool_parser = tools_parser.add_parser("port_label", help="check for port label files in email")
     port_label_tool_parser.add_argument('-b', '--batch', help="skip verification with user, apply changes", default=False, action="store_true")
     port_label_tool_parser.add_argument('-n', '--notify', help="send email to submitter",default=False, action="store_true")
     port_label_tool_parser.add_argument('-v', '--verbose', help="Run with additional information", default=False, action="store_true")
 
     #standardizer
-    standardize_tool_parser = tools_parser.add_parser("Standardize", help="apply standard configurations")
+    standardize_tool_parser = tools_parser.add_parser("standardize", help="apply standard configurations")
     standardize_tool_parser.add_argument('ipfile', help='The file with IPs to verify vlan names upstream. Format IP,username,Password')
     standardize_tool_parser.add_argument('-v', '--verbose', help="run in verbose mode", default=False, action="store_true")
     standardize_tool_parser.add_argument('-a', '--apply', help="apply changes", default=False, action="store_true")
@@ -321,7 +321,7 @@ def dnmt():
 
     #passchanger
     # standardizer
-    passchanger_tool_parser = tools_parser.add_parser("HPPassChange", help="change local passwords on hp switches")
+    passchanger_tool_parser = tools_parser.add_parser("hp_password_change", help="change local passwords on hp switches")
     passchanger_tool_parser.add_argument('ipfile',
                                          help='The file with IPs to verify vlan names upstream. Format IP,username,Password')
     passchanger_tool_parser.add_argument('username',help='new username to set as manager')
@@ -382,52 +382,52 @@ def dnmt():
     elif cmdargs.maincommand == "tools":
         if cmdargs.tools == 'ap_poke':
             try:  #<TODO ADD THIS FUNCTIONALITY EVERYWHERE>
-                tools.Ap_Poke()
+                tools.ap_poke()
             except SystemExit as errcode:
                 sys.exit(errcode)
-        elif cmdargs.tools == 'Port_Change':
-            tools.Change_Port_Vlan()
+        elif cmdargs.tools == 'port_change':
+            tools.change_port_vlan()
         elif cmdargs.tools =='dig':
             tools.diggle()
-        elif cmdargs.tools =='Port_Label':
-            tools.Port_Label_Check()
-        elif cmdargs.tools =='Standardize':
-            tools.Standardize_Begin()
-        elif cmdargs.tools =='HPPassChange':
-            tools.HP_Pass_Change_Begin()
-    elif cmdargs.maincommand == 'StatusChecks':
-        if cmdargs.statuschecks == "Activity_Tracking":
-            statusChecks.Activity_Tracking_Begin()
-        elif cmdargs.statuschecks == "Switch_Check":
-            statusChecks.Switch_Check()
+        elif cmdargs.tools =='port_label':
+            tools.port_label_check()
+        elif cmdargs.tools =='standardize':
+            tools.standardize_begin()
+        elif cmdargs.tools =='hp_password_change':
+            tools.hp_password_change_begin()
+    elif cmdargs.maincommand == 'status_checks':
+        if cmdargs.statuschecks == "activity_tracking":
+            statusChecks.activity_tracking_begin()
+        elif cmdargs.statuschecks == "switch_check":
+            statusChecks.switch_check()
         elif cmdargs.statuschecks == "maintenance":
             try:
                 statusChecks.Maintenance(int(cmdargs.maxfiles))
             except ValueError:
                 print("maxfiles is not a number, exiting")
-    elif cmdargs.maincommand =='DBcmds':
+    elif cmdargs.maincommand == 'database_commands':
         if cmdargs.DBcmds == 'find':
             if cmdargs.find == 'desc':
-                dbcmds.Find_Desc()
+                dbcmds.find_description()
             elif cmdargs.find == 'mac':
-                dbcmds.Find_Mac()
+                dbcmds.find_mac_address()
         if cmdargs.DBcmds =='reports':
             if cmdargs.reports == 'fmnet':
-                if cmdargs.fmnet == 'psviolations':
-                    dbcmds.createPSViolationReport();
+                if cmdargs.fmnet == 'port_security_violations':
+                    dbcmds.create_port_security_report();
     elif cmdargs.maincommand == 'mapper':
             mapper.iterate()
     elif cmdargs.maincommand == 'test':
-        if cmdargs.test == 'Command_Blaster':
-            test.Command_Blaster_Begin()
-        elif cmdargs.test == 'Error_Counter':
-            test.Error_Check()
-        elif cmdargs.test == 'BadPhone':
-            test.BadPhoneBegin()
+        if cmdargs.test == 'command_blaster':
+            test.command_blaster_begin()
+        elif cmdargs.test == 'error_counter':
+            test.error_check()
+        elif cmdargs.test == 'bad_phone_check':
+            test.bad_phone_search_begin()
         elif cmdargs.test == "dellsnmp":
             test.dell_snmp_Begin()
-        elif cmdargs.test == "connectcount":
-            test.connectcount_begin()
+        elif cmdargs.test == "connection_count":
+            test.connection_count_begin()
         elif cmdargs.test == "batchrunwrapper":
             test.batchrunwrapper()
         elif cmdargs.test == "Vlan_Namer":
