@@ -55,15 +55,15 @@ def dnmt():
     # direct_parser = subparsers.add_parser("direct", help= "Non Interactive Commands").add_subparsers(dest="direct")
 
     #parser commands for MAC Search
-    macsearch_parser = subparsers.add_parser("MACSearch", help= "Search for a mac address beginning on a specified switch").add_subparsers(dest="macsearch")
-    single_mac_check_parser = macsearch_parser.add_parser("single", help="Search for a single MAC address")
+    mac_search_parser = subparsers.add_parser("mac_search", help= "Search for a mac address beginning on a specified switch").add_subparsers(dest="mac_search")
+    single_mac_check_parser = mac_search_parser.add_parser("single", help="Search for a single MAC address")
     single_mac_check_parser.add_argument('mac', help='The MAC address to look for')
     single_mac_check_parser.add_argument('ipaddr', metavar='IP',
                         help='The IP to start looking for the mac address at')
     single_mac_check_parser.add_argument('-v', '--verbose', help="run in verbose mode", default=False, action="store_true")
     single_mac_check_parser.add_argument('-c', '--csv', help="save to a specified csv file" )
 
-    batch_mac_check_parser = macsearch_parser.add_parser("batch", help="A single mac address to search for")
+    batch_mac_check_parser = mac_search_parser.add_parser("batch", help="A single mac address to search for")
     batch_mac_check_parser.add_argument('batchfile', help='File with mac address for batch mode')
     batch_mac_check_parser.add_argument('ipaddr', metavar='IP',
                                          help='The IP to start looking for the mac address at')
@@ -71,10 +71,10 @@ def dnmt():
                                          action="store_true")
     batch_mac_check_parser.add_argument('-c', '--csv', help="save to a specified csv file")
 
-    general_macsearch_parser = macsearch_parser.add_parser("general",
+    general_mac_search_parser = mac_search_parser.add_parser("general",
                                              help="Search for a mac addresses on HP switches").add_subparsers(
         dest="general")
-    test_mac_check_parser = general_macsearch_parser.add_parser("single", help="use snmpSearch for a single MAC address")
+    test_mac_check_parser = general_mac_search_parser.add_parser("single", help="use snmpSearch for a single MAC address")
     test_mac_check_parser.add_argument('mac', help='The MAC address to look for')
     test_mac_check_parser.add_argument('ipaddr', metavar='IP',
                                          help='The IP to start looking for the mac address at')
@@ -82,24 +82,24 @@ def dnmt():
                                          action="store_true")
     test_mac_check_parser.add_argument('-c', '--csv', help="save to a specified csv file")
 
-    test_batch_mac_check_parser = general_macsearch_parser.add_parser("batch", help="use snmpSearch for a batch of MAC addresses")
+    test_batch_mac_check_parser = general_mac_search_parser.add_parser("batch", help="use snmpSearch for a batch of MAC addresses")
     test_batch_mac_check_parser.add_argument('batchfile', help='File with mac address for batch mode')
     test_batch_mac_check_parser.add_argument('ipaddr', metavar='IP',
                                          help='The IP to start looking for the mac address at')
     test_batch_mac_check_parser.add_argument('-v', '--verbose', help="run in verbose mode", default=False,
                                          action="store_true")
     test_batch_mac_check_parser.add_argument('-c', '--csv', help="save to a specified csv file")
-    # macsearch_parser.add_argument('-m', '--mac', metavar='macaddr', help="A single mac address to search for")
-    # macsearch_parser.add_argument('-b', '--batchfile',metavar = 'BATCHFILE',help="File with mac address for batch mode")
+    # mac_search_parser.add_argument('-m', '--mac', metavar='macaddr', help="A single mac address to search for")
+    # mac_search_parser.add_argument('-b', '--batchfile',metavar = 'BATCHFILE',help="File with mac address for batch mode")
 
 
     #parser commands for hostname updater
-    hostnameupdate_parser = subparsers.add_parser("HostnameUpdate", help= "Check switch hostnames with their DNS names & update")
-    hostnameupdate_parser.add_argument('iplist', metavar='FILENAME',
+    hostname_update_parser = subparsers.add_parser("hostname_update", help= "Check switch hostnames with their DNS names & update")
+    hostname_update_parser.add_argument('iplist', metavar='FILENAME',
                         help='The list that contains the ip addresses to check. '
                              'specify "IP,hostname,domain" on each line of the file to not check dns for that ip')
-    hostnameupdate_parser.add_argument('-c', '--check', help="Compare hostname, do not change", action="store_true")
-    hostnameupdate_parser.add_argument('-p', '--peek', help="Peek at DNS, do not login to switch", action="store_true")
+    hostname_update_parser.add_argument('-c', '--check', help="Compare hostname, do not change", action="store_true")
+    hostname_update_parser.add_argument('-p', '--peek', help="Peek at DNS, do not login to switch", action="store_true")
 
 
 
@@ -111,45 +111,45 @@ def dnmt():
     # snmptest_parser.add_argument('oid', metavar='OID',
     #                              help='The OID to check')
     #parser commands for write snmp test (temporary)
-    writetest_parser = subparsers.add_parser("WriteTest", help= "grab snmp variables")
-    writetest_parser.add_argument('ipaddr', metavar='IP',
+    write_test_parser = subparsers.add_parser("write_test", help= "grab snmp variables")
+    write_test_parser.add_argument('ipaddr', metavar='IP',
                         help='The IP of the switch')
-    writetest_parser.add_argument('-v', '--verbose', help="run in verbose mode", default=False, action="store_true")
+    write_test_parser.add_argument('-v', '--verbose', help="run in verbose mode", default=False, action="store_true")
     #parser commands for bulk vlan change (temporary)
-    vlanchange_parser = subparsers.add_parser("BulkVlanChange", help= "change all vlans on a switch")
-    vlanchange_parser.add_argument('ipaddr', metavar='IP',
+    vlan_change_parser = subparsers.add_parser("bulk_vlan_change", help= "change all vlans on a switch")
+    vlan_change_parser.add_argument('ipaddr', metavar='IP',
                         help='The IP of the switch')
-    vlanchange_parser.add_argument('oldvlan', help="Old Vlan ID to change")
-    vlanchange_parser.add_argument('newvlan', help="New Vlan ID to change to")
+    vlan_change_parser.add_argument('oldvlan', help="Old Vlan ID to change")
+    vlan_change_parser.add_argument('newvlan', help="New Vlan ID to change to")
 
     #parser for Checking on reloads
-    check_parser = subparsers.add_parser("UpgradeCheck",
-                                     help="Commands to verify upgrade of switches").add_subparsers(dest="upgradecheck")
-    single_check_parser = check_parser.add_parser("single", help="single ip to check")
-    single_check_parser.add_argument('ipaddr', metavar='IP', help='The IP to check')
-    single_check_parser.add_argument('-a', '--apply', help="Perform full reload/upgrade", default=False, action="store_true")
-    single_check_parser.add_argument('-s', '--skip', help="skip verification", default=False,
+    upgrade_check_parser = subparsers.add_parser("upgrade_check",
+                                     help="Commands to verify upgrade of switches").add_subparsers(dest="upgrade_check")
+    single_upgrade_check_parser = upgrade_check_parser.add_parser("single", help="single ip to check")
+    single_upgrade_check_parser.add_argument('ipaddr', metavar='IP', help='The IP to check')
+    single_upgrade_check_parser.add_argument('-a', '--apply', help="Perform full reload/upgrade", default=False, action="store_true")
+    single_upgrade_check_parser.add_argument('-s', '--skip', help="skip verification", default=False,
                                     action="store_true")
-    single_check_parser.add_argument('-v', '--verbose', help="run in verbose mode", default=False, action="store_true")
-    single_check_parser.add_argument('-c', '--compare', help="specify config file to match current config")
-    single_check_parser.add_argument('-d', '--delay', help="specify minutes to delay reload (If Applying)")
-    single_check_parser.add_argument('-u', '--updateinterval',
+    single_upgrade_check_parser.add_argument('-v', '--verbose', help="run in verbose mode", default=False, action="store_true")
+    single_upgrade_check_parser.add_argument('-c', '--compare', help="specify config file to match current config")
+    single_upgrade_check_parser.add_argument('-d', '--delay', help="specify minutes to delay reload (If Applying)")
+    single_upgrade_check_parser.add_argument('-u', '--updateinterval',
                                     help="specify the check interval in seconds after reload (If Applying)"
                                          "Default is 30")
 
-    batch_check_parser = check_parser.add_parser("batch", help="multiple ips to check")
-    batch_check_parser.add_argument('file', metavar='file',help='The file with IPs to check')
-    batch_check_parser.add_argument('-a', '--apply', help="Perform full reload/upgrade", default=False, action="store_true")
-    batch_check_parser.add_argument('-s', '--skip', help="skip verification", default=False,
+    batch_upgrade_check_parser = upgrade_check_parser.add_parser("batch", help="multiple ips to check")
+    batch_upgrade_check_parser.add_argument('file', metavar='file',help='The file with IPs to check')
+    batch_upgrade_check_parser.add_argument('-a', '--apply', help="Perform full reload/upgrade", default=False, action="store_true")
+    batch_upgrade_check_parser.add_argument('-s', '--skip', help="skip verification", default=False,
                                     action="store_true")
-    batch_check_parser.add_argument('-v', '--verbose', help="run in verbose mode", default=False, action="store_true")
-    batch_check_parser.add_argument('-c', '--compare', help="specify config file to match current config")
-    batch_check_parser.add_argument('-d', '--delay', help="specify minutes to delay reload (If Applying)")
-    batch_check_parser.add_argument('-u', '--updateinterval', help="specify the check interval in seconds after reload (If Applying)"
+    batch_upgrade_check_parser.add_argument('-v', '--verbose', help="run in verbose mode", default=False, action="store_true")
+    batch_upgrade_check_parser.add_argument('-c', '--compare', help="specify config file to match current config")
+    batch_upgrade_check_parser.add_argument('-d', '--delay', help="specify minutes to delay reload (If Applying)")
+    batch_upgrade_check_parser.add_argument('-u', '--updateinterval', help="specify the check interval in seconds after reload (If Applying)"
                                                                    "Default is 30")
     #viewlog functionality #integrate with regular updatecheck? single and batch? print first line of sum file for status
-    viewlog_check_parser = check_parser.add_parser("viewlog", help="parse logs for easier viewing")
-    viewlog_check_parser.add_argument('ipaddr', metavar='IP', help='The IP to check')
+    view_log_upgrade_check_parser = upgrade_check_parser.add_parser("view_log", help="parse logs for easier viewing")
+    view_log_upgrade_check_parser.add_argument('ipaddr', metavar='IP', help='The IP to check')
     # viewlog_check_parser = check_parser.add_parser("viewlog", help="parse logs for easier viewing").add_subparsers(dest="viewlog")
     # before_viewlog_check_parser = viewlog_check_parser.add_parser('before', help="check before file of an IP")
     # before_viewlog_check_parser.add_argument('ipaddr', metavar='IP', help='The IP to check')
@@ -290,14 +290,14 @@ def dnmt():
     # vlan_parser.add_argument('-v', '--verbose', help="run in verbose mode", default=False, action="store_true")
 
 
-    # parser commands for AP_Poke
-    appoke_parser = tools_parser.add_parser("AP_Poke", help="Toggle APs with issues")
-    appoke_parser.add_argument('ipaddr', metavar='IP', help='Switch Address AP is on')
-    appoke_parser.add_argument('interface', metavar='interface', help='interface AP is on')
-    appoke_parser.add_argument('-v', '--verbose', help="run in verbose mode", default=False, action="store_true")
-    appoke_parser.add_argument('-s', '--skip', help="skip verification", default=False,action="store_true")
-    appoke_parser.add_argument('-t', '--tdr', help="perform TDR test", default=False, action="store_true")
-    appoke_parser.add_argument('-l', '--login', help="Ask for login credentials", default=False, action="store_true")
+    # parser commands for ap_poke
+    ap_poke_parser = tools_parser.add_parser("ap_poke", help="Toggle APs with issues")
+    ap_poke_parser.add_argument('ipaddr', metavar='IP', help='Switch Address AP is on')
+    ap_poke_parser.add_argument('interface', metavar='interface', help='interface AP is on')
+    ap_poke_parser.add_argument('-v', '--verbose', help="run in verbose mode", default=False, action="store_true")
+    ap_poke_parser.add_argument('-s', '--skip', help="skip verification", default=False,action="store_true")
+    ap_poke_parser.add_argument('-t', '--tdr', help="perform TDR test", default=False, action="store_true")
+    ap_poke_parser.add_argument('-l', '--login', help="Ask for login credentials", default=False, action="store_true")
 
     #diggle functionality
     dig_tool_parser = tools_parser.add_parser("dig", help="List hostnames from dns by domain")
@@ -355,21 +355,21 @@ def dnmt():
 
     #create the loop for interactive prompt
 
-    if cmdargs.maincommand == "MACSearch":
-        if cmdargs.macsearch == 'single' or cmdargs.macsearch == 'batchfile':
+    if cmdargs.maincommand == "mac_search":
+        if cmdargs.mac_search == 'single' or cmdargs.mac_search == 'batchfile':
             macsearcher.begin_search()
-        elif cmdargs.macsearch =='general':
+        elif cmdargs.mac_search =='general':
             macsearcher.begin_snmp_search()
-    elif cmdargs.maincommand == "HostnameUpdate":
+    elif cmdargs.maincommand == "hostname_update":
         hostnamer.hostname_update()
     # elif args.direct == "SNMPTest":
     #     hostnamer.snmp_test(args.ipaddr, config, args.oid)
-    elif cmdargs.maincommand == "WriteTest":
+    elif cmdargs.maincommand == "write_test":
         #hostnamer.write_test(cmdargs.ipaddr, config)
         hostnamer.write_test(cmdargs.ipaddr)
-    elif cmdargs.maincommand == "BulkVlanChange":
+    elif cmdargs.maincommand == "bulk_vlan_change":
         hostnamer.bulk_vlan_change(cmdargs.ipaddr,cmdargs.oldvlan,int(cmdargs.newvlan))
-    elif cmdargs.maincommand == "UpgradeCheck":
+    elif cmdargs.maincommand == "upgrade_check":
         #UpgradeCheck.main()
         upgradeCheck.begin()
         # if cmdargs.upgradecheck == 'single' and cmdargs.ipaddr:
@@ -380,7 +380,7 @@ def dnmt():
         # elif cmdargs.upgradecheck == 'viewlog' and cmdargs.ipaddr:
 
     elif cmdargs.maincommand == "tools":
-        if cmdargs.tools == 'AP_Poke':
+        if cmdargs.tools == 'ap_poke':
             try:  #<TODO ADD THIS FUNCTIONALITY EVERYWHERE>
                 tools.Ap_Poke()
             except SystemExit as errcode:

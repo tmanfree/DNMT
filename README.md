@@ -36,6 +36,10 @@ change the vlan on an interface.
 
 * **Activity Tracking** - *dnmt.py StatusChecks Activity_Tracking*. grab switch struct data and compare it to existing data.
 
+* **Standardize** - *dnmt.py tools Standardize*. grab switch struct data and compare it to existing data.
+
+* **Mapper** - *dnmt.py mapper filename*. map out the cdp connections of all the provided IPs.
+
 * **Test Commands** - *dnmt.py test {command}*. A variety of commands that are added/removed as required
 
 ## Requirements

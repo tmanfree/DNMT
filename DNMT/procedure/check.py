@@ -164,7 +164,7 @@ class Check:
     #     return True
 
     def begin(self):
-        if self.cmdargs.upgradecheck == 'single' and self.cmdargs.ipaddr:
+        if self.cmdargs.upgrade_check == 'single' and self.cmdargs.ipaddr:
             result = self.single_search(self.cmdargs.ipaddr)
             #not printing right now!
             if ('apply' in self.cmdargs and self.cmdargs.apply) or(
@@ -172,7 +172,7 @@ class Check:
                 print(result["Print_Sum"])
 
                 self.subs.verbose_printer(result["summary"])
-        elif self.cmdargs.upgradecheck == 'batch' and self.cmdargs.file:
+        elif self.cmdargs.upgrade_check == 'batch' and self.cmdargs.file:
             iplist = []
             file = open(self.cmdargs.file, "r")
             for ip in file:
@@ -192,7 +192,7 @@ class Check:
 
                     self.subs.verbose_printer(result["summary"]) # make this printing by default?
             print("***Batch Done***")
-        elif self.cmdargs.upgradecheck == 'viewlog':
+        elif self.cmdargs.upgrade_check == 'view_log':
             self.list_logs(self.cmdargs.ipaddr)
        #add functionality to parse the various log files that are created, so you dont manually look:
         print("***Job Complete, Exiting Program***")
