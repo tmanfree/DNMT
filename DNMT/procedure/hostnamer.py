@@ -20,50 +20,6 @@ class HostNamer:
         self.config = config
         self.subs = SubRoutines(cmdargs, config)
 
-    def write_test(self,ipaddr):
-
-        randnum = random.randint(1,100)
-        if (self.subs.snmp_set(ipaddr,
-                                 ObjectType(ObjectIdentity('CISCO-CONFIG-COPY-MIB', 'ccCopySourceFileType', randnum
-                                                           ).addAsn1MibSource('file:///usr/share/snmp',
-                                                                              'http://mibs.snmplabs.com/asn1/@mib@'), 4),
-                                 ObjectType(ObjectIdentity('CISCO-CONFIG-COPY-MIB', 'ccCopyDestFileType', randnum
-                                                           ).addAsn1MibSource('file:///usr/share/snmp',
-                                                                              'http://mibs.snmplabs.com/asn1/@mib@'), 3),
-                                 ObjectType(ObjectIdentity('CISCO-CONFIG-COPY-MIB', 'ccCopyEntryRowStatus', randnum
-                                                           ).addAsn1MibSource('file:///usr/share/snmp',
-                                                                              'http://mibs.snmplabs.com/asn1/@mib@'), 4)
-                                 )):
-
-            complete = False
-            secs = 0
-
-            while not complete and secs < 30:
-                varBinds = self.subs.snmp_get(ipaddr, ObjectType(ObjectIdentity(
-                    'CISCO-CONFIG-COPY-MIB', 'ccCopyState', randnum).addAsn1MibSource(
-                    'file:///usr/share/snmp',
-                    'http://mibs.snmplabs.com/asn1/@mib@')))
-                if (varBinds):
-                    return_oid, return_value = varBinds[0]
-                    return_value = str(return_value)  # change value to string rather than DisplayString
-                    ### temp printing
-                    for varBind in varBinds:
-                        print(' = '.join([x.prettyPrint() for x in varBind]))
-                    ### temp print end
-                    if return_value == "successful":
-                        complete = True
-                    else:
-                        time.sleep(1)
-                        secs += 1
-            if complete:
-                #clear the copy table
-                if (self.subs.snmp_set(ipaddr,ObjectType(ObjectIdentity(
-                        'CISCO-CONFIG-COPY-MIB', 'ccCopyEntryRowStatus', randnum).addAsn1MibSource(
-                        'file:///usr/share/snmp',
-                        'http://mibs.snmplabs.com/asn1/@mib@'),6))):
-                    print("Job complete")
-
-
 
 
     def bulk_vlan_change(self,ipaddr,old_vlan,new_vlan):
@@ -94,7 +50,7 @@ class HostNamer:
                             'http://mibs.snmplabs.com/asn1/@mib@'), new_vlan))):
                         print("placeholder vlan ID updated")
 
-        self.write_test(ipaddr)
+        self.subs.snmp_save_config(ipaddr)
 
     # def snmp_test(ipaddr,config,oid):
     #
@@ -143,7 +99,7 @@ class HostNamer:
                     #     '1.3.6.1.2.1.1.5.0'),dns_hostname.upper()))
                     varBinds = self.subs.snmp_set(ipaddr, ObjectType(ObjectIdentity(
                         '1.3.6.1.2.1.1.5.0'), dns_hostname.upper()))
-                    self.write_test(ipaddr)
+                    self.subs.snmp_save_config(ipaddr)
                     if (varBinds):#hostname was updated successfully
                         #call itself to confirm it is updated.
                         self.snmpproc(ipaddr, dns_hostname, dns_domain)

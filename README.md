@@ -10,37 +10,37 @@ require directly accessing switches through either SSH or SNMP. **All functions 
 
 Current functionality:
 
-* **MAC Search** - *dnmt.py MACSearch  -m MAC START_IP*. Based on the previous "Lefty" program,
+* **MAC Search** - *dnmt.py mac_search  -m MAC START_IP*. Based on the previous "Lefty" program,
  this is currently operational
 
-* **Hostname Update** - *dnmt.py HostnameUpdate FILENAME*. This will compare switch hostnames
+* **Hostname Update** - *dnmt.py hostname_update FILENAME*. This will compare switch hostnames
 with dns hostnames, updating the switch hostname if they are different.
 
-* **WriteTest** - *dnmt.py WriteTest IP*. This performs a "write mem" through snmp. **May not trigger archival in 
+* **WriteTest** - *dnmt.py write_test IP*. This performs a "write mem" through snmp. **May not trigger archival in 
 cisco prime*
 
-* **Bulk Vlan Change** - *dnmt.py BulkVlanChange IP Oldvlan Newvlan*. This will change all ports on "oldvlan" 
+* **Bulk Vlan Change** - *dnmt.py bulk_vlan_change IP Oldvlan Newvlan*. This will change all ports on "oldvlan" 
 to be on "newvlan".
 
-* **Upgrade Check** - *dnmt.py UpgradeCheck [single|batch] IP|IPFILE*. This will perform some checks 
+* **Upgrade Check** - *dnmt.py upgrade_check [single|batch] IP|IPFILE*. This will perform some checks 
 before upgrading. Can also apply upgrades by restarting switches and then checking the state against the pre-reload
 state. Can be run in single or batch mode.
 
-* **AP toggle** - *dnmt.py tools AP_Poke IP Interface*. This will perform a "shut/no shut" on a port if it is deemed
+* **AP toggle** - *dnmt.py tools ap_poke IP Interface*. This will perform a "shut/no shut" on a port if it is deemed
 safe to do so.
 
-* **Port Vlan Change** - *dnmt.py tools Port_Change IP Interface*. This will provide an interactive prompt to
+* **Port Vlan Change** - *dnmt.py tools port_change IP Interface*. This will provide an interactive prompt to
 change the vlan on an interface.
 
-* **Switch Check** - *dnmt.py StatusChecks Switch_Check*. Grab a variety of switch status data through snmp.
+* **Switch Check** - *dnmt.py status_checks switch_check*. Grab a variety of switch status data through snmp.
 
-* **Activity Tracking** - *dnmt.py StatusChecks Activity_Tracking*. grab switch struct data and compare it to existing data.
+* **Activity Tracking** - *dnmt.py status_checks sctivity_tracking*. grab switch struct data and compare it to existing data.
 
-* **Standardize** - *dnmt.py tools Standardize*. grab switch struct data and compare it to existing data.
+* **Standardize** - *dnmt.py tools standardize*. apply commands to a switch if they are missing.
 
-* **Mapper** - *dnmt.py mapper filename*. map out the cdp connections of all the provided IPs.
+* **Mapper** - *dnmt.py mapper ip_filename*. map out the cdp connections of all the provided IPs.
 
-* **Test Commands** - *dnmt.py test {command}*. A variety of commands that are added/removed as required
+* **Test Commands** - *dnmt.py test {command}*. A variety of commands that are added/removed as required [buggy cmds here]
 
 ## Requirements
 
@@ -78,11 +78,11 @@ an IP address to begin searching at
     
 Example commands:
 
-    dnmt MACSearch -m AAAA.BBBB.CCCC 1.1.1.1
+    dnmt mac_search -m AAAA.BBBB.CCCC 1.1.1.1
 
 This command will search for MAC address *AAAA.BBBB.CCCC* starting from IP address 1.1.1.1
 
-    dnmt MACSearch -b macfile.txt 1.1.1.1 -c output.csv
+    dnmt mac_search -b macfile.txt 1.1.1.1 -c output.csv
 
 This command will search for all MAC addresses listed in *macfile.txt* 
  starting from IP address 1.1.1.1 and store results in *output.csv*
@@ -101,7 +101,7 @@ it will then update the switch hostname.
     
 Example commands:
 
-    dnmt HostnameUpdate -c IPList.txt
+    dnmt hostname_update -c IPList.txt
 
 This command will check all of the hostnames for IP addresses listed in IPList.txt. 
 It will not update if there is a difference, due to the -c flag.
@@ -136,9 +136,9 @@ after reload state with the before reload state. This can be run in single mode 
    
 Example commands:
 
-    dnmt UpgradeCheck single A.A.A.A
+    dnmt upgrade_check single A.A.A.A
 
-    dnmt UpgradeCheck batch FILENAME
+    dnmt upgrade_check batch FILENAME
 
 ### Write Test
 
@@ -152,7 +152,7 @@ Example commands:
     
 Example commands:
 
-    dnmt WriteTest  A.A.A.A
+    dnmt write_test  A.A.A.A
 
 This command will copy the running config of A.A.A.A to the startup config
 
@@ -168,7 +168,7 @@ This command will copy the running config of A.A.A.A to the startup config
  
 Example Commands:
  
-    dnmt.py BulkVlanChange A.A.A.A 500 901
+    dnmt.py bulk_vlan_change A.A.A.A 500 901
  
 This will change all ports on A.A.A.A on vlan 500 to vlan 901. 
 
@@ -189,7 +189,7 @@ safe to do so. Will only toggle if the port is down, or up with an AP, or up wit
 
 Example Commands:
 
-    dnmt.py tools AP_Poke A.A.A.A 1/0/1 -v
+    dnmt.py tools ap_poke A.A.A.A 1/0/1 -v
 
 This will check port 1/0/1 on switch A.A.A.A to see if it is safe to toggle. If so, it will ask if you want to do so.
 More information will be printed to the screen as it is in verbose mode. 
@@ -206,7 +206,7 @@ port on.
 
 Example Commands:
 
-    dnmt.py tools Port_Change A.A.A.A 1/0/1
+    dnmt.py tools port_change A.A.A.A 1/0/1
 
 This will provide an interactive prompt to change the vlan on port 1/0/1 of switch A.A.A.A
 
@@ -225,7 +225,7 @@ will then output it to the screen, or to a csv file if specified.
 
 Example Commands:
 
-    dnmt.py StatusChecks Switch_Check -i A.A.A.A -c CSV.csv
+    dnmt.py status_checks switch_check -i A.A.A.A -c CSV.csv
 
 This will grab switch status information from switch A.A.A.A and output to a file called CSV.csv
 
@@ -249,10 +249,37 @@ create a summary file and email it
 
 Example Commands:
 
-    dnmt.py StatusChecks Activity_Tracking -l -e test@email.com
+    dnmt.py status_checks activity_tracking -l -e test@email.com
 
 This will operate on all ips listed in /usr/lib/capt/activitycheckIPlist, compare against all existing 
  statcheck files, create a summary file using only the ips listed in activitycheckIPlist then email to test@email.com 
+ 
+ 
+ ###Mapper
+**Description:** This will check the cdp neighbour entries of switches supplied to it and map it out using graphviz.
+If an email is specified it will email the png file, otherwise it will print out a text connection display.
+Currently has hard set ignore of VG,ATA and Phones and ignores specific hostnames.
+[requires graphviz runtimes on generating machine]
+
+ **Input Required:**
+ * *filename* - a text file containing all IP seed addresses to check. one IP per line. 
+ 
+ **Optional Flags**
+
+*  *-f , --file* specify iplist file to use if not using default
+*  *-h, --help*            show this help message and exit
+*  *-v, --verbose*         run in verbose mode
+*  *-t, --test*            don't delete anything, just test
+*  *-d, --debug*           run in debug mode (extremely verbose)
+*  *-e EMAIL, --email EMAIL* specify email to send graph to
+*  *-r, --remove*          remove file after processing                   
+
+Example Commands:
+
+    dnmt.py mapper ip_file -e test@email.com -r
+
+This will generate a cdp map using all the ips in ip_file (and any it sees/can log into) then email to test@email.com.
+It will remove the png after sending.
 
 
 ###Test Commands

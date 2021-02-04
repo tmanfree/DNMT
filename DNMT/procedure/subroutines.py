@@ -112,6 +112,55 @@ class SubRoutines:
 
     ###ADVANCED SNMP COMMANDS####
 
+    # Name: snmp_save_config
+    # Input:
+    #   ipaddr (string)
+    #      -The ipaddress/hostname of the switch to write-mem on
+    # Summary:
+    #   Saves the running config to the startup config of a cisco switch
+    #     (ie GigabitEthernet X/X)
+    def snmp_save_config(self, ipaddr):
+
+        randnum = random.randint(1, 100)
+        if (self.snmp_set(ipaddr,
+                               ObjectType(ObjectIdentity('CISCO-CONFIG-COPY-MIB', 'ccCopySourceFileType', randnum
+                                                         ).addAsn1MibSource('file:///usr/share/snmp',
+                                                                            'http://mibs.snmplabs.com/asn1/@mib@'), 4),
+                               ObjectType(ObjectIdentity('CISCO-CONFIG-COPY-MIB', 'ccCopyDestFileType', randnum
+                                                         ).addAsn1MibSource('file:///usr/share/snmp',
+                                                                            'http://mibs.snmplabs.com/asn1/@mib@'), 3),
+                               ObjectType(ObjectIdentity('CISCO-CONFIG-COPY-MIB', 'ccCopyEntryRowStatus', randnum
+                                                         ).addAsn1MibSource('file:///usr/share/snmp',
+                                                                            'http://mibs.snmplabs.com/asn1/@mib@'), 4)
+                               )):
+
+            complete = False
+            secs = 0
+
+            while not complete and secs < 30:
+                varBinds = self.snmp_get(ipaddr, ObjectType(ObjectIdentity(
+                    'CISCO-CONFIG-COPY-MIB', 'ccCopyState', randnum).addAsn1MibSource(
+                    'file:///usr/share/snmp',
+                    'http://mibs.snmplabs.com/asn1/@mib@')))
+                if (varBinds):
+                    return_oid, return_value = varBinds[0]
+                    return_value = str(return_value)  # change value to string rather than DisplayString
+                    ### temp printing
+                    for varBind in varBinds:
+                        print(' = '.join([x.prettyPrint() for x in varBind]))
+                    ### temp print end
+                    if return_value == "successful":
+                        complete = True
+                    else:
+                        time.sleep(1)
+                        secs += 1
+            if complete:
+                # clear the copy table
+                if (self.snmp_set(ipaddr, ObjectType(ObjectIdentity(
+                        'CISCO-CONFIG-COPY-MIB', 'ccCopyEntryRowStatus', randnum).addAsn1MibSource(
+                    'file:///usr/share/snmp',
+                    'http://mibs.snmplabs.com/asn1/@mib@'), 6))):
+                    print("Job complete")
 
     #1.3.6.1.2.1.1.3
 

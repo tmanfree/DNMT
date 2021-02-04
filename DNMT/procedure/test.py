@@ -158,7 +158,7 @@ class Test:
             print("NETMIKO ERROR {}:{}".format(ipaddr,err.args[0]))
 
 
-    def batchrunwrapper(self):
+    def batch_command_wrapper(self):
         file = open(self.cmdargs.file, "r")
         for command in file:
             Return_val = subprocess.run(command, shell=True)
@@ -285,7 +285,7 @@ class Test:
         except Exception as err: #currently a catch all to stop linux from having a conniption when reloading
             print("NETMIKO ERROR {}:{}".format(ipaddr,err.args[0]))
 
-    def Vlan_Namer_Begin(self):
+    def vlan_namer_begin(self):
         # Iterate through addresses List
         if 'apply' in self.cmdargs and self.cmdargs.apply:
             print("Beginning Apply Vlan Naming Operation")

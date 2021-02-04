@@ -260,7 +260,7 @@ def dnmt():
     connect_count_parser = test_parser.add_parser("connection_count", help="count not connected ports")
     connect_count_parser.add_argument('file', help='The file with IPs to check')
 
-    batch_run_wrapper_parser = test_parser.add_parser("batchrunwrapper", help="run batches of command line scripts")
+    batch_run_wrapper_parser = test_parser.add_parser("batch_command_wrapper", help="run batches of command line scripts")
     batch_run_wrapper_parser.add_argument('file', help='The file with cli commands to run')
 
     vlan_namer_parser = test_parser.add_parser('Vlan_Namer',help="Rename Vlans")
@@ -268,7 +268,7 @@ def dnmt():
     vlan_namer_parser.add_argument('-v', '--verbose', help="run in verbose mode", default=False, action="store_true")
     vlan_namer_parser.add_argument('-a', '--apply', help="apply changes", default=False, action="store_true")
 
-    ipam_rest_parser = test_parser.add_parser("IPAM_REST_TEST", help="rest command testing")
+    ipam_rest_parser = test_parser.add_parser("ipam_rest_test", help="rest command testing")
     ipam_rest_parser.add_argument('building', help='The 3 letter code of the building to grab vlans from')
     ipam_rest_parser.add_argument('vlanid', help='The vlan to get the name of')
 
@@ -366,18 +366,11 @@ def dnmt():
     #     hostnamer.snmp_test(args.ipaddr, config, args.oid)
     elif cmdargs.maincommand == "write_test":
         #hostnamer.write_test(cmdargs.ipaddr, config)
-        hostnamer.write_test(cmdargs.ipaddr)
+        hostnamer.subs.snmp_save_config(cmdargs.ipaddr)
     elif cmdargs.maincommand == "bulk_vlan_change":
         hostnamer.bulk_vlan_change(cmdargs.ipaddr,cmdargs.oldvlan,int(cmdargs.newvlan))
     elif cmdargs.maincommand == "upgrade_check":
-        #UpgradeCheck.main()
         upgradeCheck.begin()
-        # if cmdargs.upgradecheck == 'single' and cmdargs.ipaddr:
-        #     #upgradeCheck.single_search(cmdargs.ipaddr)
-        #     upgradeCheck.begin()
-        # elif cmdargs.upgradecheck == 'batch' and cmdargs.file:
-        #     upgradeCheck.begin()
-        # elif cmdargs.upgradecheck == 'viewlog' and cmdargs.ipaddr:
 
     elif cmdargs.maincommand == "tools":
         if cmdargs.tools == 'ap_poke':
@@ -428,11 +421,11 @@ def dnmt():
             test.dell_snmp_Begin()
         elif cmdargs.test == "connection_count":
             test.connection_count_begin()
-        elif cmdargs.test == "batchrunwrapper":
-            test.batchrunwrapper()
+        elif cmdargs.test == "batch_command_wrapper":
+            test.batch_command_wrapper()
         elif cmdargs.test == "Vlan_Namer":
-            test.Vlan_Namer_Begin()
-        elif cmdargs.test == "IPAM_REST_TEST":
+            test.vlan_namer_begin()
+        elif cmdargs.test == "ipam_rest_test":
             temp = test.Ipam_Rest_Get("https://ipam.ualberta.ca/solid.intranet/rest/vlmvlan_list",
                                                    {"WHERE": "vlmdomain_description like '{}' and vlmvlan_vlan_id = '{}'".format(cmdargs.building,cmdargs.vlanid)})
             print(temp)
