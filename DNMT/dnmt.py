@@ -389,11 +389,11 @@ def dnmt():
         elif cmdargs.tools =='hp_password_change':
             tools.hp_password_change_begin()
     elif cmdargs.maincommand == 'status_checks':
-        if cmdargs.statuschecks == "activity_tracking":
+        if cmdargs.status_checks == "activity_tracking":
             statusChecks.activity_tracking_begin()
-        elif cmdargs.statuschecks == "switch_check":
+        elif cmdargs.status_checks == "switch_check":
             statusChecks.switch_check()
-        elif cmdargs.statuschecks == "maintenance":
+        elif cmdargs.status_checks == "maintenance":
             try:
                 statusChecks.Maintenance(int(cmdargs.maxfiles))
             except ValueError:
