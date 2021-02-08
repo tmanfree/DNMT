@@ -404,7 +404,7 @@ def dnmt():
                 dbcmds.find_description()
             elif cmdargs.find == 'mac':
                 dbcmds.find_mac_address()
-        if cmdargs.DBcmds =='reports':
+        if cmdargs.database_Commands =='reports':
             if cmdargs.reports == 'fmnet':
                 if cmdargs.fmnet == 'port_security_violations':
                     dbcmds.create_port_security_report();
