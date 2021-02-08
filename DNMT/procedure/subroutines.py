@@ -1917,7 +1917,7 @@ class SubRoutines:
         try:
             successful_files = []
             failure_files = []
-            if 'file' in kwargs and kwargs['file'] is not None or kwargs['maincommand'] == "StatusChecks": #have default of all IPS with statusChecks
+            if 'file' in kwargs and kwargs['file'] is not None or kwargs['maincommand'] == "status_checks": #have default of all IPS with statusChecks
                 if 'file' in kwargs and kwargs['file'] is not None:
                     file = open(os.path.join(kwargs['file']), "r")
                 else:
@@ -1938,7 +1938,7 @@ class SubRoutines:
         # By default grabs all existing statcheck files, this could be changed to only act on the iplist provided
 
         if 'file' in self.cmdargs and self.cmdargs.file is not None and kwargs['maincommand'] =='database_commands' or kwargs[
-            'maincommand'] == "StatusChecks" and 'limit' in self.cmdargs and self.cmdargs.limit:
+            'maincommand'] == "status_checks" and 'limit' in self.cmdargs and self.cmdargs.limit:
             self.custom_printer("verbose","##### Creating Limited Summary List #####")
             fileList = [f + "-statcheck.bz2" for f in iplist]
         else:
