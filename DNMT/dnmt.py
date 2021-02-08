@@ -399,7 +399,7 @@ def dnmt():
             except ValueError:
                 print("maxfiles is not a number, exiting")
     elif cmdargs.maincommand == 'database_commands':
-        if cmdargs.DBcmds == 'find':
+        if cmdargs.database_commands == 'find':
             if cmdargs.find == 'desc':
                 dbcmds.find_description()
             elif cmdargs.find == 'mac':
