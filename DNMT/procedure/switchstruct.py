@@ -83,7 +83,7 @@ class StackStruct:
     def printSingleLine(self):
         print(StackStruct.CSVHeader)
         for switch in self.switches:
-            switch.printSingleLine(self.ip, self.vendor, self.hostname, "\"{}\"".format(str(self.uptime).replace(',',' ')))
+            switch.printSingleLine(self.ip, self.vendor, self.hostname, str(self.uptime).replace(',',' '))
 
     # def appendSingleLine(self):
     #     totalString = ""
@@ -106,7 +106,7 @@ class StackStruct:
                 setattr(self,varname,None)
 
         for switch in self.switches:
-            totalString += switch.appendSingleLineCustom((self.ip,self.vendor, self.hostname, "\"{}\"".format(str(self.uptime).replace(',',' '))),**kwargs)
+            totalString += switch.appendSingleLineCustom((self.ip,self.vendor, self.hostname,str(self.uptime).replace(',',' ')),**kwargs)
         return totalString
 
     def exportCSV(self,filename):
@@ -115,7 +115,7 @@ class StackStruct:
             print(StackStruct.CSVHeader,file=filePointer)
 
             for switch in self.switches:
-                switch.exportCSV(self.ip,self.vendor, self.hostname, "\"{}\"".format(str(self.uptime).replace(',',' ')),filePointer)
+                switch.exportCSV(self.ip,self.vendor, self.hostname,str(self.uptime).replace(',',' '),filePointer)
 
     # def csvStack(self):
     #     with open("test.csv", 'w', encoding='utf-8') as f:
