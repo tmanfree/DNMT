@@ -177,6 +177,7 @@ class SubRoutines:
     #     (ie GigabitEthernet X/X)
     def snmp_get_uptime(self, ipaddr):
         intId = 0  # intitalize as 0 as not found
+        uptime = None #preassignment to avoid any errors if not found
         varBinds = self.snmp_walk(ipaddr, ObjectType(ObjectIdentity(
             '1.3.6.1.2.1.1.3')))
         #'1.3.6.1.2.1.2.2.1.2')))
@@ -1220,6 +1221,8 @@ class SubRoutines:
         switchStruct.vlanList  = self.snmp_get_vlan_database(ipaddr,vendor)
         if vendor != "None Found":
             switchStruct.hostname = self.snmp_get_hostname(ipaddr)
+
+            switchStruct.uptime = self.snmp_get_uptime(ipaddr)
 
             for switch in self.snmp_get_switch_id_bulk(ipaddr,vendor):
                 if (switchStruct.getSwitch(switch['Switch']) is None):

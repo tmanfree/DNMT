@@ -12,11 +12,11 @@ from pysnmp.proto import rfc1902
 
 class StackStruct:
     #External Variables/Methods
-    CSVHeader = "IP,Vendor,Hostname,SwitchNum,Model,Serial,SoftwareVer,ModuleNum,PortNum,PortName,PortDesc,PoE,Neighbour name,Neighbour port,Neighbour type, Neighbour IP, Status (1=Up),DataVlan,DataVlan name,VoiceVlan,Mode (1=Trunk),IntID,PsViolations,InputErrors,OutputErrors,InputCounters,OutputCounters,LastTimeUpdated,DeltaInputCounters,DeltaOutputCounters,HistoricalInputErrors,HistoricalOutputErrors,HistoricalInputCounters,HistoricalOutputCounters"
+    CSVHeader = "IP,Vendor,Hostname,System Uptime,SwitchNum,Model,Serial,SoftwareVer,ModuleNum,PortNum,PortName,PortDesc,PoE,Neighbour name,Neighbour port,Neighbour type, Neighbour IP, Status (1=Up),DataVlan,DataVlan name,VoiceVlan,Mode (1=Trunk),IntID,PsViolations,InputErrors,OutputErrors,InputCounters,OutputCounters,LastTimeUpdated,DeltaInputCounters,DeltaOutputCounters,HistoricalInputErrors,HistoricalOutputErrors,HistoricalInputCounters,HistoricalOutputCounters"
 
     def getHeader(flags):
         if 'xecutive' in flags and eval("flags.xecutive"):
-            return "IP,Vendor,Hostname,SwitchNum,Model,Serial,SoftwareVer,ModuleNum,PortNum,PortName,PortDesc,PoE draw (1=Yes),Status (1=Up),DataVlan,DataVlan name,VoiceVlan,Mode (1=Trunk),PsViolations,InputErrors,OutputErrors,InputCounters,OutputCounters,LastTimeUpdated,DeltaInputCounters,DeltaOutputCounters\n"
+            return "IP,Vendor,Hostname,System Uptime,SwitchNum,Model,Serial,SoftwareVer,ModuleNum,PortNum,PortName,PortDesc,PoE draw (1=Yes),Status (1=Up),DataVlan,DataVlan name,VoiceVlan,Mode (1=Trunk),PsViolations,InputErrors,OutputErrors,InputCounters,OutputCounters,LastTimeUpdated,DeltaInputCounters,DeltaOutputCounters\n"
         else:
             return "{}\n".format(StackStruct.CSVHeader)
 
@@ -27,6 +27,7 @@ class StackStruct:
         self.ip = ipaddr
         self.vendor = vendor
         self.hostname = None
+        self.uptime = None
         self.switches = []
         self.vlanList = []
         # self.CSVHeader = "IP,Vendor,Hostname,SwitchNum,Model,Serial,SoftwareVer,ModuleNum,PortNum,PortName,PortDesc,PoE,Neighbour name,Neighbour port,Neighbour Info,Status (1=Up),DataVlan,VoiceVlan,Mode (1=Trunk),IntID,PsViolations,InputErrors,OutputErrors,InputCounters,OutputCounters,LastTimeUpdated,DeltaInputCounters,DeltaOutputCounters"
@@ -75,14 +76,14 @@ class StackStruct:
                     None)
 
     def printStack(self):
-        print("IP:{}\nVendor:{}\nHosntame:{}".format(self.ip,self.vendor,self.hostname))
+        print("IP:{}\nVendor:{}\nHosntame:{},\nSystem Uptime:{}".format(self.ip,self.vendor,self.hostname, self.uptime))
         for switch in self.switches:
             switch.printSwitch()
 
     def printSingleLine(self):
         print(StackStruct.CSVHeader)
         for switch in self.switches:
-            switch.printSingleLine(self.ip, self.vendor, self.hostname)
+            switch.printSingleLine(self.ip, self.vendor, self.hostname, "\"{}\"".format(str(self.uptime).replace(',',' ')))
 
     # def appendSingleLine(self):
     #     totalString = ""
@@ -99,8 +100,13 @@ class StackStruct:
 
     def appendSingleLineCustom(self,**kwargs):
         totalString = ""
+
+        for varname in ['uptime','hostname']: #checker to avoid newly added attributes being missing
+            if not hasattr(self,varname):
+                setattr(self,varname,None)
+
         for switch in self.switches:
-            totalString += switch.appendSingleLineCustom((self.ip,self.vendor, self.hostname),**kwargs)
+            totalString += switch.appendSingleLineCustom((self.ip,self.vendor, self.hostname, "\"{}\"".format(str(self.uptime).replace(',',' '))),**kwargs)
         return totalString
 
     def exportCSV(self,filename):
@@ -109,7 +115,7 @@ class StackStruct:
             print(StackStruct.CSVHeader,file=filePointer)
 
             for switch in self.switches:
-                switch.exportCSV(self.ip,self.vendor, self.hostname,filePointer)
+                switch.exportCSV(self.ip,self.vendor, self.hostname, "\"{}\"".format(str(self.uptime).replace(',',' ')),filePointer)
 
     # def csvStack(self):
     #     with open("test.csv", 'w', encoding='utf-8') as f:
