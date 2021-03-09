@@ -481,5 +481,15 @@ class StatusChecks:
         # test.printSingleLine()
         if 'csv' in self.cmdargs and self.cmdargs.csv is not None:
             test.exportCSV(self.cmdargs.csv)
+            try:
+                ##################
+                if 'email' in self.cmdargs and self.cmdargs.email is not None:
+                    msg_subject = "Switch Status - {}".format(datetime.date.today().strftime('%Y-%m-%d'))
+                    body = "Processing complete"
+
+                    self.subs.email_with_attachment(msg_subject, self.cmdargs.email, body, self.cmdargs.csv)
+                #######################
+            except Exception as err:
+                print(err)
         else:
             test.printStack()
