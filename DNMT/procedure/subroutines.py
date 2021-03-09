@@ -15,7 +15,12 @@ from email.mime.base import MIMEBase
 from email.mime.image import MIMEImage
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+from email.mime.audio import MIMEAudio
 from email import encoders
+import mimetypes
+
+
+
 
 #for readable activity files
 import zipfile #imports for summary filescompression imports
@@ -1878,13 +1883,35 @@ class SubRoutines:
             #      int((time.time() - total_start) * 100) / 100, len(self.successful_switches),len(self.failure_switches) )
 
             themsg.preamble = 'I am not using a MIME-aware mail reader.\n'
-            image = MIMEImage(image_data,name=os.path.basename(filename))
-            # msg = MIMEBase('application', 'zip')
-            # msg.set_payload(file.read())
-            # encoders.encode_base64(msg)
-            # msg.add_header('Content-Disposition', 'attachment', filename=file)
+            ctype, encoding = mimetypes.guess_type(filename)
+            if ctype is None or encoding is not None:
+                ctype = "application/octet-stream"
 
-            themsg.attach(image)
+            maintype, subtype = ctype.split("/", 1)
+
+            if maintype == "text":
+                fp = open(filename)
+                # Note: we should handle calculating the charset
+                attachment = MIMEText(fp.read(), _subtype=subtype)
+                fp.close()
+            elif maintype == "image":
+                fp = open(filename, "rb")
+                attachment = MIMEImage(fp.read(), _subtype=subtype)
+                fp.close()
+            elif maintype == "audio":
+                fp = open(filename, "rb")
+                attachment = MIMEAudio(fp.read(), _subtype=subtype)
+                fp.close()
+            else:
+                fp = open(filename, "rb")
+                attachment = MIMEBase(maintype, subtype)
+                attachment.set_payload(fp.read())
+                fp.close()
+                encoders.encode_base64(attachment)
+            attachment.add_header("Content-Disposition", "attachment", filename=filename)
+            themsg.attach(attachment)
+            # image = MIMEImage(image_data,name=os.path.basename(filename))
+            # themsg.attach(image)
 
             # create the body of the email
 
