@@ -331,7 +331,7 @@ class PortStruct:
         else:
             while True:
                 try:
-                    return "{},{},{},\"{}\",{},\"{}\",{},\"{}\",{}, {},{},{},{},{},{},{},{},{},{},{},{},{},{},\"{}\",\"{}\",\"{}\",\"{}\"\n".format(
+                    return "{},{},{},\"{}\",{},\"{}\",\"{}\",\"{}\",{}, {},{},{},{},{},{},{},{},{},{},{},{},{},{},\"{}\",\"{}\",\"{}\",\"{}\"\n".format(
                         str(passedTup).translate({ord(i): None for i in '()\''}),
                         self.portnumber, self.portname, self.description, self.poe,
                         self.cdpname, self.cdpport, self.cdptype, self.cdpip, self.status, self.datavlan,
@@ -408,7 +408,7 @@ class PortStruct:
 
 
     def printSingleLine(self,passedTup):
-        print("{},{},{},\"{}\",{},\"{}\",{},\"{}\",{},{},{},{},{},{},{},{},{},{},{},{},{},{},{}".format(str(passedTup).translate({ord(i): None for i in '()\''}),
+        print("{},{},{},\"{}\",{},\"{}\",\"{}\",\"{}\",{},{},{},{},{},{},{},{},{},{},{},{},{},{},{}".format(str(passedTup).translate({ord(i): None for i in '()\''}),
                                                         self.portnumber, self.portname, self.description, self.poe,
                                                         self.cdpname, self.cdpport, self.cdptype, self.cdpip, self.status,
                                                         self.datavlan, self.datavlanname, self.voicevlan,
@@ -416,7 +416,7 @@ class PortStruct:
                                                               self.inputcounters, self.outputcounters,
                                                               self.lastupdate,self.deltalastin,self.deltalastout))
     def exportCSV(self,passedTup,filePointer):
-        print("{},{},{},\"{}\",{},\"{}\",{},\"{}\",{},{},{},{},{},{},{},{},{},{},{},{},{},{},{}".format(str(passedTup).translate({ord(i): None for i in '()\''}),
+        print("{},{},{},\"{}\",{},\"{}\",\"{}\",\"{}\",{},{},{},{},{},{},{},{},{},{},{},{},{},{},{}".format(str(passedTup).translate({ord(i): None for i in '()\''}),
                                                         self.portnumber, self.portname, self.description, self.poe,
                                                         self.cdpname, self.cdpport, self.cdptype, self.cdpip, self.status,
                                                         self.datavlan,self.datavlanname,self.voicevlan,
