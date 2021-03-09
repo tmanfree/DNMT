@@ -115,7 +115,7 @@ class StackStruct:
             print(StackStruct.CSVHeader,file=filePointer)
 
             for switch in self.switches:
-                switch.exportCSV(self.ip,self.vendor, self.hostname,str(self.uptime).replace(',',' '),filePointer)
+                switch.exportCSV((self.ip,self.vendor, self.hostname,str(self.uptime).replace(',',' ')),filePointer)
 
     # def csvStack(self):
     #     with open("test.csv", 'w', encoding='utf-8') as f:
@@ -172,9 +172,9 @@ class SwitchStruct:
             totalString += module.appendSingleLineCustom(passedTup+(self.switchnumber, self.model, self.serialnumber, self.version),**kwargs)
         return totalString
 
-    def exportCSV(self,ip,vendor, hostname, filePointer):
+    def exportCSV(self,passedTup, filePointer):
         for module in self.modules:
-            module.exportCSV((ip,vendor,hostname,self.switchnumber,self.model,self.serialnumber,self.version),filePointer)
+            module.exportCSV(passedTup+(self.switchnumber,self.model,self.serialnumber,self.version),filePointer)
 
 
 class ModuleStruct:
