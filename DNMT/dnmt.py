@@ -190,6 +190,7 @@ def dnmt():
     switch_check_parser.add_argument('-c', '--csv', help="save to a specified csv file")
     switch_check_parser.add_argument('-v', '--verbose', help="run in verbose mode", default=False, action="store_true")
     switch_check_parser.add_argument('-l', '--load', help="load switchstruct from a specified file")
+    switch_check_parser.add_argument('-r', '--ro', help="use a custom RO snmp string")
 
     #DB commands - subset of status checking
     db_cmds_parser = subparsers.add_parser("database_commands",

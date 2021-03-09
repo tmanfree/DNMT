@@ -456,28 +456,30 @@ class StatusChecks:
 
 
     def switch_check(self):
+        if 'ro' in self.cmdargs and self.cmdargs.ro is not None: #TODO abstract out to dnmt.py to have custom implementation generic?
+            self.subs.config.ro = self.cmdargs.ro
             #3560X with ten gig uplink doesn't show gi 1/1-2 only ten 1/1-2.
-            if 'load' in self.cmdargs and self.cmdargs.load is not None:
-                try:
-                    # LOADING Compressed files
-                    with bz2.open(self.cmdargs.load, "rb") as f:
-                        test = pickle.load(f, encoding='utf-8')
+        if 'load' in self.cmdargs and self.cmdargs.load is not None:
+            try:
+                # LOADING Compressed files
+                with bz2.open(self.cmdargs.load, "rb") as f:
+                    test = pickle.load(f, encoding='utf-8')
 
-                except FileNotFoundError:
-                    print("##### {} -  No file found #####".format(self.cmdargs.load))
-                except Exception as err:  # currently a catch all to stop linux from having a conniption when reloading
-                    print("FILE ERROR {}".format( err.args[0]))
-            elif 'ipaddr' in self.cmdargs and self.cmdargs.ipaddr is not None:
-                start = time.time()
-                test = self.subs.snmp_get_switch_data_full(self.cmdargs.ipaddr)
-                end = time.time()
-                print("time:{} seconds".format(int((end-start)*100)/100))
-            else:
-                print("Invalid Syntax, need to specify an IP with -i or a file to check with -l")
-                sys.exit(1)
-            # test.printStack()
-            # test.printSingleLine()
-            if 'csv' in self.cmdargs and self.cmdargs.csv is not None:
-                test.exportCSV(self.cmdargs.csv)
-            else:
-                test.printStack()
+            except FileNotFoundError:
+                print("##### {} -  No file found #####".format(self.cmdargs.load))
+            except Exception as err:  # currently a catch all to stop linux from having a conniption when reloading
+                print("FILE ERROR {}".format( err.args[0]))
+        elif 'ipaddr' in self.cmdargs and self.cmdargs.ipaddr is not None:
+            start = time.time()
+            test = self.subs.snmp_get_switch_data_full(self.cmdargs.ipaddr)
+            end = time.time()
+            print("time:{} seconds".format(int((end-start)*100)/100))
+        else:
+            print("Invalid Syntax, need to specify an IP with -i or a file to check with -l")
+            sys.exit(1)
+        # test.printStack()
+        # test.printSingleLine()
+        if 'csv' in self.cmdargs and self.cmdargs.csv is not None:
+            test.exportCSV(self.cmdargs.csv)
+        else:
+            test.printStack()
