@@ -44,10 +44,15 @@ class SubRoutines:
 ####################
 
     ###BASE SNMP COMMANDS####
-    def snmp_set(self, ipaddr, *args):
+    def snmp_set(self, ipaddr, *args, **kwargs):
+        if kwargs.get('rw') is None:
+            rw_string = self.config.rw
+        else:
+            rw_string = kwargs.get('rw')
+
         errorIndication, errorStatus, errorIndex, varBinds = next(
             setCmd(SnmpEngine(),
-                   CommunityData(self.config.rw),
+                   CommunityData(rw_string),
                    UdpTransportTarget((ipaddr, 161)),
                    ContextData(),
                    *args)
@@ -61,10 +66,14 @@ class SubRoutines:
             #success
             return True
 
-    def snmp_get(self,  ipaddr, *args):
+    def snmp_get(self,  ipaddr, *args, **kwargs):
+        if kwargs.get('ro') is None:
+            ro_string = self.config.ro
+        else:
+            ro_string = kwargs.get('ro')
         errorIndication, errorStatus, errorIndex, varBinds = next(
             getCmd(SnmpEngine(),
-                   CommunityData(self.config.ro),
+                   CommunityData(ro_string),
                    UdpTransportTarget((ipaddr, 161)),
                    ContextData(),
                    *args)
@@ -79,10 +88,14 @@ class SubRoutines:
             return varBinds
 
 
-    def snmp_walk(self,  ipaddr, *args):
+    def snmp_walk(self,  ipaddr, *args,**kwargs):
+        if kwargs.get('ro') is None:
+            ro_string = self.config.ro
+        else:
+            ro_string = kwargs.get('ro')
         snmpList = []
         for (errorIndication, errorStatus, errorIndex, varBinds) in nextCmd(SnmpEngine(),
-            CommunityData(self.config.ro),UdpTransportTarget((ipaddr, 161)), ContextData(),
+            CommunityData(ro_string),UdpTransportTarget((ipaddr, 161)), ContextData(),
                                                                             *args, lexicographicMode=False):
             if errorIndication:
                 print("{} - {}".format(ipaddr,errorIndication), file=sys.stderr)
@@ -97,10 +110,14 @@ class SubRoutines:
 
         return snmpList
 
-    def vlan_at_snmp_walk(self,  ipaddr, vlanid, *args):
+    def vlan_at_snmp_walk(self,  ipaddr, vlanid, *args,**kwargs):
+        if kwargs.get('ro') is None:
+            ro_string = self.config.ro
+        else:
+            ro_string = kwargs.get('ro')
         snmpList = []
         for (errorIndication, errorStatus, errorIndex, varBinds) in nextCmd(SnmpEngine(),
-            CommunityData(self.config.ro+"@"+str(vlanid)),UdpTransportTarget((ipaddr, 161)), ContextData(),
+            CommunityData(ro_string+"@"+str(vlanid)),UdpTransportTarget((ipaddr, 161)), ContextData(),
                                                                             *args, lexicographicMode=False):
             if errorIndication:
                 print("{} - {}".format(ipaddr,errorIndication), file=sys.stderr)
@@ -124,7 +141,7 @@ class SubRoutines:
     # Summary:
     #   Saves the running config to the startup config of a cisco switch
     #     (ie GigabitEthernet X/X)
-    def snmp_save_config(self, ipaddr):
+    def snmp_save_config(self, ipaddr,**kwargs):
 
         randnum = random.randint(1, 100)
         if (self.snmp_set(ipaddr,
@@ -136,7 +153,7 @@ class SubRoutines:
                                                                             'http://mibs.snmplabs.com/asn1/@mib@'), 3),
                                ObjectType(ObjectIdentity('CISCO-CONFIG-COPY-MIB', 'ccCopyEntryRowStatus', randnum
                                                          ).addAsn1MibSource('file:///usr/share/snmp',
-                                                                            'http://mibs.snmplabs.com/asn1/@mib@'), 4)
+                                                                            'http://mibs.snmplabs.com/asn1/@mib@'), 4), rw=kwargs.get('rw')
                                )):
 
             complete = False
@@ -164,7 +181,7 @@ class SubRoutines:
                 if (self.snmp_set(ipaddr, ObjectType(ObjectIdentity(
                         'CISCO-CONFIG-COPY-MIB', 'ccCopyEntryRowStatus', randnum).addAsn1MibSource(
                     'file:///usr/share/snmp',
-                    'http://mibs.snmplabs.com/asn1/@mib@'), 6))):
+                    'http://mibs.snmplabs.com/asn1/@mib@'), 6), rw=kwargs.get('rw'))):
                     print("Job complete")
 
     #1.3.6.1.2.1.1.3
@@ -180,11 +197,11 @@ class SubRoutines:
     #   grabs the interface id of a supplied interface.
     #   currently using 1.3.6.1.2.1.31.1.1.1.1, OiD could be updated to 1.3.6.1.2.1.2.2.1.2 for full name checking
     #     (ie GigabitEthernet X/X)
-    def snmp_get_uptime(self, ipaddr):
+    def snmp_get_uptime(self, ipaddr,**kwargs):
         intId = 0  # intitalize as 0 as not found
         uptime = None #preassignment to avoid any errors if not found
         varBinds = self.snmp_walk(ipaddr, ObjectType(ObjectIdentity(
-            '1.3.6.1.2.1.1.3')))
+            '1.3.6.1.2.1.1.3')),ro=kwargs.get('ro'))
         #'1.3.6.1.2.1.2.2.1.2')))
 
         for varBind in varBinds:
@@ -208,10 +225,10 @@ class SubRoutines:
     #   grabs the interface id of a supplied interface.
     #   currently using 1.3.6.1.2.1.31.1.1.1.1, OiD could be updated to 1.3.6.1.2.1.2.2.1.2 for full name checking
     #     (ie GigabitEthernet X/X)
-    def snmp_get_interface_id(self, ipaddr, interface):
+    def snmp_get_interface_id(self, ipaddr, interface,**kwargs):
         intId = 0  # intitalize as 0 as not found
         varBinds = self.snmp_walk(ipaddr, ObjectType(ObjectIdentity(
-            '1.3.6.1.2.1.31.1.1.1.1')))
+            '1.3.6.1.2.1.31.1.1.1.1')),ro=kwargs.get('ro'))
         #'1.3.6.1.2.1.2.2.1.2')))
 
         for varBind in varBinds:
@@ -231,9 +248,9 @@ class SubRoutines:
         # Summary:
         #   grabs the vendor string and checks if HP or Cisco is in it, could parse for switch model?
 
-    def snmp_get_vendor_string(self, ipaddr):
+    def snmp_get_vendor_string(self, ipaddr,**kwargs):
         oidstring = '1.3.6.1.2.1.1.1.0'
-        varBind = self.snmp_get(ipaddr, ObjectType(ObjectIdentity(oidstring)))
+        varBind = self.snmp_get(ipaddr, ObjectType(ObjectIdentity(oidstring)),ro=kwargs.get('ro'))
         if varBind is not None:
             vendorString = varBind[0]._ObjectType__args[1]._value.decode("utf-8")
             if (re.match("Cisco", vendorString)):
@@ -260,10 +277,10 @@ class SubRoutines:
         # Summary:
         #   grabs the system name and returns it
 
-    def snmp_get_hostname(self, ipaddr):
+    def snmp_get_hostname(self, ipaddr,**kwargs):
         # oidstring = '1.3.6.1.4.1.9.2.1.3.0'
         oidstring = '1.3.6.1.2.1.1.5.0'
-        varBind = self.snmp_get(ipaddr, ObjectType(ObjectIdentity(oidstring)))
+        varBind = self.snmp_get(ipaddr, ObjectType(ObjectIdentity(oidstring)),ro=kwargs.get('ro'))
         hostname=""
         if varBind is not None:
             hostname = varBind[0]._ObjectType__args[1]._value.decode("utf-8")
@@ -282,10 +299,10 @@ class SubRoutines:
         # Summary:
         #   grabs the crc errors for a port
 
-    def snmp_get_crc_errors_by_id(self, ipaddr, intId):
+    def snmp_get_crc_errors_by_id(self, ipaddr, intId, **kwargs):
         oidstring = '1.3.6.1.4.1.9.2.2.1.1.12.{}'.format(intId)
         # find the current vlan assignment for the port
-        varBind = self.snmp_get(ipaddr, ObjectType(ObjectIdentity(oidstring)))
+        varBind = self.snmp_get(ipaddr, ObjectType(ObjectIdentity(oidstring)),ro=kwargs.get('ro'))
         interfaceErrors = varBind[0]._ObjectType__args[1]._value
 
         return interfaceErrors
@@ -301,10 +318,10 @@ class SubRoutines:
         # Summary:
         #   grabs the output errors for a port
 
-    def snmp_get_input_errors_by_id(self, ipaddr,intId):
+    def snmp_get_input_errors_by_id(self, ipaddr, intId, **kwargs):
         oidstring = '1.3.6.1.2.1.2.2.1.14.{}'.format(intId)
         # find the current vlan assignment for the port
-        varBind = self.snmp_get(ipaddr, ObjectType(ObjectIdentity(oidstring)))
+        varBind = self.snmp_get(ipaddr, ObjectType(ObjectIdentity(oidstring)),ro=kwargs.get('ro'))
         interfaceErrors = varBind[0]._ObjectType__args[1]._value
 
         return interfaceErrors
@@ -320,10 +337,10 @@ class SubRoutines:
         # Summary:
         #   grabs the input errors for a port
 
-    def snmp_get_output_errors_by_id(self, ipaddr,intId):
+    def snmp_get_output_errors_by_id(self, ipaddr, intId, **kwargs):
         oidstring = '1.3.6.1.2.1.2.2.1.20.{}'.format(intId)
         # find the current vlan assignment for the port
-        varBind = self.snmp_get(ipaddr, ObjectType(ObjectIdentity(oidstring)))
+        varBind = self.snmp_get(ipaddr, ObjectType(ObjectIdentity(oidstring)),ro=kwargs.get('ro'))
         interfaceErrors = varBind[0]._ObjectType__args[1]._value
 
         return interfaceErrors
@@ -339,10 +356,10 @@ class SubRoutines:
     #  interfaceDescriptions (a string of the interface description)
     # Summary:
     #   returns all interface ids
-    def snmp_get_interface_id_bulk(self, ipaddr,vendor):
+    def snmp_get_interface_id_bulk(self, ipaddr, vendor, **kwargs):
         intId = 0  # intitalize as 0 as not found
         varBinds = self.snmp_walk(ipaddr, ObjectType(ObjectIdentity(
-            '1.3.6.1.2.1.31.1.1.1.1')))
+            '1.3.6.1.2.1.31.1.1.1.1')), ro=kwargs.get('ro'))
         returnList = []
 
 
@@ -388,12 +405,12 @@ class SubRoutines:
     #  MacList (a list of the interfaces that mac addresses are on that are  on the switch)
     # Summary:
     #   Returns the ports that mac addresses are on, according to their ID (on vlan 1...)
-    def snmp_get_mac_int_bulk(self, ipaddr):
+    def snmp_get_mac_int_bulk(self, ipaddr, **kwargs):
         MacList = []
         #1.3.6.1.2.1.17.4.3.1.2  will give the port the ID is on X.X.X.X.X.X = Port (Integer)
         #1.3.6.1.2.1.17.4.3.1.1 will give the mac address as payload, the string IDs as 6 oid string X.X.X.X.X.X = MAC (HEX STRING E8 6A .....)
         oidstring = '1.3.6.1.2.1.17.4.3.1.2'
-        varBinds = self.snmp_walk(ipaddr, ObjectType(ObjectIdentity(oidstring)))
+        varBinds = self.snmp_walk(ipaddr, ObjectType(ObjectIdentity(oidstring)),ro=kwargs.get('ro'))
 
         for varBind in varBinds:
             interfaceVlan = varBind._ObjectType__args[1]._value
@@ -413,12 +430,12 @@ class SubRoutines:
     # Summary:
     #   grabs all mac addresses in the table assignments, on vlan 1...
     #       for macs on other vlans need to specify by appending @vlan_id to the snmp RO
-    def snmp_get_mac_id_bulk(self, ipaddr):
+    def snmp_get_mac_id_bulk(self, ipaddr, **kwargs):
         MacList = []
         #1.3.6.1.2.1.17.4.3.1.2  will give the port the ID is on X.X.X.X.X.X = Port (Integer)
         #1.3.6.1.2.1.17.4.3.1.1 will give the mac address as payload, the string IDs as 6 oid string X.X.X.X.X.X = MAC (HEX STRING E8 6A .....)
         oidstring = '1.3.6.1.2.1.17.4.3.1.1'
-        varBinds = self.snmp_walk(ipaddr, ObjectType(ObjectIdentity(oidstring)))
+        varBinds = self.snmp_walk(ipaddr, ObjectType(ObjectIdentity(oidstring)),ro=kwargs.get('ro'))
 
         for varBind in varBinds:
             interfaceVlan = varBind._ObjectType__args[1]._value
@@ -440,10 +457,10 @@ class SubRoutines:
         # Summary:
         #   returns all switch IDs
 
-    def snmp_get_switch_id_bulk(self, ipaddr, vendor):
+    def snmp_get_switch_id_bulk(self, ipaddr, vendor, **kwargs):
         intId = 0  # intitalize as 0 as not found
         varBinds = self.snmp_walk(ipaddr, ObjectType(ObjectIdentity(
-            '1.3.6.1.2.1.47.1.1.1.1.7')))
+            '1.3.6.1.2.1.47.1.1.1.1.7')),ro=kwargs.get('ro'))
         returnList = []
         if vendor == "Cisco":
             for varBind in varBinds:
@@ -490,10 +507,10 @@ class SubRoutines:
         # Summary:
         #   grabs the switch serial number
 
-    def snmp_get_serial_number(self, ipaddr, intId):
+    def snmp_get_serial_number(self, ipaddr, intId, **kwargs):
         oidstring = '1.3.6.1.2.1.47.1.1.1.1.11.{}'.format(intId)
         # find the current vlan assignment for the port
-        varBind = self.snmp_get(ipaddr, ObjectType(ObjectIdentity(oidstring)))
+        varBind = self.snmp_get(ipaddr, ObjectType(ObjectIdentity(oidstring)),ro=kwargs.get('ro'))
         serialNum = varBind[0]._ObjectType__args[1]._value
 
         return serialNum.decode("utf-8")
@@ -509,9 +526,9 @@ class SubRoutines:
         # Summary:
         #   grabs the switch serial number
 
-    def snmp_get_serial_number_bulk(self, ipaddr):
+    def snmp_get_serial_number_bulk(self, ipaddr, **kwargs):
         varBinds = self.snmp_walk(ipaddr, ObjectType(ObjectIdentity(
-            '1.3.6.1.2.1.47.1.1.1.1.11')))
+            '1.3.6.1.2.1.47.1.1.1.1.11')),ro=kwargs.get('ro'))
         returnList = []
 
         for varBind in varBinds:
@@ -535,10 +552,10 @@ class SubRoutines:
         # Summary:
         #   grabs the switch model type
 
-    def snmp_get_model(self, ipaddr, intId):
+    def snmp_get_model(self, ipaddr, intId, **kwargs):
         oidstring = '1.3.6.1.2.1.47.1.1.1.1.13.{}'.format(intId)
         # find the current vlan assignment for the port
-        varBind = self.snmp_get(ipaddr, ObjectType(ObjectIdentity(oidstring)))
+        varBind = self.snmp_get(ipaddr, ObjectType(ObjectIdentity(oidstring)),ro=kwargs.get('ro'))
         model = varBind[0]._ObjectType__args[1]._value
 
         return model.decode("utf-8")
@@ -554,10 +571,10 @@ class SubRoutines:
         # Summary:
         #   grabs the switch software version
 
-    def snmp_get_software(self, ipaddr, intId):
+    def snmp_get_software(self, ipaddr, intId,**kwargs):
         oidstring = '1.3.6.1.2.1.47.1.1.1.1.10.{}'.format(intId)
         # find the current vlan assignment for the port
-        varBind = self.snmp_get(ipaddr, ObjectType(ObjectIdentity(oidstring)))
+        varBind = self.snmp_get(ipaddr, ObjectType(ObjectIdentity(oidstring)),ro=kwargs.get('ro'))
         softwareVersion = varBind[0]._ObjectType__args[1]._value
 
         return softwareVersion.decode("utf-8")
@@ -573,10 +590,10 @@ class SubRoutines:
     #  fullInt (a string of the full interface name)
     # Summary:
     #   grabs the interface name
-    def snmp_get_full_interface(self, ipaddr, intId):
+    def snmp_get_full_interface(self, ipaddr, intId,**kwargs):
         oidstring = '1.3.6.1.2.1.2.2.1.2.{}'.format(intId)
         # find the current vlan assignment for the port
-        varBind = self.snmp_get(ipaddr, ObjectType(ObjectIdentity(oidstring)))
+        varBind = self.snmp_get(ipaddr, ObjectType(ObjectIdentity(oidstring)),ro=kwargs.get('ro'))
         fullInt = varBind[0]._ObjectType__args[1]._value
 
         return fullInt.decode("utf-8")
@@ -591,11 +608,11 @@ class SubRoutines:
     #  currentVlan (a string of the current vlan on a port)
     # Summary:
     #   grabs the assigned vlan of an interface
-    def snmp_get_interface_vlan(self, ipaddr, intId, vendor):
+    def snmp_get_interface_vlan(self, ipaddr, intId, vendor,**kwargs):
 
         if vendor == "HP":
             currentVlan = None
-            for port in self.snmp_get_interface_vlan_bulk(ipaddr,vendor):
+            for port in self.snmp_get_interface_vlan_bulk(ipaddr,vendor,ro=kwargs.get('ro')):
                 if port is not None:  # ignore vlan interfaces and non existent interfaces
                     if port["Id"] == intId:
                         currentVlan = port['Vlan']
@@ -604,7 +621,7 @@ class SubRoutines:
         else:
             oidstring = '1.3.6.1.4.1.9.9.68.1.2.2.1.2.{}'.format(intId)
             # find the current vlan assignment for the port
-            varBind = self.snmp_get(ipaddr, ObjectType(ObjectIdentity(oidstring)))
+            varBind = self.snmp_get(ipaddr, ObjectType(ObjectIdentity(oidstring)),ro=kwargs.get('ro'))
             currentVlan = varBind[0]._ObjectType__args[1]._value
 
         return currentVlan
@@ -620,11 +637,11 @@ class SubRoutines:
     #  currentVlan (a string of the current vlan on a port)
     # Summary:
     #   grabs all interface vlan assignments
-    def snmp_get_interface_vlan_bulk(self, ipaddr,vendor):
+    def snmp_get_interface_vlan_bulk(self, ipaddr,vendor,**kwargs):
         interfaceVlanList = []
         if vendor == "Cisco":
             oidstring = '1.3.6.1.4.1.9.9.68.1.2.2.1.2'
-            varBinds = self.snmp_walk(ipaddr, ObjectType(ObjectIdentity(oidstring)))
+            varBinds = self.snmp_walk(ipaddr, ObjectType(ObjectIdentity(oidstring)),ro=kwargs.get('ro'))
 
             for varBind in varBinds:
                 interfaceVlan = varBind._ObjectType__args[1]._value
@@ -634,7 +651,7 @@ class SubRoutines:
         elif vendor == "HP" or vendor == "Dell" or vendor == "Ancient Dell":
 
             oidstring = '1.3.6.1.2.1.17.7.1.4.3.1.4'
-            varBinds = self.snmp_walk(ipaddr, ObjectType(ObjectIdentity(oidstring)))
+            varBinds = self.snmp_walk(ipaddr, ObjectType(ObjectIdentity(oidstring)),ro=kwargs.get('ro'))
 
             for varBind in varBinds:
                 interfaceVlan = varBind._ObjectType__args[1]._value
@@ -672,9 +689,9 @@ class SubRoutines:
     #  interfaceDescription (a string of the interface description)
     # Summary:
     #   grabs the description of an interface
-    def snmp_get_interface_description(self, ipaddr, intId):
+    def snmp_get_interface_description(self, ipaddr, intId,**kwargs):
         oidstring = '1.3.6.1.2.1.31.1.1.1.18.{}'.format(intId)
-        varBind = self.snmp_get(ipaddr, ObjectType(ObjectIdentity(oidstring)))
+        varBind = self.snmp_get(ipaddr, ObjectType(ObjectIdentity(oidstring)),ro=kwargs.get('ro'))
         interfaceDescription = varBind[0]._ObjectType__args[1]._value
 
         return interfaceDescription.decode("utf-8")
@@ -691,9 +708,9 @@ class SubRoutines:
     #   none
     # Summary:
     #   Sets the description for the specified interface
-    def snmp_set_interface_description(self, ipaddr, intId, desc):
+    def snmp_set_interface_description(self, ipaddr, intId, desc, **kwargs):
         oidstring = '1.3.6.1.2.1.31.1.1.1.18.{}'.format(intId)
-        self.snmp_set(ipaddr, ObjectType(ObjectIdentity(oidstring), OctetString(desc)))
+        self.snmp_set(ipaddr, ObjectType(ObjectIdentity(oidstring), OctetString(desc)), rw=kwargs.get('rw'))
         #self.snmp_set(ipaddr, ObjectType(ObjectIdentity(oidstring), rfc1902.Integer(5)))
 
 
@@ -709,10 +726,10 @@ class SubRoutines:
     #   none
     # Summary:
     #   Sets the specified interface to the specified vlan
-    def snmp_set_interface_vlan(self, ipaddr, intId, newvlan, oldvlan, vendor):
+    def snmp_set_interface_vlan(self, ipaddr, intId, newvlan, oldvlan, vendor, **kwargs):
         if vendor == "Cisco:":
             oidstring = '1.3.6.1.4.1.9.9.68.1.2.2.1.2.{}'.format(intId)
-            self.snmp_set(ipaddr, ObjectType(ObjectIdentity(oidstring), rfc1902.Integer(newvlan)))
+            self.snmp_set(ipaddr, ObjectType(ObjectIdentity(oidstring), rfc1902.Integer(newvlan)), rw=kwargs.get('rw'))
         # else:
         #     # oidstring = "1.3.6.1.2.1.17.7.1.4.5.1.1.{}".format(intId)
         #     # self.snmp_set(ipaddr, ObjectType(ObjectIdentity(oidstring), rfc1902.Integer(newvlan)))
@@ -778,11 +795,11 @@ class SubRoutines:
     #   none
     # Summary:
     #   Shuts down the specified interface, then re-enables it after 2 seconds
-    def snmp_reset_interface(self,ipaddr,intId):
+    def snmp_reset_interface(self,ipaddr,intId,**kwargs):
         oidstring = '1.3.6.1.2.1.2.2.1.7.{}'.format(intId)
-        self.snmp_set(ipaddr, ObjectType(ObjectIdentity(oidstring), rfc1902.Integer(2)))
+        self.snmp_set(ipaddr, ObjectType(ObjectIdentity(oidstring), rfc1902.Integer(2)), rw=kwargs.get('rw'))
         time.sleep(2)
-        self.snmp_set(ipaddr, ObjectType(ObjectIdentity(oidstring), rfc1902.Integer(1)))
+        self.snmp_set(ipaddr, ObjectType(ObjectIdentity(oidstring), rfc1902.Integer(1)), rw=kwargs.get('rw'))
 
     # Name: snmp_get_vlan_database
     # Input:
@@ -793,7 +810,7 @@ class SubRoutines:
     # Summary:
     #   Grabs list of vlans from 1.3.6.1.4.1.9.9.46.1.3.1.1.4.1 for cisco
     #   currently ignores vlan 1002 - 1005 as they are defaults on cisco
-    def snmp_get_vlan_database(self, ipaddr, vendor):
+    def snmp_get_vlan_database(self, ipaddr, vendor,**kwargs):
 
         if vendor =="HP" or vendor =='Dell':
             oidstring = '1.3.6.1.2.1.17.7.1.4.3.1.1'
@@ -801,7 +818,7 @@ class SubRoutines:
             oidstring = '1.3.6.1.4.1.9.9.46.1.3.1.1.4.{}'.format('1')
 
 
-        varBinds = self.snmp_walk(ipaddr, ObjectType(ObjectIdentity(oidstring)))
+        varBinds = self.snmp_walk(ipaddr, ObjectType(ObjectIdentity(oidstring)),ro=kwargs.get('ro'))
         vlansToIgnore = [1002, 1003, 1004, 1005]  # declare what vlans we will ignore.
         vlanList = []  # intitalize a blank list
 
@@ -849,11 +866,11 @@ class SubRoutines:
         # Summary:
         #   Returns a list of poe allocation in the format {Switch:X,Port:X,"Power:X"}
         # OID NOT VALID FOR DELL
-    def snmp_get_port_poe_alloc_bulk(self, ipaddr):
+    def snmp_get_port_poe_alloc_bulk(self, ipaddr,**kwargs):
 
         oidstring = '1.3.6.1.4.1.9.9.402.1.2.1.7'
         # oidstring = '1.3.6.1.4.1.9.9.402.1.2.1.7.1'
-        varBinds = self.snmp_walk(ipaddr, ObjectType(ObjectIdentity(oidstring)))
+        varBinds = self.snmp_walk(ipaddr, ObjectType(ObjectIdentity(oidstring)),ro=kwargs.get('ro'))
         intList = []  # intitalize a blank list
 
         for varBind in varBinds:
@@ -874,10 +891,10 @@ class SubRoutines:
         #   Returns a list of active ports in structure {Switch:X,Port:X}
         #   Has an issue with uplinks of X/1/X currently
 
-    def snmp_get_port_activity_bulk(self, ipaddr):
+    def snmp_get_port_activity_bulk(self, ipaddr,**kwargs):
 
         oidstring = '1.3.6.1.2.1.2.2.1.8'
-        varBinds = self.snmp_walk(ipaddr, ObjectType(ObjectIdentity(oidstring)))
+        varBinds = self.snmp_walk(ipaddr, ObjectType(ObjectIdentity(oidstring)),ro=kwargs.get('ro'))
         intList = []  # intitalize a blank list
 
         for varBind in varBinds:
@@ -896,10 +913,10 @@ class SubRoutines:
     #  interfaceDescriptionList (a list of strings of the interface descriptions)
     # Summary:
     #   grabs the description of all physical interfaces
-    def snmp_get_interface_description_bulk(self, ipaddr):
+    def snmp_get_interface_description_bulk(self, ipaddr,**kwargs):
         # oidstring = '1.3.6.1.2.1.31.1.1.1.1'
         oidstring = '1.3.6.1.2.1.31.1.1.1.18'
-        varBinds = self.snmp_walk(ipaddr, ObjectType(ObjectIdentity(oidstring)))
+        varBinds = self.snmp_walk(ipaddr, ObjectType(ObjectIdentity(oidstring)),ro=kwargs.get('ro'))
         interfaceDescriptionList = []
 
         for varBind in varBinds:
@@ -921,11 +938,11 @@ class SubRoutines:
         #  interfaceTrunkingList (a list of strings of the interface trunk modes)
         # Summary:
         #   grabs the description of all physical interfaces
-    def snmp_get_interface_trunking_bulk(self, ipaddr, vendor):
+    def snmp_get_interface_trunking_bulk(self, ipaddr, vendor,**kwargs):
         interfaceTrunkingList = []
         if vendor == "Cisco":
             oidstring = '1.3.6.1.4.1.9.9.46.1.6.1.1.14'
-            varBinds = self.snmp_walk(ipaddr, ObjectType(ObjectIdentity(oidstring)))
+            varBinds = self.snmp_walk(ipaddr, ObjectType(ObjectIdentity(oidstring)),ro=kwargs.get('ro'))
 
 
             for varBind in varBinds:
@@ -950,7 +967,7 @@ class SubRoutines:
         #  cdp neighbour list
         # Summary:
         #   grabs the cdp or LLDP infothat is connected to each interface. Currently not grabbing field 10 of lldp
-    def snmp_get_neighbour_bulk(self, ipaddr, vendor):
+    def snmp_get_neighbour_bulk(self, ipaddr, vendor, **kwargs):
         interfaceCdpList = []
 
         if vendor == "Cisco" or vendor == "HP":
@@ -963,11 +980,11 @@ class SubRoutines:
             categoryIndex = 10
         else:
             return interfaceCdpList
-        varBinds = self.snmp_walk(ipaddr, ObjectType(ObjectIdentity(oidString)))
+        varBinds = self.snmp_walk(ipaddr, ObjectType(ObjectIdentity(oidString)),ro=kwargs.get('ro'))
 
         # add separate call to get IP, since Cisco doesn't like to give it with everything else
         if vendor == "Cisco":
-            varBinds = varBinds + self.snmp_walk(ipaddr, ObjectType(ObjectIdentity("{}.4".format(oidString))))
+            varBinds = varBinds + self.snmp_walk(ipaddr, ObjectType(ObjectIdentity("{}.4".format(oidString))),ro=kwargs.get('ro'))
 
 
         for varBind in varBinds:
@@ -1019,9 +1036,9 @@ class SubRoutines:
         #  voice vlan list
         # Summary:
         #   grabs the voice vlan that is connected to each interface
-    def snmp_get_voice_vlan_bulk(self, ipaddr):
+    def snmp_get_voice_vlan_bulk(self, ipaddr,**kwargs):
         oidstring = '1.3.6.1.4.1.9.9.68.1.5.1.1.1'
-        varBinds = self.snmp_walk(ipaddr, ObjectType(ObjectIdentity(oidstring)))
+        varBinds = self.snmp_walk(ipaddr, ObjectType(ObjectIdentity(oidstring)),ro=kwargs.get('ro'))
         interfaceVlanList = []
 
         for varBind in varBinds:
@@ -1041,9 +1058,9 @@ class SubRoutines:
     #  port security violations list
     # Summary:
     #   grabs the a list of port security violations on ports
-    def snmp_get_port_security_violations_bulk(self, ipaddr):
+    def snmp_get_port_security_violations_bulk(self, ipaddr, **kwargs):
         oidstring = '1.3.6.1.4.1.9.9.315.1.2.1.1.9 '
-        varBinds = self.snmp_walk(ipaddr, ObjectType(ObjectIdentity(oidstring)))
+        varBinds = self.snmp_walk(ipaddr, ObjectType(ObjectIdentity(oidstring)),ro=kwargs.get('ro'))
         interfaceViolationsList = []
 
         for varBind in varBinds:
@@ -1063,9 +1080,9 @@ class SubRoutines:
         #  input errors list
         # Summary:
         #   grabs the a list of input errors
-    def snmp_get_input_errors_bulk(self, ipaddr):
+    def snmp_get_input_errors_bulk(self, ipaddr,**kwargs):
         oidstring = '1.3.6.1.2.1.2.2.1.14 '
-        varBinds = self.snmp_walk(ipaddr, ObjectType(ObjectIdentity(oidstring)))
+        varBinds = self.snmp_walk(ipaddr, ObjectType(ObjectIdentity(oidstring)),ro=kwargs.get('ro'))
         interfaceErrorist = []
 
         for varBind in varBinds:
@@ -1085,9 +1102,9 @@ class SubRoutines:
         #  input errors list
         # Summary:
         #   grabs the a list of input errors
-    def snmp_get_output_errors_bulk(self, ipaddr):
+    def snmp_get_output_errors_bulk(self, ipaddr,**kwargs):
         oidstring = '1.3.6.1.2.1.2.2.1.20 '
-        varBinds = self.snmp_walk(ipaddr, ObjectType(ObjectIdentity(oidstring)))
+        varBinds = self.snmp_walk(ipaddr, ObjectType(ObjectIdentity(oidstring)),ro=kwargs.get('ro'))
         interfaceErrorist = []
 
         for varBind in varBinds:
@@ -1107,9 +1124,9 @@ class SubRoutines:
     #  input counters list
     # Summary:
     #   grabs the a list of input counters (adds ifinOctets and ifinUcast together)
-    def snmp_get_input_counters_bulk(self, ipaddr):
+    def snmp_get_input_counters_bulk(self, ipaddr,**kwargs):
         oidstring = '1.3.6.1.2.1.2.2.1.10 '
-        varBinds = self.snmp_walk(ipaddr, ObjectType(ObjectIdentity(oidstring)))
+        varBinds = self.snmp_walk(ipaddr, ObjectType(ObjectIdentity(oidstring)),ro=kwargs.get('ro'))
         interfaceCounterList = []
 
         for varBind in varBinds:
@@ -1120,7 +1137,7 @@ class SubRoutines:
             interfaceCounterList.append({'Id': intId, 'Counters': interfaceCounters})
 
         oidstring = '1.3.6.1.2.1.2.2.1.11 '
-        varBinds = self.snmp_walk(ipaddr, ObjectType(ObjectIdentity(oidstring)))
+        varBinds = self.snmp_walk(ipaddr, ObjectType(ObjectIdentity(oidstring)),ro=kwargs.get('ro'))
 
         for varBind in varBinds:
             interfaceCounters = varBind._ObjectType__args[1]._value
@@ -1141,9 +1158,9 @@ class SubRoutines:
     #  output counters list
     # Summary:
     #   grabs the a list of out counters (adds ifoutOctets and ifoutUcast together)
-    def snmp_get_output_counters_bulk(self, ipaddr):
+    def snmp_get_output_counters_bulk(self, ipaddr,**kwargs):
         oidstring = '1.3.6.1.2.1.2.2.1.16 '
-        varBinds = self.snmp_walk(ipaddr, ObjectType(ObjectIdentity(oidstring)))
+        varBinds = self.snmp_walk(ipaddr, ObjectType(ObjectIdentity(oidstring)),ro=kwargs.get('ro'))
         interfaceCounterList = []
 
         for varBind in varBinds:
@@ -1154,7 +1171,7 @@ class SubRoutines:
             interfaceCounterList.append({'Id': intId, 'Counters': interfaceCounters})
 
         oidstring = '1.3.6.1.2.1.2.2.1.17 '
-        varBinds = self.snmp_walk(ipaddr, ObjectType(ObjectIdentity(oidstring)))
+        varBinds = self.snmp_walk(ipaddr, ObjectType(ObjectIdentity(oidstring)),ro=kwargs.get('ro'))
 
         for varBind in varBinds:
             interfaceCounters = varBind._ObjectType__args[1]._value
@@ -1174,13 +1191,13 @@ class SubRoutines:
         #  mac_address_list
         # Summary:
         #   grabs the a list of mac addresses on the switch. Time intensive procedure.
-    def snmp_get_mac_table_bulk(self, ipaddr, vendor):
+    def snmp_get_mac_table_bulk(self, ipaddr, vendor,**kwargs):
 
         oidstring = '1.3.6.1.2.1.17.4.3.1'
         macList=[]
 
         if vendor == "HP":
-            varBinds = self.snmp_walk(ipaddr, ObjectType(ObjectIdentity(oidstring)))
+            varBinds = self.snmp_walk(ipaddr, ObjectType(ObjectIdentity(oidstring)),ro=kwargs.get('ro'))
             i = 0
             while (i < len(varBinds) / 3):
                 macList.append({"MAC": varBinds[i]._ObjectType__args[1]._value,
@@ -1191,11 +1208,11 @@ class SubRoutines:
 
         elif vendor == "Cisco":
 
-            vlanList = self.snmp_get_vlan_database(ipaddr,vendor)
+            vlanList = self.snmp_get_vlan_database(ipaddr,vendor,ro=kwargs.get('ro'))
 
             for vlan in vlanList:
                 #Return should always be a factor of 3. X=MAC, X+1=Port, X+2=status
-                varBinds = self.vlan_at_snmp_walk(ipaddr,vlan['ID'],ObjectType(ObjectIdentity(oidstring)))
+                varBinds = self.vlan_at_snmp_walk(ipaddr,vlan['ID'],ObjectType(ObjectIdentity(oidstring)),ro=kwargs.get('ro'))
                 i = 0
                 while ( i < len(varBinds)/3):
                     macList.append({"MAC": varBinds[i]._ObjectType__args[1]._value,
@@ -1218,31 +1235,31 @@ class SubRoutines:
         # Summary:
         #   grabs information from the switch to put in a datastructure
 
-    def snmp_get_switch_data_full(self, ipaddr):
+    def snmp_get_switch_data_full(self, ipaddr,**kwargs):
         # test = self.snmp_get_switch_id_bulk(ipaddr)
 
-        vendor = self.snmp_get_vendor_string(ipaddr)
+        vendor = self.snmp_get_vendor_string(ipaddr,ro=kwargs.get('ro'))
         switchStruct = StackStruct(ipaddr, vendor)
-        switchStruct.vlanList  = self.snmp_get_vlan_database(ipaddr,vendor)
+        switchStruct.vlanList  = self.snmp_get_vlan_database(ipaddr,vendor,ro=kwargs.get('ro'))
         if vendor != "None Found":
-            switchStruct.hostname = self.snmp_get_hostname(ipaddr)
+            switchStruct.hostname = self.snmp_get_hostname(ipaddr,ro=kwargs.get('ro'))
 
-            switchStruct.uptime = self.snmp_get_uptime(ipaddr)
+            switchStruct.uptime = self.snmp_get_uptime(ipaddr,ro=kwargs.get('ro'))
 
-            for switch in self.snmp_get_switch_id_bulk(ipaddr,vendor):
+            for switch in self.snmp_get_switch_id_bulk(ipaddr,vendor,ro=kwargs.get('ro')):
                 if (switchStruct.getSwitch(switch['Switch']) is None):
                     switchStruct.addSwitch(switch['Switch'])
                 switchStruct.getSwitch(switch['Switch']).id = switch['Id']
 
             for switch in switchStruct.switches: #individual calls for this seem to be resolving faster than a bulk
-                switch.serialnumber=self.snmp_get_serial_number(ipaddr,switch.id)
-                switch.model = self.snmp_get_model(ipaddr,switch.id)
-                switch.version = self.snmp_get_software(ipaddr,switch.id)
+                switch.serialnumber=self.snmp_get_serial_number(ipaddr,switch.id,ro=kwargs.get('ro'))
+                switch.model = self.snmp_get_model(ipaddr,switch.id,ro=kwargs.get('ro'))
+                switch.version = self.snmp_get_software(ipaddr,switch.id,ro=kwargs.get('ro'))
 
 
 
             #get interfaces and create them on the structure if they are not there
-            for port in self.snmp_get_interface_id_bulk(ipaddr,vendor):
+            for port in self.snmp_get_interface_id_bulk(ipaddr,vendor,ro=kwargs.get('ro')):
                 if (switchStruct.getSwitch(port['Switch']) is None): #Comment out?
                     switchStruct.addSwitch(port['Switch'])  #Comment out?
                 if (switchStruct.getSwitch(port['Switch']).getModule(port['Module']) is None):
@@ -1259,7 +1276,7 @@ class SubRoutines:
 
 
             #go through power return Not working for Dell
-            for port in self.snmp_get_port_poe_alloc_bulk(ipaddr):
+            for port in self.snmp_get_port_poe_alloc_bulk(ipaddr,ro=kwargs.get('ro')):
                 if port is not None and switchStruct.getSwitch(port['Switch']) is not None and switchStruct.getSwitch(port['Switch']).id is not None: #added catch for provisioned switch 1 being missing
                     #This doesnt use the interfaceId, the first return should be the base-t result in the event of gi & te
                     #such as 3650 uplink module being 1/0/1 on ten and gi
@@ -1280,25 +1297,25 @@ class SubRoutines:
 
             #go through interface returns (includes vlans, so need to map id to port)
             #get port status (2 is up, 1 is down)
-            for port in self.snmp_get_port_activity_bulk(ipaddr):
+            for port in self.snmp_get_port_activity_bulk(ipaddr,ro=kwargs.get('ro')):
                 if port is not None: #ignore vlan interfaces and non existent interfaces
                     foundport = switchStruct.getPortById(port['Id'])
                     if foundport is not None:
                         foundport.status = port['Status']
             #get trunk mode
-            for port in self.snmp_get_interface_trunking_bulk(ipaddr,vendor):
+            for port in self.snmp_get_interface_trunking_bulk(ipaddr,vendor,ro=kwargs.get('ro')):
                 if port is not None: #ignore vlan interfaces and non existent interfaces
                     foundport = switchStruct.getPortById(port['Id'])
                     if foundport is not None:
                         foundport.portmode = port['TrunkMode']
             #Get descriptions
-            for port in self.snmp_get_interface_description_bulk(ipaddr):
+            for port in self.snmp_get_interface_description_bulk(ipaddr,ro=kwargs.get('ro')):
                 if port is not None:  # ignore vlan interfaces and non existent interfaces
                     foundport = switchStruct.getPortById(port['Id'])
                     if foundport is not None:
                         foundport.description = port['Description']
             # Get Vlans on ports
-            for port in self.snmp_get_interface_vlan_bulk(ipaddr,vendor):
+            for port in self.snmp_get_interface_vlan_bulk(ipaddr,vendor,ro=kwargs.get('ro')):
                 if port is not None:  # ignore vlan interfaces and non existent interfaces
                     foundport = switchStruct.getPortById(port['Id'])
                     if foundport is not None:
@@ -1308,7 +1325,7 @@ class SubRoutines:
                         #                 'ID' in vlanEntry and vlanEntry["ID"] == port['Vlan']]
 
            # Get CDP information for ports
-            for port in self.snmp_get_neighbour_bulk(ipaddr,vendor):
+            for port in self.snmp_get_neighbour_bulk(ipaddr,vendor,ro=kwargs.get('ro')):
                 if port is not None:  # ignore vlan interfaces and non existent interfaces
                     foundport = switchStruct.getPortById(port['Id'])
                     if foundport is not None:
@@ -1321,7 +1338,7 @@ class SubRoutines:
                         elif port['Category'] == "IP": #
                             foundport.cdpip = port['Value']
 
-            for port in self.snmp_get_port_security_violations_bulk(ipaddr):
+            for port in self.snmp_get_port_security_violations_bulk(ipaddr,ro=kwargs.get('ro')):
                 if port is not None:  # ignore vlan interfaces and non existent interfaces
                     foundport = switchStruct.getPortById(port['Id'])
                     if foundport is not None:
@@ -1329,7 +1346,7 @@ class SubRoutines:
 
 
             # Get input Errors for ports
-            for port in self.snmp_get_input_errors_bulk(ipaddr):
+            for port in self.snmp_get_input_errors_bulk(ipaddr,ro=kwargs.get('ro')):
                 if port is not None:  # ignore vlan interfaces and non existent interfaces
                     foundport = switchStruct.getPortById(port['Id'])
                     if foundport is not None:
@@ -1337,7 +1354,7 @@ class SubRoutines:
                         foundport.historicalinputerrors.append((int(datetime.datetime.now().strftime("%Y%m%d%H%M")),port['Errors']))
 
             # Get output Errors for ports
-            for port in self.snmp_get_output_errors_bulk(ipaddr):
+            for port in self.snmp_get_output_errors_bulk(ipaddr,ro=kwargs.get('ro')):
                 if port is not None:  # ignore vlan interfaces and non existent interfaces
                     foundport = switchStruct.getPortById(port['Id'])
                     if foundport is not None:
@@ -1345,21 +1362,21 @@ class SubRoutines:
                         foundport.historicaloutputerrors.append((int(datetime.datetime.now().strftime("%Y%m%d%H%M")),port['Errors']))
 
             # Get input Counters for ports
-            for port in self.snmp_get_input_counters_bulk(ipaddr):
+            for port in self.snmp_get_input_counters_bulk(ipaddr,ro=kwargs.get('ro')):
                 if port is not None:  # ignore vlan interfaces and non existent interfaces
                     foundport = switchStruct.getPortById(port['Id'])
                     if foundport is not None:
                         foundport.inputcounters = port['Counters']
                         foundport.historicalinputcounters.append((int(datetime.datetime.now().strftime("%Y%m%d%H%M")),port['Counters']))
 
-            for port in self.snmp_get_output_counters_bulk(ipaddr):
+            for port in self.snmp_get_output_counters_bulk(ipaddr,ro=kwargs.get('ro')):
                 if port is not None:  # ignore vlan interfaces and non existent interfaces
                     foundport = switchStruct.getPortById(port['Id'])
                     if foundport is not None:
                         foundport.outputcounters = port['Counters']
                         foundport.historicaloutputcounters.append((int(datetime.datetime.now().strftime("%Y%m%d%H%M")), port['Counters']))
 
-            for port in self.snmp_get_voice_vlan_bulk(ipaddr):
+            for port in self.snmp_get_voice_vlan_bulk(ipaddr,ro=kwargs.get('ro')):
                 if port is not None:  # ignore vlan interfaces and non existent interfaces
                     foundport = switchStruct.getPortById(port['Id'])
                     if foundport is not None:
@@ -1955,6 +1972,10 @@ class SubRoutines:
                 self.custom_printer("verbose","##### ip file opened:{} #####".format(file))
                 iplist = []
                 for ip in file:
+                    #processing for custom RO strings
+                    ip = ip.split(',')
+                    ip = ip[0] #ensure only the IP will be used
+                    #end processing
                     iplist.append(ip.rstrip())
                 file.close()
 

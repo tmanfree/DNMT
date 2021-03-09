@@ -313,11 +313,21 @@ class StatusChecks:
     # TODO
     #   -Determine where these log files should go
         #Wrapping everything in a try catch for multiprocessing purposes
+
         try:
             start = time.time()
             self.subs.verbose_printer("##### {} -  Processing #####".format(ipaddr))
             self.subs.custom_printer("debug", "## DBG - Grabbing switch data through SNMP ##")
-            NewSwitchStatus  = self.subs.snmp_get_switch_data_full(ipaddr)
+
+            # self.subs.config.ro = self.config.ro #reset to default to ensure previous ones did not bork things
+            custom_ro_check = ipaddr.split(',')
+            ro_string = self.subs.config.ro
+            if len(custom_ro_check) > 1:
+                ro_string = custom_ro_check[1]
+                ipaddr = custom_ro_check[0]
+
+
+            NewSwitchStatus  = self.subs.snmp_get_switch_data_full(ipaddr,ro=ro_string)
 
 
         #TODO Check if a previous static check exists, and load it if it does, otherwise create it and write it out
