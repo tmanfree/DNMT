@@ -241,6 +241,7 @@ def dnmt():
     mapper_parser.add_argument('-e', '--email', help="specify email to send graph to")
     mapper_parser.add_argument('-r', '--remove', help="remove file afterwards", default=False,
                                       action="store_true")
+    mapper_parser.add_argument('-c', '--customro', help="use custom RO string")
 
 
     #Tests Begin

@@ -134,11 +134,10 @@ class Mapper:
         # test = self.subs.snmp_get_uptime(ipaddr)
 
 
-
-        vendor = self.subs.snmp_get_vendor_string(ipaddr)
+        vendor = self.subs.snmp_get_vendor_string(ipaddr,ro=self.cmdargs.customro) #if the flag is not set it will default to set RO
 
         #TODO combine get_neighbour results to have type & ip in the same entry for filtering
-        bulkCDPList = self.subs.snmp_get_neighbour_bulk(ipaddr, vendor)
+        bulkCDPList = self.subs.snmp_get_neighbour_bulk(ipaddr, vendor,ro=self.cmdargs.customro)
         if len(bulkCDPList) > 0:
             formattedCDPList = []
             for entry in bulkCDPList:
