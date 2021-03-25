@@ -65,38 +65,123 @@ class SubRoutines:
         else:
             #success
             return True
+    def test_snmpv3(self, ipaddr,oid, *args, **kwargs):
+        self.custom_printer("debug", "## DBG - Trying SNMP V3 {} ##".format(ipaddr))
+        if kwargs.get('snmpv3_user_string') is None:
+            snmpv3_user_string = self.config.snmpv3_ro_user_string
+        else:
+            snmpv3_user_string = kwargs.get('snmpv3_user_string')
+
+        if kwargs.get('snmpv3_auth_string') is None and len(self.config.snmpv3_ro_auth_string) > 0 :
+            snmpv3_auth_string = self.config.snmpv3_ro_auth_string
+        else:
+            snmpv3_auth_string = kwargs.get('snmpv3_auth_string')
+
+        if kwargs.get('snmpv3_priv_string') is None and len(self.config.snmpv3_ro_priv_string) > 0 :
+            snmpv3_priv_string = self.config.snmpv3_ro_priv_string
+        else:
+            snmpv3_priv_string = kwargs.get('snmpv3_priv_string')
+
+            snmpTuple = (SnmpEngine(),UsmUserData(snmpv3_user_string,snmpv3_auth_string,snmpv3_priv_string), UdpTransportTarget((ipaddr, 161)),ContextData(),ObjectType(ObjectIdentity(oid)))
+        snmpList = []
+        for (errorIndication, errorStatus, errorIndex, varBinds) in nextCmd(*snmpTuple, lexicographicMode=False):
+            if errorIndication:
+                print("{} - {}".format(ipaddr, errorIndication), file=sys.stderr)
+                break
+            elif errorStatus:
+                print('%s at %s' % (errorStatus.prettyPrint(),
+                                    errorIndex and varBinds[int(errorIndex) - 1][0] or '?'),
+                      file=sys.stderr)
+                break
+            else:
+                snmpList.append(varBinds[0])
+            ###
+
+
+        errorIndication, errorStatus, errorIndex, varBinds = next(getCmd(
+            SnmpEngine(),
+            UsmUserData(snmpv3_user_string,snmpv3_auth_string,snmpv3_priv_string),
+            # UsmUserData(*tupler),
+            UdpTransportTarget((ipaddr, 161)),
+            ContextData(),
+            # ObjectType(ObjectIdentity('IF-MIB', 'ifInOctets', 1))
+            ObjectType(ObjectIdentity(oid))
+        ))
+
+        if errorIndication is not None:
+            self.custom_printer("debug", "## DBG - {} SNMPV3 Failed {}, trying V2 ##".format(ipaddr,errorIndication))
+        else: #V3 Successful
+            return varBinds
+
+
+
+
 
     def snmp_get(self,  ipaddr, *args, **kwargs):
-        if kwargs.get('ro') is None:
-            ro_string = self.config.ro
+        self.custom_printer("debug", "## DBG - {} - SNMP GET Trying SNMP V3 {} ##".format(ipaddr,args))
+        if kwargs.get('snmpv3_user_string') is None:
+            snmpv3_user_string = self.config.snmpv3_ro_user_string
         else:
-            ro_string = kwargs.get('ro')
-        errorIndication, errorStatus, errorIndex, varBinds = next(
-            getCmd(SnmpEngine(),
-                   CommunityData(ro_string),
-                   UdpTransportTarget((ipaddr, 161)),
-                   ContextData(),
-                   *args)
-        )
-        if errorIndication:  # check for errors
-            print("{} - {}".format(ipaddr,errorIndication))
-        elif errorStatus:  # error status (confirm this)
-            print('%s at %s' % (errorStatus.prettyPrint(),
-                                errorIndex and varBinds[int(errorIndex) - 1][0] or '?'))
+            snmpv3_user_string = kwargs.get('snmpv3_user_string')
+
+        if kwargs.get('snmpv3_auth_string') is None and len(self.config.snmpv3_ro_auth_string) > 0:
+            snmpv3_auth_string = self.config.snmpv3_ro_auth_string
         else:
-            # success
+            snmpv3_auth_string = kwargs.get('snmpv3_auth_string')
+
+        if kwargs.get('snmpv3_priv_string') is None and len(self.config.snmpv3_ro_priv_string) > 0:
+            snmpv3_priv_string = self.config.snmpv3_ro_priv_string
+        else:
+            snmpv3_priv_string = kwargs.get('snmpv3_priv_string')
+
+
+        snmp_tuple = (SnmpEngine(), UsmUserData(snmpv3_user_string, snmpv3_auth_string, snmpv3_priv_string),
+                      UdpTransportTarget((ipaddr, 161)), ContextData(), *args)
+        errorIndication, errorStatus, errorIndex, varBinds = next(getCmd(*snmp_tuple))
+
+        if errorIndication is not None:
+            self.custom_printer("debug", "## DBG - {} SNMPV3 GET Failed {}, trying V2 ##".format(ipaddr, errorIndication))
+            if kwargs.get('ro') is None:
+                ro_string = self.config.ro
+            else:
+                ro_string = kwargs.get('ro')
+            snmp_tuple = (SnmpEngine(), CommunityData(ro_string), UdpTransportTarget((ipaddr, 161)), ContextData(), *args)
+            errorIndication, errorStatus, errorIndex, varBinds = next(getCmd(*snmp_tuple))
+
+            if errorIndication:  # check for errors
+                print("{} - {}".format(ipaddr,errorIndication))
+            elif errorStatus:  # error status (confirm this)
+                print('%s at %s' % (errorStatus.prettyPrint(),
+                                    errorIndex and varBinds[int(errorIndex) - 1][0] or '?'))
+            else:
+                # success
+                self.custom_printer("debug", "## DBG - {} - SNMP GET SUCCESSFUL SNMP V2 {} ##".format(ipaddr, args))
+                return varBinds
+        else:
+            self.custom_printer("debug", "## DBG - {} - SNMP GET SUCCESSFUL SNMP V3 {} ##".format(ipaddr, args))
             return varBinds
 
 
     def snmp_walk(self,  ipaddr, *args,**kwargs):
-        if kwargs.get('ro') is None:
-            ro_string = self.config.ro
-        else:
-            ro_string = kwargs.get('ro')
         snmpList = []
-        for (errorIndication, errorStatus, errorIndex, varBinds) in nextCmd(SnmpEngine(),
-            CommunityData(ro_string),UdpTransportTarget((ipaddr, 161)), ContextData(),
-                                                                            *args, lexicographicMode=False):
+        self.custom_printer("debug", "## DBG - {} - SNMP WALK Trying SNMP V3 {} ##".format(ipaddr,args))
+        if kwargs.get('snmpv3_user_string') is None:
+            snmpv3_user_string = self.config.snmpv3_ro_user_string
+        else:
+            snmpv3_user_string = kwargs.get('snmpv3_user_string')
+
+        if kwargs.get('snmpv3_auth_string') is None and len(self.config.snmpv3_ro_auth_string) > 0 :
+            snmpv3_auth_string = self.config.snmpv3_ro_auth_string
+        else:
+            snmpv3_auth_string = kwargs.get('snmpv3_auth_string')
+
+        if kwargs.get('snmpv3_priv_string') is None and len(self.config.snmpv3_ro_priv_string) > 0 :
+            snmpv3_priv_string = self.config.snmpv3_ro_priv_string
+        else:
+            snmpv3_priv_string = kwargs.get('snmpv3_priv_string')
+
+            snmp_tuple = (SnmpEngine(),UsmUserData(snmpv3_user_string,snmpv3_auth_string,snmpv3_priv_string), UdpTransportTarget((ipaddr, 161)),ContextData(),*args)
+        for (errorIndication, errorStatus, errorIndex, varBinds) in nextCmd(*snmp_tuple, lexicographicMode=False):
             if errorIndication:
                 print("{} - {}".format(ipaddr,errorIndication), file=sys.stderr)
                 break
@@ -107,6 +192,28 @@ class SubRoutines:
                 break
             else:
                 snmpList.append(varBinds[0])
+        if errorIndication is not None:
+            self.custom_printer("debug", "## DBG - {} SNMPV3 WALK Failed {}, trying V2 ##".format(ipaddr, errorIndication))
+            if kwargs.get('ro') is None:
+                ro_string = self.config.ro
+            else:
+                ro_string = kwargs.get('ro')
+
+            snmp_tuple = (SnmpEngine(), CommunityData(ro_string), UdpTransportTarget((ipaddr, 161)), ContextData(), *args)
+            for (errorIndication, errorStatus, errorIndex, varBinds) in nextCmd(*snmp_tuple, lexicographicMode=False):
+                if errorIndication:
+                    print("{} - {}".format(ipaddr,errorIndication), file=sys.stderr)
+                    break
+                elif errorStatus:
+                    print('%s at %s' % (errorStatus.prettyPrint(),
+                                        errorIndex and varBinds[int(errorIndex) - 1][0] or '?'),
+                          file=sys.stderr)
+                    break
+                else:
+                    self.custom_printer("debug", "## DBG - {} - SNMP WALK SUCCESSFUL SNMP V2 {} ##".format(ipaddr, args))
+                    snmpList.append(varBinds[0])
+        else:
+            self.custom_printer("debug", "## DBG - {} - SNMP WALK SUCCESSFUL SNMP V3 {} ##".format(ipaddr, args))
 
         return snmpList
 

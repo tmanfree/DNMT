@@ -189,6 +189,7 @@ def dnmt():
     switch_check_parser.add_argument('-i', '--ipaddr', metavar='IP', help='Switch Address interface is on')
     switch_check_parser.add_argument('-c', '--csv', help="save to a specified csv file")
     switch_check_parser.add_argument('-v', '--verbose', help="run in verbose mode", default=False, action="store_true")
+    switch_check_parser.add_argument('-d', '--debug', help="run in debug very verbose mode", default=False, action="store_true")
     switch_check_parser.add_argument('-l', '--load', help="load switchstruct from a specified file")
     switch_check_parser.add_argument('-r', '--ro', help="use a custom RO snmp string")
     switch_check_parser.add_argument('-e', '--email', help="email to send csv file to (ONLY with CSV option)")
@@ -259,6 +260,12 @@ def dnmt():
     dell_snmp_parser = test_parser.add_parser("dellsnmp", help="add snmp ro string")
     dell_snmp_parser.add_argument('file', metavar='file', help='The file with IPs to check')
     dell_snmp_parser.add_argument('snmpstring', metavar='snmpstring', help="snmp string to add")
+
+    snmpv3_parser = test_parser.add_parser("snmpv3", help="simple test out snmpv3")
+    snmpv3_parser.add_argument('ipaddr', help='ip')
+    snmpv3_parser.add_argument('snmpv3_user_string', help='snmp user string')
+    snmpv3_parser.add_argument('snmpv3_auth_string', help='snmp auth string')
+    snmpv3_parser.add_argument('oid', help='oid')
 
     connect_count_parser = test_parser.add_parser("connection_count", help="count not connected ports")
     connect_count_parser.add_argument('file', help='The file with IPs to check')
@@ -428,6 +435,8 @@ def dnmt():
             test.batch_command_wrapper()
         elif cmdargs.test == "Vlan_Namer":
             test.vlan_namer_begin()
+        elif cmdargs.test == "snmpv3":
+            test.subs.test_snmpv3(cmdargs.ipaddr,cmdargs.oid,snmpv3_user_string=cmdargs.snmpv3_user_string, snmpv3_auth_string=cmdargs.snmpv3_auth_string)
         elif cmdargs.test == "ipam_rest_test":
             temp = test.Ipam_Rest_Get("https://ipam.ualberta.ca/solid.intranet/rest/vlmvlan_list",
                                                    {"WHERE": "vlmdomain_description like '{}' and vlmvlan_vlan_id = '{}'".format(cmdargs.building,cmdargs.vlanid)})
