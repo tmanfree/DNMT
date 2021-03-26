@@ -45,25 +45,48 @@ class SubRoutines:
 
     ###BASE SNMP COMMANDS####
     def snmp_set(self, ipaddr, *args, **kwargs):
-        if kwargs.get('rw') is None:
-            rw_string = self.config.rw
+        self.custom_printer("debug", "## DBG - {} - SNMP GET Trying SNMP V3 {} ##".format(ipaddr, args))
+        if kwargs.get('snmpv3_user_string') is None:
+            snmpv3_user_string = self.config.snmpv3_rw_user_string
         else:
-            rw_string = kwargs.get('rw')
+            snmpv3_user_string = kwargs.get('snmpv3_user_string')
 
-        errorIndication, errorStatus, errorIndex, varBinds = next(
-            setCmd(SnmpEngine(),
-                   CommunityData(rw_string),
-                   UdpTransportTarget((ipaddr, 161)),
-                   ContextData(),
-                   *args)
-        )
-        if errorIndication:  # check for errors
-            print("{} - {}".format(ipaddr,errorIndication))
-        elif errorStatus:  # error status (confirm this)
-            print('%s at %s' % (errorStatus.prettyPrint(),
-                                errorIndex and varBinds[int(errorIndex) - 1][0] or '?'))
+        if kwargs.get('snmpv3_auth_string') is None and len(self.config.snmpv3_rw_auth_string) > 0:
+            snmpv3_auth_string = self.config.snmpv3_rw_auth_string
         else:
-            #success
+            snmpv3_auth_string = kwargs.get('snmpv3_auth_string')
+
+        if kwargs.get('snmpv3_priv_string') is None and len(self.config.snmpv3_rw_priv_string) > 0:
+            snmpv3_priv_string = self.config.snmpv3_rw_priv_string
+        else:
+            snmpv3_priv_string = kwargs.get('snmpv3_priv_string')
+
+        snmp_tuple = (SnmpEngine(), UsmUserData(snmpv3_user_string, snmpv3_auth_string, snmpv3_priv_string),
+                      UdpTransportTarget((ipaddr, 161)), ContextData(), *args)
+        errorIndication, errorStatus, errorIndex, varBinds = next(setCmd(*snmp_tuple))
+
+        if errorIndication is not None:
+            self.custom_printer("debug",
+                                "## DBG - {} SNMPV3 SET Failed {}, trying V2 ##".format(ipaddr, errorIndication))
+            if kwargs.get('rw') is None:
+                rw_string = self.config.rw
+            else:
+                rw_string = kwargs.get('rw')
+            snmp_tuple = (SnmpEngine(), CommunityData(rw_string),UdpTransportTarget((ipaddr, 161)), ContextData(), *args)
+            errorIndication, errorStatus, errorIndex, varBinds = next(setCmd(*snmp_tuple))
+            if errorIndication:  # check for errors
+                print("{} - {}".format(ipaddr,errorIndication))
+                return False
+            elif errorStatus:  # error status (confirm this)
+                print('%s at %s' % (errorStatus.prettyPrint(),
+                                    errorIndex and varBinds[int(errorIndex) - 1][0] or '?'))
+                return False
+            else:
+                #success
+                self.custom_printer("debug", "## DBG - {} - SNMP SET SUCCESSFUL SNMP V2 {} ##".format(ipaddr, args))
+                return True
+        else:
+            self.custom_printer("debug", "## DBG - {} - SNMP SET SUCCESSFUL SNMP V3 {} ##".format(ipaddr, args))
             return True
     def test_snmpv3(self, ipaddr,oid, *args, **kwargs):
         self.custom_printer("debug", "## DBG - Trying SNMP V3 {} ##".format(ipaddr))
