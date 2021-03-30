@@ -245,6 +245,9 @@ def dnmt():
     mapper_parser.add_argument('-r', '--remove', help="remove file afterwards", default=False,
                                       action="store_true")
     mapper_parser.add_argument('-c', '--customro', help="use custom RO string")
+    mapper_parser.add_argument('-f', '--filterstring', help="strings to end on, ie:domain names", default="EMPTY_STRING")
+    mapper_parser.add_argument('-m', '--multifilter', help="colon seperated strings to end on, ie:domain names",
+                               default="EMPTY_STRING")
 
 
     #Tests Begin

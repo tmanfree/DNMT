@@ -55,6 +55,7 @@ class Mapper:
 
 
     def iterate(self):
+        #TODO change RO to a list of strings and try them all if one fails?
         # os.environ["PATH"] += os.pathsep + "C:\\Program Files\\Graphviz\\bin\\"  # required for testing on PC
         iplist = []
 
@@ -69,10 +70,15 @@ class Mapper:
             file.close()
 
             for ipaddr in iplist:
+                ipaddr = ipaddr.split(",") #handle custom ip variables in ipfile
+                if len(ipaddr) > 1:
+                    self.cmdargs.customro = ipaddr[1]
+                else:
+                    self.cmdargs.customro = None
 
-                neigh_ip = socket.gethostbyname(ipaddr)
+                neigh_ip = socket.gethostbyname(ipaddr[0])
                 if neigh_ip not in self.pendingNeighbours and neigh_ip not in self.visitedNeighbours:
-                    self.pendingNeighbours.append(ipaddr)
+                    self.pendingNeighbours.append(ipaddr[0])
 
                 while len(self.pendingNeighbours) > 0:
                     self.checkNeighbours(self.pendingNeighbours.pop())
@@ -159,16 +165,16 @@ class Mapper:
                         neigh_node_name = [port['Name'],"",[port['IP']]]  # if the host is not found
 
 
-
+                    #TODO MAKE filter variables custom instead of hardcoded values
                     if any(x in port['Name'].lower() for x in
-                           ['-ba-', '-ef-', '-ds-', '-cs-']) and "orenet.ualberta.ca" in port['Name']:
+                           self.cmdargs.multifilter.split(' ')) and self.cmdargs.filterstring in port['Name']:
                         neigh_node_name[2][0] = port[
                             'Name']  # assign the IP to be the core hostname for checking with mapped edges
 
                     # if "net.ualberta.ca" in neigh_node_name[0] and all(x not in self.mappedEdges for x in [(node_name[2][0],neigh_node_name[2][0]), (neigh_node_name[2][0],node_name[2][0])]):
                     if all(x not in self.mappedEdges for x in[(node_name[2][0], neigh_node_name[2][0]),(neigh_node_name[2][0], node_name[2][0])]): #map all edges (turn off other types like linux?)
 
-                        if any(x in port['Name'].lower() for x in ['-ba-','-ef-','-ds-','-cs-']) and "orenet.ualberta.ca" in port['Name']:
+                        if any(x in port['Name'].lower() for x in self.cmdargs.multifilter.split(' ')) and self.cmdargs.filterstring in port['Name']:
                             self.graphObject.edge("{}({})".format(node_name[0], node_name[2][0]),"{}".format(neigh_node_name[2][0]))  # will add a core edge
                         else:
                             self.graphObject.edge("{}({})".format(node_name[0],node_name[2][0]),"{}({})".format(neigh_node_name[0],neigh_node_name[2][0])) # will add an edge by name
@@ -176,10 +182,6 @@ class Mapper:
                                 self.pendingNeighbours.append(port["IP"])
 
                         self.mappedEdges.append((node_name[2][0],neigh_node_name[2][0]))
-
-                        # if "orenet.ualberta.ca" not in neigh_node_name and "orenet.ualberta.ca" not in port['Name']: #avoid going into core devices
-                        #     if (port["IP"] not in self.visitedNeighbours and port["IP"] not in self.pendingNeighbours):
-                        #         self.pendingNeighbours.append(port["IP"])
 
             self.successful_switches.append(ipaddr)
         else:
