@@ -179,8 +179,11 @@ class SwitchStruct:
 
 class ModuleStruct:
     def __init__(self, moduleNum):
-
-        self.modulenumber = int(moduleNum)
+        # try:
+        #     self.modulenumber = int(moduleNum)
+        # except ValueError:
+        #     self.modulenumber = moduleNum # catch for 4000 Series switches
+        self.modulenumber = moduleNum #removed typecasting to int for modules with alpha ids
         self.ports = []
 
     def addPort(self, portInfo):

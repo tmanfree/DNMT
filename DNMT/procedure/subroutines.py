@@ -515,6 +515,12 @@ class SubRoutines:
                 if (re.match(r"^(\d+)$", portname)):
                     returnList.append({'Switch': 1, 'Module': 0, 'Port': int(portname),
                                            'PortName': portname, 'Id': oidId})
+                elif (re.match(r"^([a-zA-Z]\d+)$", portname)): # catch for 4000 series switches
+                    # switchnum = self.regex_parser_var0(r"^([A-Z])\d+$", portname)
+                    switchnum = self.regex_parser_varx(r"^([A-Z])(?:(\d))?", portname)
+                    if (len(switchnum) == 2):
+                        returnList.append({'Switch': 1, 'Module': switchnum[0], 'Port': switchnum[1],
+                                           'PortName': portname, 'Id': oidId})
             elif vendor == "Ancient Dell":
                 if (re.match(r"^g(\d+)$", portname)):
                     interface = self.regex_parser_var0(r"^g(\d+)$", portname)
@@ -610,7 +616,18 @@ class SubRoutines:
                 #     if switchnum is not None:
                 #         returnList.append({'Switch': int(switchnum), 'Id': oidId})
         elif vendor =="HP" or vendor == "Ancient Dell":
-            returnList.append({'Switch': 1, 'Id': 1}) #Currently defaulting to using id of 1
+            ### Obsolete code for finding switch letter in 4000 series, moved to modules
+            # for varBind in varBinds:
+            #     varName = varBind._ObjectType__args[1]._value.decode("utf-8")
+            #     oidTuple = varBind._ObjectType__args[0]._ObjectIdentity__oid._value
+            #     oidId = oidTuple[len(oidTuple) - 1]
+            #
+            #     if (re.match(r"^Slot [A-Z]$", varName)):
+            #         switchnum = self.regex_parser_var0(r"^Slot ([A-Z])?", varName)
+            #         if switchnum is not None:
+            #             returnList.append({'Switch': switchnum, 'Id': oidId})
+            if len(returnList) == 0:
+                returnList.append({'Switch': 1, 'Id': 1}) #Currently defaulting to using id of 1
         elif vendor == "Dell":
             for varBind in varBinds:
                 varName = varBind._ObjectType__args[1]._value.decode("utf-8")
