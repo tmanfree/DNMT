@@ -46,6 +46,7 @@ class SubRoutines:
     ###BASE SNMP COMMANDS####
     def snmp_set(self, ipaddr, *args, **kwargs):
         self.custom_printer("debug", "## DBG - {} - SNMP GET Trying SNMP V3 {} ##".format(ipaddr, args))
+        errorIndication = None  # preset to not balk on
         if kwargs.get('snmpv3_user_string') is None:
             snmpv3_user_string = self.config.snmpv3_rw_user_string
         else:
@@ -142,6 +143,7 @@ class SubRoutines:
 
     def snmp_get(self,  ipaddr, *args, **kwargs):
         self.custom_printer("debug", "## DBG - {} - SNMP GET Trying SNMP V3 {} ##".format(ipaddr,args))
+        errorIndication = None  # preset to not balk on
         if kwargs.get('snmpv3_user_string') is None:
             snmpv3_user_string = self.config.snmpv3_ro_user_string
         else:
@@ -187,6 +189,7 @@ class SubRoutines:
 
     def snmp_walk(self,  ipaddr, *args,**kwargs):
         snmpList = []
+        errorIndication = None  # preset to not balk on
         self.custom_printer("debug", "## DBG - {} - SNMP WALK Trying SNMP V3 {} ##".format(ipaddr,args))
         if kwargs.get('snmpv3_user_string') is None:
             snmpv3_user_string = self.config.snmpv3_ro_user_string
@@ -202,7 +205,6 @@ class SubRoutines:
             snmpv3_priv_string = self.config.snmpv3_ro_priv_string
         else:
             snmpv3_priv_string = kwargs.get('snmpv3_priv_string')
-
             snmp_tuple = (SnmpEngine(),UsmUserData(snmpv3_user_string,snmpv3_auth_string,snmpv3_priv_string), UdpTransportTarget((ipaddr, 161)),ContextData(),*args)
         for (errorIndication, errorStatus, errorIndex, varBinds) in nextCmd(*snmp_tuple, lexicographicMode=False):
             if errorIndication:
