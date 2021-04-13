@@ -2163,11 +2163,13 @@ class SubRoutines:
                     TotalStatus += SwitchStatus.appendSingleLineCustom(**SL_keywords)
 
                     self.custom_printer("debug", "## DBG - Appending {} to successful files ##".format(ip))
-                    successful_files.append("{}-statcheck.bz2".format(ip))
+                    # successful_files.append("{}-statcheck.bz2".format(ip))#TODO remove additional statcheck.bz2
+                    successful_files.append(ip)
             except Exception as err:  # currently a catch all to stop linux from having a conniption when reloading
                 print("FILE ERROR {}-statcheck:{}".format(ip, err.args[0]))
                 self.custom_printer("debug", "## DBG - Error in create readable activity file ##")
-                failure_files.append("{}-statcheck.bz2".format(ip))
+                # failure_files.append("{}-statcheck.bz2".format(ip)) #TODO remove additional statcheck.bz2
+                failure_files.append(ip)
 
         zf = zipfile.ZipFile(
             os.path.join(self.log_path, "activitycheck", "processedfiles", "{}.zip".format(status_filename)),
