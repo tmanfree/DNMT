@@ -352,10 +352,17 @@ def dnmt():
     arp_table_check_parser = tools_parser.add_parser("arp_table_check", help="check the arp table of a switch")
     arp_table_check_parser.add_argument('ipaddr', help='switch to check')
     arp_table_check_parser.add_argument('cmdfile', help='file that contains arp filters')
-    arp_table_check_parser.add_argument('-c', '--csv', help="output as csve", default=False,
+    arp_table_check_parser.add_argument('-c', '--csv', help="output to screen as csv", default=False,
+                                         action="store_true")
+    arp_table_check_parser.add_argument('-v', '--verbose', help="run in verbose mode", default=False,
                                          action="store_true")
 
-    arp_table_check_parser.add_argument('-v', '--verbose', help="run in verbose mode", default=False,
+    #mac table check (could be replaced with command_blaster)
+    mac_table_check_parser = tools_parser.add_parser("mac_table_check", help="check the mac table of switches")
+    mac_table_check_parser.add_argument('ipfile', help='file containing switch ips to check')
+    mac_table_check_parser.add_argument('-c', '--csv', help="output to screen as csv", default=False,
+                                         action="store_true")
+    mac_table_check_parser.add_argument('-v', '--verbose', help="run in verbose mode", default=False,
                                          action="store_true")
 
 
@@ -415,6 +422,8 @@ def dnmt():
             tools.hp_password_change_begin()
         elif cmdargs.tools =='arp_table_check':
             tools.arp_table_check()
+        elif cmdargs.tools =='mac_table_check':
+            tools.mac_table_check()
     elif cmdargs.maincommand == 'status_checks':
         if cmdargs.status_checks == "activity_tracking":
             statusChecks.activity_tracking_begin()
