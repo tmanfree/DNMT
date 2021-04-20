@@ -711,3 +711,58 @@ class Tools:
         else:
             self.subs.verbose_printer("####{}### ERROR Unable to ping ".format(ipaddr))
             return "{} - No Ping Response".format(ipaddr)
+
+    def arp_table_check(self):
+
+        # TODO change RO to a list of strings and try them all if one fails?
+        # os.environ["PATH"] += os.pathsep + "C:\\Program Files\\Graphviz\\bin\\"  # required for testing on PC
+        cmdlist = []
+
+
+
+
+        file = open(os.path.join(self.cmdargs.cmdfile), "r")
+        self.subs.verbose_printer("##### file opened:{} #####".format(file))
+
+        for cmd in file:
+            cmdlist.append(cmd.rstrip())
+        file.close()
+
+        if self.subs.ping_check(self.cmdargs.ipaddr):
+            try:
+                net_connect = self.subs.create_connection(self.cmdargs.ipaddr) #added this
+                if net_connect:
+                    output = net_connect.send_command("term length 0")
+                    for cmd in cmdlist:
+
+                        # Show Interface Status
+                        self.subs.custom_printer("verbose", "show ip arp {}".format(cmd))
+                        output = net_connect.send_command("show ip arp {}".format(cmd))
+                        # example output: 2044    0000.AAAA.BBBB    DYNAMIC     Po9
+                        if 'csv' in self.cmdargs and self.cmdargs.csv:
+                            outputlist = output.splitlines()
+                            for line in outputlist:
+                                csv = re.sub("\s+", ",", line)
+                                print("{},{}".format(cmd,csv))
+                        else:
+                            print(output)
+                        # macHolder = reg_mac_addr.search(output)
+                        #
+                        # if macHolder is not None:
+                        #
+                        #     # if a port channel then-->
+                        #     if "Po" in output:
+                        #         reg_find = reg_PC.search(output)
+                        #         output = net_connect.send_command(
+                        #             'show etherchannel summary | include {}\('.format(reg_find.group(0)))
+                        #     port_reg_find = reg_PC_port.search(output)
+                        #     #example output: 9      Po9(SU)         LACP      Te1/0/9(P)  Te2/0/9(P)
+                        #     port_info = net_connect.send_command("show int status | i ({}_) ".format(port_reg_find.group(1)))
+                        #     output = net_connect.send_command("show cdp neigh {} detail".format(port_reg_find.group(1)))
+            except netmiko.ssh_exception.NetMikoAuthenticationException as err:
+                self.subs.verbose_printer(err.args[0],"Netmiko Authentication Failure")
+            except netmiko.ssh_exception.NetMikoTimeoutException as err:
+                self.subs.verbose_printer(err.args[0], "Netmiko Timeout Failure")
+            except ValueError as err:
+                #if 'verbose' in self.cmdargs and self.cmdargs.verbose:
+                print(err.args[0])

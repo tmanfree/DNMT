@@ -348,6 +348,16 @@ def dnmt():
     passchanger_tool_parser.add_argument('-m', '--manual', help="IP list file will specify vendors and login creds",
                                          default=False, action="store_true")
 
+    #arp_table check
+    arp_table_check_parser = tools_parser.add_parser("arp_table_check", help="check the arp table of a switch")
+    arp_table_check_parser.add_argument('ipaddr', help='switch to check')
+    arp_table_check_parser.add_argument('cmdfile', help='file that contains arp filters')
+    arp_table_check_parser.add_argument('-c', '--csv', help="output as csve", default=False,
+                                         action="store_true")
+
+    arp_table_check_parser.add_argument('-v', '--verbose', help="run in verbose mode", default=False,
+                                         action="store_true")
+
 
 
 
@@ -371,7 +381,7 @@ def dnmt():
     #create the loop for interactive prompt
 
     if cmdargs.maincommand == "mac_search":
-        if cmdargs.mac_search == 'single' or cmdargs.mac_search == 'batchfile':
+        if cmdargs.mac_search == 'single' or cmdargs.mac_search == 'batch':
             macsearcher.begin_search()
         elif cmdargs.mac_search =='general':
             macsearcher.begin_snmp_search()
@@ -403,6 +413,8 @@ def dnmt():
             tools.standardize_begin()
         elif cmdargs.tools =='hp_password_change':
             tools.hp_password_change_begin()
+        elif cmdargs.tools =='arp_table_check':
+            tools.arp_table_check()
     elif cmdargs.maincommand == 'status_checks':
         if cmdargs.status_checks == "activity_tracking":
             statusChecks.activity_tracking_begin()
