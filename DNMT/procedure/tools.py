@@ -736,8 +736,15 @@ class Tools:
                         if 'csv' in self.cmdargs and self.cmdargs.csv:
                             outputlist = output.splitlines()
                             for line in outputlist:
-                                csv = re.sub("\s+", ",", line)
-                                print("{},{},{}".format(self.cmdargs.ipaddr,cmd,csv))
+                                if 'filter' in self.cmdargs and self.cmdargs.filter is not None:
+                                    filterlist = self.cmdargs.filter.split(',')
+
+                                    if not any([x in line for x in filterlist]):
+                                        csv = re.sub("\s+", ",", line)
+                                        print("{},{},{}".format(self.cmdargs.ipaddr, cmd, csv))
+                                else:
+                                    csv = re.sub("\s+", ",", line)
+                                    print("{},{},{}".format(self.cmdargs.ipaddr,cmd,csv))
                         else:
                             print(output)
             except netmiko.ssh_exception.NetMikoAuthenticationException as err:

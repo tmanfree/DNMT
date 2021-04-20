@@ -352,6 +352,7 @@ def dnmt():
     arp_table_check_parser = tools_parser.add_parser("arp_table_check", help="check the arp table of a switch")
     arp_table_check_parser.add_argument('ipaddr', help='switch to check')
     arp_table_check_parser.add_argument('cmdfile', help='file that contains arp filters')
+    arp_table_check_parser.add_argument('-f', '--filter', help="filter out lines containing csv filter val")
     arp_table_check_parser.add_argument('-c', '--csv', help="output to screen as csv", default=False,
                                          action="store_true")
     arp_table_check_parser.add_argument('-v', '--verbose', help="run in verbose mode", default=False,
