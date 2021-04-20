@@ -737,7 +737,7 @@ class Tools:
                             outputlist = output.splitlines()
                             for line in outputlist:
                                 csv = re.sub("\s+", ",", line)
-                                print("{},{}".format(cmd,csv))
+                                print("{},{},{}".format(self.cmdargs.ipaddr,cmd,csv))
                         else:
                             print(output)
             except netmiko.ssh_exception.NetMikoAuthenticationException as err:
@@ -769,12 +769,20 @@ class Tools:
                         # Show Interface Status
                         self.subs.custom_printer("verbose", "show mac addr")
                         output = net_connect.send_command("show mac addr")
-                        # example output: 2044    0000.AAAA.BBBB    DYNAMIC     Po9
                         if 'csv' in self.cmdargs and self.cmdargs.csv:
                             outputlist = output.splitlines()
                             for line in outputlist:
-                                csv = re.sub("\s+", ",", line.strip())
-                                print("{},{}".format(ip, csv))
+                                if 'filter' in self.cmdargs and self.cmdargs.filter is not None:
+                                    filterlist = self.cmdargs.filter.split(',')
+
+                                    if not any([x in line for x in filterlist]):
+                                        csv = re.sub("\s+", ",", line.strip())
+                                        print("{},{}".format(ip, csv))
+                                else:
+                                    csv = re.sub("\s+", ",", line.strip())
+                                    print("{},{}".format(ip, csv))
+
+
                         else:
                             print(output)
                 except netmiko.ssh_exception.NetMikoAuthenticationException as err:

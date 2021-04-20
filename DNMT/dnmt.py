@@ -360,6 +360,7 @@ def dnmt():
     #mac table check (could be replaced with command_blaster)
     mac_table_check_parser = tools_parser.add_parser("mac_table_check", help="check the mac table of switches")
     mac_table_check_parser.add_argument('ipfile', help='file containing switch ips to check')
+    mac_table_check_parser.add_argument('-f', '--filter', help="filter out lines containing csv filter val")
     mac_table_check_parser.add_argument('-c', '--csv', help="output to screen as csv", default=False,
                                          action="store_true")
     mac_table_check_parser.add_argument('-v', '--verbose', help="run in verbose mode", default=False,
