@@ -73,10 +73,13 @@ class Test:
         file.close()
 
         #Iterate through addresses List
-        file = open(self.cmdargs.ipaddrfile, "r")
-        for ip in file:
-            self.Command_Blast(ip.rstrip(), commandlist)
-        file.close()
+        if 'single' in self.cmdargs and self.cmdargs.single:
+            self.Command_Blast(self.cmdargs.ipaddrfile, commandlist)
+        else:
+            file = open(self.cmdargs.ipaddrfile, "r")
+            for ip in file:
+                self.Command_Blast(ip.rstrip(), commandlist)
+            file.close()
 
 
 
@@ -89,8 +92,14 @@ class Test:
                 ### ADD ERROR HANDLING FOR FAILED CONNECTION
                 print("-------- CONNECTED TO {} --------".format(ipaddr))
 
+                if 'enable' in self.cmdargs and self.cmdargs.enable:
+                    net_connect.enable()
+
                 for command in commandlist:
-                    result = net_connect.send_command(command)
+                    if 'timing' in self.cmdargs and self.cmdargs.timing:
+                        result = net_connect.send_command_timing(command)
+                    else:
+                        result = net_connect.send_command(command)
                     print("COMMAND:{}\nRESPONSE:{}".format(command,result))
                 net_connect.disconnect()
             else:

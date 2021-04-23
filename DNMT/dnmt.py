@@ -255,6 +255,13 @@ def dnmt():
     command_blaster_parser = test_parser.add_parser("command_blaster", help="send some non-enabled commands")
     command_blaster_parser.add_argument('ipaddrfile', help='text file with switch addresses to run commands on')
     command_blaster_parser.add_argument('commandfile', help='text file with commands to run')
+    command_blaster_parser.add_argument('-e', '--enable', help="run in enable mode", default=False,
+                                         action="store_true")
+    command_blaster_parser.add_argument('-t', '--timing', help="send commands in timing mode", default=False,
+                                         action="store_true")
+    command_blaster_parser.add_argument('-s', '--single', help="parses ipaddrfile as a single ip rather than file", default=False,
+                                        action="store_true")
+
     error_counter_parser = test_parser.add_parser("error_counter", help="check the errors of an interface")
     error_counter_parser.add_argument('ipaddr', help='address of switch to check')
     error_counter_parser.add_argument('interface', help='string to grab error counts of example:8/10')
