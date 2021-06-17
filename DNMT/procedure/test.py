@@ -74,26 +74,84 @@ class Test:
 
         #Iterate through addresses List
         if 'single' in self.cmdargs and self.cmdargs.single:
-            self.Command_Blast(self.cmdargs.ipaddrfile, commandlist)
+            vendor = self.subs.snmp_get_vendor_string(self.cmdargs.ipaddrfile.rstrip())
+            if vendor == "Cisco":
+                device_type = "cisco_ios"
+            elif vendor == "HP":
+                device_type = "hp_procurve"
+            else:
+                device_type = "generic_termserver"
+            self.Command_Blast(self.cmdargs.ipaddrfile.rstrip(), device_type, self.config.username,
+                                                   self.config.password, self.config.enable_pw, 22, commandlist)
+            # self.Command_Blast(self.cmdargs.ipaddrfile, commandlist)
         else:
             file = open(self.cmdargs.ipaddrfile, "r")
+
+            ##########Begin
+            # summary_list = []
+            if 'manual' in self.cmdargs and self.cmdargs.manual:
+                row_titles = next(file).split(
+                    ',')  # grab the first row (the titles) use these to make the standardize switch call dynamic
+                row_titles[len(row_titles) - 1] = row_titles[
+                    len(row_titles) - 1].rstrip()  # remove the trailing newline
+            ############END
             for ip in file:
-                self.Command_Blast(ip.rstrip(), commandlist)
+                #TODO replace the manual flag with a split length check to see if there are multiple fields
+                if ('manual' in self.cmdargs and self.cmdargs.manual and len(
+                        row_titles) == 6):  # {IP][Vendor][UN][PW][EN][PORT.split]
+                    ip_entry = ip.split(',')
+                    if (len(ip_entry) == len(row_titles)):
+                        ip_entry[len(ip_entry) - 1] = ip_entry[len(ip_entry) - 1].rstrip()
+                        self.Command_Blast(ip_entry[row_titles.index("ip")],
+                                                                    ip_entry[row_titles.index("type")],
+                                                                    ip_entry[row_titles.index("user")],
+                                                                    ip_entry[row_titles.index("pass")],
+                                                                    ip_entry[row_titles.index("en")],
+                                                                    ip_entry[row_titles.index("port")],
+                                                                    commandlist)
+
+                elif 'manual' in self.cmdargs and not self.cmdargs.manual:
+                    try:
+                        vendor = self.subs.snmp_get_vendor_string(ip.rstrip())
+                        if vendor == "Cisco":
+                            device_type = "cisco_ios"
+                        elif vendor == "HP":
+                            device_type = "hp_procurve"
+                        else:
+                            device_type = "generic_termserver"
+                        self.Command_Blast(ip.rstrip(), device_type, self.config.username,
+                                                                    self.config.password, self.config.enable_pw, 22,commandlist)
+                    except Exception as err:
+                        print(err)
+
+                # #############
+                # self.Command_Blast(ip.rstrip(), commandlist)
             file.close()
 
 
 
-    def Command_Blast(self,ipaddr,commandlist):
+    def Command_Blast(self,ipaddr,vendor,username,password,enable_pw,port,commandlist):
         # SSH Connection
         try:
-            net_connect = self.subs.create_connection(ipaddr)
+            # net_connect = self.subs.create_connection(ipaddr)
             # net_connect = ConnectHandler(**cisco_sw)
+            if "hp_procurve_telnet" in vendor:
+                net_connect = self.subs.create_connection_manual(ipaddr, vendor, username, password, enable_pw,
+                                                                 port, "sername", "assword")
+            else:
+                net_connect = self.subs.create_connection_custom(ipaddr, vendor, username, password, enable_pw, port)
+
             if net_connect:
                 ### ADD ERROR HANDLING FOR FAILED CONNECTION
                 print("-------- CONNECTED TO {} --------".format(ipaddr))
 
                 if 'enable' in self.cmdargs and self.cmdargs.enable:
-                    net_connect.enable()
+                    if 'manual' in self.cmdargs and self.cmdargs.manual:
+                        enable_success = self.subs.vendor_enable_manual(vendor, net_connect, username, password,
+                                                                        enable_pw)
+                    else:
+                        enable_success = self.subs.vendor_enable(vendor, net_connect)
+                # test = net_connect.find_prompt()
 
                 for command in commandlist:
                     if 'timing' in self.cmdargs and self.cmdargs.timing:
@@ -102,6 +160,7 @@ class Test:
                         result = net_connect.send_command(command)
                     print("COMMAND:{}\nRESPONSE:{}".format(command,result))
                 net_connect.disconnect()
+                print("-------- CLOSED CONNECTION TO {} --------".format(ipaddr))
             else:
                 print("-------- FAILED TO CONNECTED TO {} --------".format(ipaddr))
         except netmiko.ssh_exception.NetMikoAuthenticationException as err:

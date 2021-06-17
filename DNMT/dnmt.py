@@ -261,6 +261,8 @@ def dnmt():
                                          action="store_true")
     command_blaster_parser.add_argument('-s', '--single', help="parses ipaddrfile as a single ip rather than file", default=False,
                                         action="store_true")
+    command_blaster_parser.add_argument('-m', '--manual', help="specify manual fields in iplist", default=False,
+                                         action="store_true")
 
     error_counter_parser = test_parser.add_parser("error_counter", help="check the errors of an interface")
     error_counter_parser.add_argument('ipaddr', help='address of switch to check')
@@ -371,6 +373,7 @@ def dnmt():
     mac_table_check_parser.add_argument('-f', '--filter', help="filter out lines containing csv filter val")
     mac_table_check_parser.add_argument('-c', '--csv', help="output to screen as csv", default=False,
                                          action="store_true")
+
     mac_table_check_parser.add_argument('-v', '--verbose', help="run in verbose mode", default=False,
                                          action="store_true")
 
