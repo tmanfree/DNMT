@@ -25,6 +25,7 @@ from DNMT.procedure.statuschecks import StatusChecks
 from DNMT.procedure.tools import Tools
 from DNMT.procedure import hostnamer
 from DNMT.procedure.test import Test
+from DNMT.procedure.mactracking import MacTracking
 
 #3rd party imports
 import argcomplete
@@ -157,6 +158,37 @@ def dnmt():
     # before_viewlog_check_parser.add_argument('ipaddr', metavar='IP', help='The IP to check')
     # after_viewlog_check_parser = viewlog_check_parser.add_parser('after', help="check after file of an IP")#THERE ARE AFTERS AND RELOADS
     # after_viewlog_check_parser.add_argument('ipaddr', metavar='IP', help='The IP to check')
+
+    # mac Checking parsers
+    mac_checks_parser = subparsers.add_parser("mac_checks",
+                                                 help="functions regarding checking mac address locations").add_subparsers(
+        dest="mac_checks")
+    # maintenance_parser = status_checks_parser.add_parser("maintenance", help="perform maintenance (clean up)")
+    # maintenance_parser.add_argument('maxfiles', help="Max number of statuscheck files to keep")
+    # maintenance_parser.add_argument('-v', '--verbose', help="run in verbose mode", default=False,
+    #                                 action="store_true")
+    # maintenance_parser.add_argument('-t', '--test', help="don't delete anything, just test", default=False,
+    #                                 action="store_true")
+
+    mac_tracking_parser = mac_checks_parser.add_parser("mac_tracking",
+                                                               help="search for a mac address (SNMP)")
+    mac_tracking_parser.add_argument('-f', '--file', help="specify iplist file to use if not using default")
+    mac_tracking_parser.add_argument('-e', '--email', help="specify which email to send file to")
+    mac_tracking_parser.add_argument('-i', '--ignorefield', help="specify which field(s) to ignore if empty")
+    mac_tracking_parser.add_argument('-n', '--numprocs', help="specify how many concurrent processes")
+    mac_tracking_parser.add_argument('-p', '--parallel', help="run grab processes in parallel", default=False,
+                                          action="store_true")
+    mac_tracking_parser.add_argument('-l', '--limit', help="only put switches specified in iplist in summary file",
+                                          default=False, action="store_true")
+    mac_tracking_parser.add_argument('-c', '--check', help="Operate on existing database, do not search",
+                                          default=False, action="store_true")
+    mac_tracking_parser.add_argument('-v', '--verbose', help="run in verbose mode", default=False,
+                                          action="store_true")
+    mac_tracking_parser.add_argument('-d', '--debug', help="run in debug mode (extremely verbose)", default=False,
+                                          action="store_true")
+    mac_tracking_parser.add_argument('-m', '--maxentries', help="modify max number of historical entries")
+    mac_tracking_parser.add_argument('-x', '--xecutive', help="print out a modified summary file", default=False,
+                                          action="store_true")
 
 
 
@@ -388,12 +420,14 @@ def dnmt():
     hostnamer = HostNamer(cmdargs,config)
     upgradeCheck = Check(cmdargs, config)
     statusChecks = StatusChecks(cmdargs,config)
+    mactracker = MacTracking(cmdargs, config)
     mapper = Mapper(cmdargs,config)
     tools = Tools(cmdargs, config)
     dbcmds = DBcmds(cmdargs,config)
     # functions = Functions(cmdargs,config)
     # snmpFuncs = SnmpFuncs(cmdargs,config)
     test = Test(cmdargs, config)
+
 
     ### complete CLI Parsing
 
@@ -446,6 +480,9 @@ def dnmt():
                 statusChecks.Maintenance(int(cmdargs.maxfiles))
             except ValueError:
                 print("maxfiles is not a number, exiting")
+    elif cmdargs.maincommand == 'mac_checks':
+        if cmdargs.mac_checks == "mac_tracking":
+            mactracker.mac_tracking_begin()
     elif cmdargs.maincommand == 'database_commands':
         if cmdargs.database_commands == 'find':
             if cmdargs.find == 'desc':

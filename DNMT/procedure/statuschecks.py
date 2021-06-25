@@ -503,3 +503,118 @@ class StatusChecks:
                 print(err)
         else:
             test.printStack()
+
+
+
+
+    def activity_tracking_begin(self):
+        iplist = []
+        total_start = time.time()
+        if not os.path.exists(os.path.join(self.subs.log_path, "activitycheck", "rawfiles")):
+            self.subs.custom_printer("debug","## DBG - Creating activitycheck/rawfiles directory ##")
+            os.makedirs(os.path.join(self.subs.log_path, "activitycheck", "rawfiles"))
+        if not os.path.exists(os.path.join(self.subs.log_path, "activitycheck", "processedfiles")):
+            self.subs.custom_printer("debug", "## DBG - Creating activitycheck/processedfiles directory ##")
+            os.makedirs(os.path.join(self.subs.log_path, "activitycheck", "processedfiles"))
+        # Specifying a file only changes what IPs are updated, right now the status check grabs all existing files in
+        # the raw data folder
+        try:
+            if 'file' in self.cmdargs and self.cmdargs.file is not None:
+                file = open(os.path.join(self.cmdargs.file), "r")
+            else:
+                file = open(os.path.abspath(os.path.join(os.sep, 'usr', 'lib', 'capt', "activitycheckIPlist")), "r")
+            self.subs.verbose_printer("##### file opened:{} #####".format(file))
+
+            for ip in file:
+                iplist.append(ip.rstrip())
+            file.close()
+
+            # pool = Pool(len(iplist))  # 4 concurrent processes
+            # results = pool.map(self.single_search, iplist)
+
+            #TODO CHANGE to do them with individual processes
+            if 'check' in self.cmdargs and self.cmdargs.check is False:
+                # pool = Pool(len(iplist))  # 4 concurrent processes
+                if 'parallel' in self.cmdargs and self.cmdargs.parallel is True:
+                    if 'numprocs' in self.cmdargs and self.cmdargs.numprocs is False:
+                        numprocs = 5
+                    else:
+                        if self.cmdargs.numprocs == "all":
+                            numprocs = len(iplist)
+                        else:
+                            try:
+                                numprocs = int(self.cmdargs.numprocs)
+                            except ValueError:
+                                self.subs.verbose_printer("numprocs is not a number, defaulting to 5!")
+                                numprocs = 5
+                            except Exception:
+                                numprocs = 5 #catch all if things go sideways
+                    pool = Pool(numprocs)
+                    results = pool.map(self.Activity_Tracking,iplist)
+                    for result in results:
+                        if result[0]:
+                            self.successful_switches.append(result[1])
+                        else:
+                            self.failure_switches.append(result[1])
+                else:
+                    for ip in iplist:
+                        try:
+                            result = self.Activity_Tracking(ip)
+                            if result[0]:
+                                self.successful_switches.append(result[1])
+                            else:
+                                self.failure_switches.append(result[1])
+                        except Exception as err:
+                            print("ERROR PROCESSING FILE {}:{}".format(ip, err))
+            self.subs.verbose_printer("##### Total Processing Complete, Total Time:{} seconds #####".format( int((time.time() - total_start) * 100) / 100))
+        except FileNotFoundError:
+            print("##### ERROR iplist files not found #####")
+        except Exception as err:
+            print ("##### ERROR with processing:{} #####".format(err))
+
+        # After all processes return, read in each pickle and create a single output file?
+        status_filename = "{}-FullStatus.csv".format(datetime.datetime.now().strftime('%Y-%m-%d-%H%M'))
+        try:
+            # self.Create_Readable_Activity_File(status_filename,iplist)
+            self.successful_files,self.failure_files = self.subs.create_readable_activity_file(status_filename,**vars(self.cmdargs))
+        except Exception as err:
+            print("##### ERROR creating Summary File: {} #####".format(err))
+
+        #Compress
+        # with open(os.path.join(self.log_path, "activitycheck", "processedfiles", status_filename), 'rb') as f_in:
+        #     with gzip.open(os.path.join(self.log_path, "activitycheck", "processedfiles", "{}.gz".format(status_filename)), 'wb') as f_out:
+        #         shutil.copyfileobj(f_in, f_out)
+        #EMail finished file:
+        try:
+            ##################
+            if 'email' in self.cmdargs and self.cmdargs.email is not None:
+                msg_subject = "updated activitycheck - {}".format(datetime.date.today().strftime('%Y-%m-%d'))
+
+                body = "Processing completed in {} seconds\n".format(int((time.time() - total_start) * 100) / 100)
+                body += "{} switch state files SUCCESSFULLY updated\n".format(len(self.successful_switches))
+                body += "{} switch state files FAILED to update\n".format(len(self.failure_switches))
+                body += "{} switch states SUCCESSFULLY added to the summary file\n".format(len(self.successful_files))
+                body += "{} switch states FAILED to add to the summary file\n".format(len(self.failure_files))
+                body += "\n--------------------------------------------------------------------------------------\n\n"
+
+                if len(self.successful_switches) > 0:
+                    body += "--- List of switch statuses SUCCESSFULLY updated ---\n"
+                    for entry in self.successful_switches:
+                        body += "{}\n".format(entry)
+                if len(self.failure_switches) > 0:
+                    body += "--- List of switch statuses that FAILED to update ---\n"
+                    for entry in self.failure_switches:
+                        body += "{}\n".format(entry)
+                if len(self.successful_files) > 0:
+                    body += "--- List of files SUCCESSFULLY added to summary file ---\n"
+                    for entry in self.successful_files:
+                        body += "{}\n".format(entry)
+                if len(self.failure_files) > 0:
+                    body += "--- List of files FAILED to be added to summary file ---\n"
+                    for entry in self.failure_files:
+                        body += "{}\n".format(entry)
+                # self.subs.email_zip_file(msg_subject,self.cmdargs.email,body,status_filename)
+                self.subs.email_zip_file(msg_subject, self.cmdargs.email, body, status_filename)
+            #######################
+        except Exception as err:
+            print(err)

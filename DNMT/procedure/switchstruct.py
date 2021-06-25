@@ -260,6 +260,8 @@ class PortStruct:
         self.historicalinputcounters = []
         self.historicaloutputcounters = []
 
+        self.macaddresses = [] #experimental
+
         self.lastupdate = None #specific to activity tracking
         self.deltalastin = None #specific to activity tracking
         self.deltalastout = None #specific to activity tracking
