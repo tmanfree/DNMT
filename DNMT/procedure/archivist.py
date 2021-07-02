@@ -31,13 +31,41 @@ class Archivist:
         self.config.logpath = os.path.join(os.path.expanduser(self.config.logpath), "logs", "UpgradeCheck",
                                            datetime.date.today().strftime('%Y%m%d'))
 
+    def basic_maintenance(self,maxfiles):
+        #
+        self.subs.verbose_printer("##### Cleaning up backup files #####")
+
+        #Remove oldest files (listed first on windows
+        filelist = os.listdir(os.path.join(self.subs.log_path, "activitycheck", "backups"))
+        if len(filelist) > 0 and len(filelist) > maxfiles:
+            # self.subs.verbose_printer("##### unsorted list:{} #####".format(filelist))
+            sortedfilelist = sorted(filelist)
+            # self.subs.verbose_printer("##### sorted list:{} #####".format(testlist))
+            filestoremove = sortedfilelist[0:(len(filelist)-maxfiles)]
+            self.subs.custom_printer("verbose", "total files:{}\nremoving files:{}".format(len(filelist),len(filestoremove)))
+            for file in filestoremove:
+                if file.endswith("-SwitchStatus.Backup.zip"):
+                    # process
+                    try:
+                        self.subs.verbose_printer("##### File to remove:{} #####".format(file))
+                        if 'test' in self.cmdargs and self.cmdargs.test is False :
+                            self.subs.custom_printer("verbose", "## Removing file {} ##".format(file))
+                            os.remove(os.path.join(self.subs.log_path, "activitycheck", "backups",file))
+                        else:
+                            self.subs.custom_printer("debug", "## DBG - testing, would have removed {} ##".format(file))
+                    except Exception as err:  # currently a catch all to stop linux from having a conniption when reloading
+                        print("FILE ERROR {}:{}".format(file, err.args[0]))
+
+        else:
+            self.subs.verbose_printer("total files:{} are less than max value:{}".format(len(filelist), maxfiles))
+
     def basic_archival(self):
         try:
             working_folder = os.path.join(self.subs.log_path, "activitycheck", "rawfiles", "legacy")
 
 
             zipfile_name = os.path.join(self.subs.log_path, "activitycheck", "backups",
-                                        "SwitchStatus Backup {}.zip".format(
+                                        "{}-SwitchStatus.Backup.zip".format(
                                             datetime.datetime.now().strftime("%Y%m%d%H%M")))
             files = os.listdir(working_folder)
             files_py = files
@@ -54,8 +82,10 @@ class Archivist:
             self.subs.custom_printer("debug", "## DBG - adding files to backup zipfile:{} ##".format(zipfile_name))
             for a in files_py:
                 full_file_path = os.path.join(working_folder,a)
-                ZipFile.write(full_file_path, compress_type=zipfile.ZIP_DEFLATED)
+                # ZipFile.write(full_file_path, compress_type=zipfile.ZIP_DEFLATED)
+                ZipFile.write(full_file_path,a, compress_type=zipfile.ZIP_DEFLATED)
             ZipFile.close()
+
 
             self.subs.custom_printer("debug", "## DBG - zipfile backup created ##")
 

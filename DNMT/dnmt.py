@@ -415,6 +415,14 @@ def dnmt():
     archival_basic_parser.add_argument('-r', '--remove', help="remove file afterwards", default=False,
                                action="store_true")
 
+    archival_basic_maintenance_parser = archival_parser.add_parser("basic_archival_maintenance", help="simple backup maintenance")
+    archival_basic_maintenance_parser.add_argument('-v', '--verbose', help="run in verbose mode", default=False,
+                               action="store_true")
+    archival_basic_maintenance_parser.add_argument('-d', '--debug', help="run in debug mode (extremely verbose)", default=False,
+                               action="store_true")
+    archival_basic_maintenance_parser.add_argument('maxfiles',  help="how many backup files to keep")
+    archival_basic_maintenance_parser.add_argument('-t', '--test', help="do not remove any files", default=False,action="store_true")
+
 
     archival_test_parser = archival_parser.add_parser("archival_test", help="test svn")
     # archival_test_parser.add_argument('ipaddr', metavar='IP', help='Switch Address interface is on')
@@ -532,6 +540,11 @@ def dnmt():
     elif cmdargs.maincommand == 'archival':
         if cmdargs.archival == 'basic_archival':
             archivist.basic_archival()
+        elif cmdargs.archival == 'basic_archival_maintenance':
+            try:
+                archivist.basic_maintenance(int(cmdargs.maxfiles))
+            except ValueError:
+                print("maxfiles is not a number, exiting")
 
 
 
