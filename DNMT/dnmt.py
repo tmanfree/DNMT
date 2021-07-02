@@ -18,6 +18,7 @@ from DNMT.procedure import config
 from DNMT.procedure.hostnamer import HostNamer
 from DNMT.procedure.dbcmds import DBcmds
 from DNMT.procedure.mapper import Mapper
+from DNMT.procedure.archivist import Archivist
 
 from DNMT.procedure.statuschecks import StatusChecks
 # from DNMT.procedure.SnmpFuncs import SnmpFuncs
@@ -328,12 +329,6 @@ def dnmt():
     ipam_rest_parser.add_argument('building', help='The 3 letter code of the building to grab vlans from')
     ipam_rest_parser.add_argument('vlanid', help='The vlan to get the name of')
 
-
-
-
-
-
-
     #Tests End
 
 
@@ -409,6 +404,23 @@ def dnmt():
     mac_table_check_parser.add_argument('-v', '--verbose', help="run in verbose mode", default=False,
                                          action="store_true")
 
+    # create subcategory for archival
+    archival_parser = subparsers.add_parser("archival", help="archival commands").add_subparsers(dest="archival")
+    archival_basic_parser = archival_parser.add_parser("basic_archival", help="simple backup of legacy files")
+    archival_basic_parser.add_argument('-v', '--verbose', help="run in verbose mode", default=False,
+                               action="store_true")
+    archival_basic_parser.add_argument('-d', '--debug', help="run in debug mode (extremely verbose)", default=False,
+                               action="store_true")
+    archival_basic_parser.add_argument('-e', '--email', help="specify email to send graph to")
+    archival_basic_parser.add_argument('-r', '--remove', help="remove file afterwards", default=False,
+                               action="store_true")
+
+
+    archival_test_parser = archival_parser.add_parser("archival_test", help="test svn")
+    # archival_test_parser.add_argument('ipaddr', metavar='IP', help='Switch Address interface is on')
+    # archival_test_parser.add_argument('interface', metavar='interface', help='interface to update')
+
+
 
 
 
@@ -424,6 +436,7 @@ def dnmt():
     mapper = Mapper(cmdargs,config)
     tools = Tools(cmdargs, config)
     dbcmds = DBcmds(cmdargs,config)
+    archivist = Archivist(cmdargs,config)
     # functions = Functions(cmdargs,config)
     # snmpFuncs = SnmpFuncs(cmdargs,config)
     test = Test(cmdargs, config)
@@ -516,6 +529,9 @@ def dnmt():
             temp = test.Ipam_Rest_Get("https://ipam.ualberta.ca/solid.intranet/rest/vlmvlan_list",
                                                    {"WHERE": "vlmdomain_description like '{}' and vlmvlan_vlan_id = '{}'".format(cmdargs.building,cmdargs.vlanid)})
             print(temp)
+    elif cmdargs.maincommand == 'archival':
+        if cmdargs.archival == 'basic_archival':
+            archivist.basic_archival()
 
 
 
