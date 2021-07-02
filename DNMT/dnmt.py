@@ -414,6 +414,7 @@ def dnmt():
     archival_basic_parser.add_argument('-e', '--email', help="specify email to send graph to")
     archival_basic_parser.add_argument('-r', '--remove', help="remove file afterwards", default=False,
                                action="store_true")
+    archival_basic_parser.add_argument('-m', '--maintenance', help="perform maintenance after running, removing specified number of files")
 
     archival_basic_maintenance_parser = archival_parser.add_parser("basic_archival_maintenance", help="simple backup maintenance")
     archival_basic_maintenance_parser.add_argument('-v', '--verbose', help="run in verbose mode", default=False,
@@ -421,7 +422,7 @@ def dnmt():
     archival_basic_maintenance_parser.add_argument('-d', '--debug', help="run in debug mode (extremely verbose)", default=False,
                                action="store_true")
     archival_basic_maintenance_parser.add_argument('maxfiles',  help="how many backup files to keep")
-    archival_basic_maintenance_parser.add_argument('-t', '--test', help="do not remove any files", default=False,action="store_true")
+    archival_basic_maintenance_parser.add_argument('-c', '--check', help="do not remove any files", default=False,action="store_true")
 
 
     archival_test_parser = archival_parser.add_parser("archival_test", help="test svn")

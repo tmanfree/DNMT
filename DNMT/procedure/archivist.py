@@ -48,11 +48,12 @@ class Archivist:
                     # process
                     try:
                         self.subs.verbose_printer("##### File to remove:{} #####".format(file))
-                        if 'test' in self.cmdargs and self.cmdargs.test is False :
-                            self.subs.custom_printer("verbose", "## Removing file {} ##".format(file))
-                            os.remove(os.path.join(self.subs.log_path, "activitycheck", "backups",file))
-                        else:
+                        if 'check' in self.cmdargs and self.cmdargs.check is True :
                             self.subs.custom_printer("debug", "## DBG - testing, would have removed {} ##".format(file))
+                        else:
+                            self.subs.custom_printer("debug", "## Removing file {} ##".format(file))
+                            os.remove(os.path.join(self.subs.log_path, "activitycheck", "backups", file))
+
                     except Exception as err:  # currently a catch all to stop linux from having a conniption when reloading
                         print("FILE ERROR {}:{}".format(file, err.args[0]))
 
@@ -101,6 +102,12 @@ class Archivist:
                     self.subs.custom_printer("debug", "## DBG - zipfile {} removed ##".format(zipfile_name))
                 else:
                     print("The file does not exist")
+
+            if 'maintenance' in self.cmdargs and self.cmdargs.maintenance is not None:
+                try:
+                    self.basic_maintenance(int(self.cmdargs.maintenance))
+                except ValueError:
+                    self.subs.custom_printer("debug", "## DBG - maintenance({}) is not a number. maintenance not performed ##".format(self.cmdargs.maintenance))
 
         except Exception as err:
             print(err)
