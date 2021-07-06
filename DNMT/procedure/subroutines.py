@@ -37,6 +37,8 @@ class SubRoutines:
         self.config = config
         self.log_path = os.path.abspath(os.path.join(os.sep, 'var', 'log', 'dnmt')) #will be used by statuschecks right now
 
+        self.snmpv3_capable = True   #TODO iterate this functionality to all snmp functions currently only in switch struct
+
 
 
 ####################
@@ -142,30 +144,37 @@ class SubRoutines:
 
 
     def snmp_get(self,  ipaddr, *args, **kwargs):
-        self.custom_printer("debug", "## DBG - {} - SNMP GET Trying SNMP V3 {} ##".format(ipaddr,args))
-        errorIndication = None  # preset to not balk on
-        if kwargs.get('snmpv3_user_string') is None:
-            snmpv3_user_string = self.config.snmpv3_ro_user_string
-        else:
-            snmpv3_user_string = kwargs.get('snmpv3_user_string')
+        errorIndication = None #catch all for snmpv3 not capable
+        if (self.snmpv3_capable):
+            self.custom_printer("debug", "## DBG - {} - SNMP GET Trying SNMP V3 {} ##".format(ipaddr,args))
+            errorIndication = None  # preset to not balk on
+            if kwargs.get('snmpv3_user_string') is None:
+                snmpv3_user_string = self.config.snmpv3_ro_user_string
+            else:
+                snmpv3_user_string = kwargs.get('snmpv3_user_string')
 
-        if kwargs.get('snmpv3_auth_string') is None and len(self.config.snmpv3_ro_auth_string) > 0:
-            snmpv3_auth_string = self.config.snmpv3_ro_auth_string
-        else:
-            snmpv3_auth_string = kwargs.get('snmpv3_auth_string')
+            if kwargs.get('snmpv3_auth_string') is None and len(self.config.snmpv3_ro_auth_string) > 0:
+                snmpv3_auth_string = self.config.snmpv3_ro_auth_string
+            else:
+                snmpv3_auth_string = kwargs.get('snmpv3_auth_string')
 
-        if kwargs.get('snmpv3_priv_string') is None and len(self.config.snmpv3_ro_priv_string) > 0:
-            snmpv3_priv_string = self.config.snmpv3_ro_priv_string
-        else:
-            snmpv3_priv_string = kwargs.get('snmpv3_priv_string')
+            if kwargs.get('snmpv3_priv_string') is None and len(self.config.snmpv3_ro_priv_string) > 0:
+                snmpv3_priv_string = self.config.snmpv3_ro_priv_string
+            else:
+                snmpv3_priv_string = kwargs.get('snmpv3_priv_string')
 
 
-        snmp_tuple = (SnmpEngine(), UsmUserData(snmpv3_user_string, snmpv3_auth_string, snmpv3_priv_string),
-                      UdpTransportTarget((ipaddr, 161)), ContextData(), *args)
-        errorIndication, errorStatus, errorIndex, varBinds = next(getCmd(*snmp_tuple))
+            snmp_tuple = (SnmpEngine(), UsmUserData(snmpv3_user_string, snmpv3_auth_string, snmpv3_priv_string),
+                          UdpTransportTarget((ipaddr, 161)), ContextData(), *args)
+            errorIndication, errorStatus, errorIndex, varBinds = next(getCmd(*snmp_tuple))
+            if errorIndication is not None:
+                self.custom_printer("debug",
+                                    "## DBG - {} SNMPV3 WALK Failed {}, setting failure flag ##".format(ipaddr,
+                                                                                                        errorIndication))
+                self.snmpv3_capable = False
 
-        if errorIndication is not None:
-            self.custom_printer("debug", "## DBG - {} SNMPV3 GET Failed {}, trying V2 ##".format(ipaddr, errorIndication))
+        if not self.snmpv3_capable:
+            self.custom_printer("debug", "## DBG - {} SNMPV2 GET ##".format(ipaddr, errorIndication))
             if kwargs.get('ro') is None:
                 ro_string = self.config.ro
             else:
@@ -190,35 +199,42 @@ class SubRoutines:
     def snmp_walk(self,  ipaddr, *args,**kwargs):
         snmpList = []
         errorIndication = None  # preset to not balk on
-        self.custom_printer("debug", "## DBG - {} - SNMP WALK Trying SNMP V3 {} ##".format(ipaddr,args))
-        if kwargs.get('snmpv3_user_string') is None:
-            snmpv3_user_string = self.config.snmpv3_ro_user_string
-        else:
-            snmpv3_user_string = kwargs.get('snmpv3_user_string')
-
-        if kwargs.get('snmpv3_auth_string') is None and len(self.config.snmpv3_ro_auth_string) > 0 :
-            snmpv3_auth_string = self.config.snmpv3_ro_auth_string
-        else:
-            snmpv3_auth_string = kwargs.get('snmpv3_auth_string')
-
-        if kwargs.get('snmpv3_priv_string') is None and len(self.config.snmpv3_ro_priv_string) > 0 :
-            snmpv3_priv_string = self.config.snmpv3_ro_priv_string
-        else:
-            snmpv3_priv_string = kwargs.get('snmpv3_priv_string')
-            snmp_tuple = (SnmpEngine(),UsmUserData(snmpv3_user_string,snmpv3_auth_string,snmpv3_priv_string), UdpTransportTarget((ipaddr, 161)),ContextData(),*args)
-        for (errorIndication, errorStatus, errorIndex, varBinds) in nextCmd(*snmp_tuple, lexicographicMode=False):
-            if errorIndication:
-                print("{} - {}".format(ipaddr,errorIndication), file=sys.stderr)
-                break
-            elif errorStatus:
-                print('%s at %s' % (errorStatus.prettyPrint(),
-                                    errorIndex and varBinds[int(errorIndex) - 1][0] or '?'),
-                      file=sys.stderr)
-                break
+        if (self.snmpv3_capable):
+            self.custom_printer("debug", "## DBG - {} - SNMP WALK Trying SNMP V3 {} ##".format(ipaddr,args))
+            if kwargs.get('snmpv3_user_string') is None:
+                snmpv3_user_string = self.config.snmpv3_ro_user_string
             else:
-                snmpList.append(varBinds[0])
-        if errorIndication is not None:
-            self.custom_printer("debug", "## DBG - {} SNMPV3 WALK Failed {}, trying V2 ##".format(ipaddr, errorIndication))
+                snmpv3_user_string = kwargs.get('snmpv3_user_string')
+
+            if kwargs.get('snmpv3_auth_string') is None and len(self.config.snmpv3_ro_auth_string) > 0 :
+                snmpv3_auth_string = self.config.snmpv3_ro_auth_string
+            else:
+                snmpv3_auth_string = kwargs.get('snmpv3_auth_string')
+
+            if kwargs.get('snmpv3_priv_string') is None and len(self.config.snmpv3_ro_priv_string) > 0 :
+                snmpv3_priv_string = self.config.snmpv3_ro_priv_string
+            else:
+                snmpv3_priv_string = kwargs.get('snmpv3_priv_string')
+                snmp_tuple = (SnmpEngine(),UsmUserData(snmpv3_user_string,snmpv3_auth_string,snmpv3_priv_string), UdpTransportTarget((ipaddr, 161)),ContextData(),*args)
+            for (errorIndication, errorStatus, errorIndex, varBinds) in nextCmd(*snmp_tuple, lexicographicMode=False):
+                if errorIndication:
+                    print("{} - {}".format(ipaddr,errorIndication), file=sys.stderr)
+                    break
+                elif errorStatus:
+                    print('%s at %s' % (errorStatus.prettyPrint(),
+                                        errorIndex and varBinds[int(errorIndex) - 1][0] or '?'),
+                          file=sys.stderr)
+                    break
+                else:
+                    snmpList.append(varBinds[0])
+            if errorIndication is not None:
+                self.custom_printer("debug",
+                                    "## DBG - {} SNMPV3 WALK Failed {}, setting failure flag ##".format(ipaddr, errorIndication))
+                self.snmpv3_capable = False
+
+
+        if not self.snmpv3_capable:
+            self.custom_printer("debug", "## DBG - {} SNMPV2 GET ##".format(ipaddr, errorIndication))
             if kwargs.get('ro') is None:
                 ro_string = self.config.ro
             else:
@@ -1558,7 +1574,7 @@ class SubRoutines:
 
     def snmp_get_switch_data_full(self, ipaddr,**kwargs):
         # test = self.snmp_get_switch_id_bulk(ipaddr)
-
+        self.snmpv3_capable = True
         vendor = self.snmp_get_vendor_string(ipaddr,ro=kwargs.get('ro'))
         switchStruct = StackStruct(ipaddr, vendor)
         switchStruct.vlanList  = self.snmp_get_vlan_database(ipaddr,vendor,ro=kwargs.get('ro'))
