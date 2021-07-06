@@ -296,6 +296,8 @@ def dnmt():
                                         action="store_true")
     command_blaster_parser.add_argument('-m', '--manual', help="specify manual fields in iplist", default=False,
                                          action="store_true")
+    command_blaster_parser.add_argument('-v', '--verbose', help="verbose output", default=False,action="store_true")
+    # command_blaster_parser.add_argument('-d', '--debug', help="debug output", default=False,action="store_true")
 
     error_counter_parser = test_parser.add_parser("error_counter", help="check the errors of an interface")
     error_counter_parser.add_argument('ipaddr', help='address of switch to check')
