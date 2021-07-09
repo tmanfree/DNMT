@@ -414,7 +414,7 @@ class Test:
                         for vlanEntry in current_vlan_list:
                             if vlanEntry["NewName"] is not None and vlanEntry["NewName"] is not "":
                                 if (vlanEntry["NewName"] == vlanEntry["Name"]):
-                                    self.subs.verbose_printer("###{}### vlan {} is the SAME: {} ".format(ipaddr, vlanEntry["ID"],vlanEntry["Name"]))
+                                    self.subs.custom_printer("verbose", "###{}### vlan {} is the SAME: {} ".format(ipaddr, vlanEntry["ID"],vlanEntry["Name"]))
                                 else:
                                     result = net_connect.send_config_set(["vlan {}".format(vlanEntry["ID"]), "name {}".format(vlanEntry["NewName"])])
                                     #self.subs.verbose_printer(result)
@@ -432,6 +432,7 @@ class Test:
                         print("-------- FAILED TO CONNECTED TO {} --------\n".format(ipaddr))
                 else: #just checking
                     for vlanEntry in current_vlan_list:
+                        print("-------- CHECKING {}  --------".format(ipaddr))
                         if vlanEntry["NewName"] is not None and vlanEntry["NewName"] is not "":
                             if (vlanEntry["NewName"] == vlanEntry["Name"]):
                                 self.subs.verbose_printer(
