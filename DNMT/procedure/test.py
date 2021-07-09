@@ -423,7 +423,7 @@ class Test:
                                                                                           vlanEntry["Name"],
                                                                                           vlanEntry["NewName"]))
                             else:
-                                print("###{}### vlan {} not found in IPAM. Old Name: {}".format(ipaddr,vlanEntry["ID"],vlanEntry["Name"]))
+                                self.subs.custom_printer("verbose", "###{}### vlan {} not found in IPAM. Old Name: {}".format(ipaddr,vlanEntry["ID"],vlanEntry["Name"]) )
                         result = net_connect.save_config()
                         # self.subs.verbose_printer("###{}###   {}".format(ipaddr, result))
                         net_connect.disconnect()
@@ -439,7 +439,7 @@ class Test:
                                     "###{}### vlan {} is the SAME: {} ".format(ipaddr, vlanEntry["ID"],
                                                                                vlanEntry["Name"]))
                             else:
-                                print("###{}### vlan {} is DIFFERENT. \nOLD: {} \nNEW {}".format(ipaddr, vlanEntry["ID"],
+                                print("###{}### vlan {} is DIFFERENT. \nOLD: {} \nNEW: {}".format(ipaddr, vlanEntry["ID"],
                                                                                       vlanEntry["Name"],
                                                                                       vlanEntry["NewName"]))
                         else:
