@@ -438,7 +438,7 @@ class Test:
                                     "###{}### vlan {} is the SAME: {} ".format(ipaddr, vlanEntry["ID"],
                                                                                vlanEntry["Name"]))
                             else:
-                                print("###{}### vlan {} is DIFFERENT. OLD: {} NEW {}".format(ipaddr, vlanEntry["ID"],
+                                print("###{}### vlan {} is DIFFERENT. \nOLD: {} \nNEW {}".format(ipaddr, vlanEntry["ID"],
                                                                                       vlanEntry["Name"],
                                                                                       vlanEntry["NewName"]))
                         else:
