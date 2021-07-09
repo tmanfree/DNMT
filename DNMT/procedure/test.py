@@ -431,8 +431,8 @@ class Test:
                     else:
                         print("-------- FAILED TO CONNECTED TO {} --------\n".format(ipaddr))
                 else: #just checking
+                    print("-------- CHECKING VLANS ON {}  --------".format(ipaddr))
                     for vlanEntry in current_vlan_list:
-                        print("-------- CHECKING {}  --------".format(ipaddr))
                         if vlanEntry["NewName"] is not None and vlanEntry["NewName"] is not "":
                             if (vlanEntry["NewName"] == vlanEntry["Name"]):
                                 self.subs.verbose_printer(
