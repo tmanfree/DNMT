@@ -427,9 +427,9 @@ class Test:
                         result = net_connect.save_config()
                         # self.subs.verbose_printer("###{}###   {}".format(ipaddr, result))
                         net_connect.disconnect()
-                        print("-------- FINISHED PROCESSING {}  --------".format(ipaddr))
+                        print("-------- FINISHED PROCESSING {}  --------\n".format(ipaddr))
                     else:
-                        print("-------- FAILED TO CONNECTED TO {} --------".format(ipaddr))
+                        print("-------- FAILED TO CONNECTED TO {} --------\n".format(ipaddr))
                 else: #just checking
                     for vlanEntry in current_vlan_list:
                         if vlanEntry["NewName"] is not None and vlanEntry["NewName"] is not "":
@@ -444,6 +444,7 @@ class Test:
                         else:
                             print("###{}### vlan {} not found in IPAM. Old Name: {}".format(ipaddr, vlanEntry["ID"],
                                                                                             vlanEntry["Name"]))
+                    print("-------- FINISHED CHECKING {}  --------\n".format(ipaddr))
 
             except netmiko.ssh_exception.NetMikoAuthenticationException as err:
                 self.subs.verbose_printer(err.args[0], "Netmiko Authentication Failure")
