@@ -322,9 +322,10 @@ def dnmt():
     batch_run_wrapper_parser = test_parser.add_parser("batch_command_wrapper", help="run batches of command line scripts")
     batch_run_wrapper_parser.add_argument('file', help='The file with cli commands to run')
 
-    vlan_namer_parser = test_parser.add_parser('Vlan_Namer',help="Rename Vlans")
+    vlan_namer_parser = test_parser.add_parser('vlan_namer',help="Rename Vlans")
     vlan_namer_parser.add_argument('file', help='The file with IPs to verify vlan names upstream')
     vlan_namer_parser.add_argument('-v', '--verbose', help="run in verbose mode", default=False, action="store_true")
+    vlan_namer_parser.add_argument('-d', '--debug', help="run in debug mode", default=False, action="store_true")
     vlan_namer_parser.add_argument('-a', '--apply', help="apply changes", default=False, action="store_true")
 
     ipam_rest_parser = test_parser.add_parser("ipam_rest_test", help="rest command testing")
@@ -532,7 +533,7 @@ def dnmt():
             test.connection_count_begin()
         elif cmdargs.test == "batch_command_wrapper":
             test.batch_command_wrapper()
-        elif cmdargs.test == "Vlan_Namer":
+        elif cmdargs.test == "vlan_namer":
             test.vlan_namer_begin()
         elif cmdargs.test == "snmpv3":
             test.subs.test_snmpv3(cmdargs.ipaddr,cmdargs.oid,snmpv3_user_string=cmdargs.snmpv3_user_string, snmpv3_auth_string=cmdargs.snmpv3_auth_string)
