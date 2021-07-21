@@ -321,6 +321,7 @@ def dnmt():
 
     batch_run_wrapper_parser = test_parser.add_parser("batch_command_wrapper", help="run batches of command line scripts")
     batch_run_wrapper_parser.add_argument('file', help='The file with cli commands to run')
+    batch_run_wrapper_parser.add_argument('-v', '--verbose', help="run in verbose mode", default=False, action="store_true")
 
     vlan_namer_parser = test_parser.add_parser('vlan_namer',help="Rename Vlans")
     vlan_namer_parser.add_argument('file', help='The file with IPs to verify vlan names upstream')
