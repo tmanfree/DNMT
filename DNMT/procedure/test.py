@@ -229,9 +229,9 @@ class Test:
     def batch_command_wrapper(self):
         file = open(self.cmdargs.file, "r")
         for command in file:
-            self.subs.custom_printer("verbose", "###running command:{}### ".format(command))
+            self.subs.custom_printer("verbose", "###running command:{}### ".format(command.rstrip()))
             Return_val = subprocess.run(command, shell=True)
-            self.subs.custom_printer("verbose", "###return vla of command {} is:{}### ".format(command,Return_val))
+            self.subs.custom_printer("verbose", "###return vla of command {} is:{}### ".format(command.rstrip(),Return_val))
         file.close()
 
 
