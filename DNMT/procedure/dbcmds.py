@@ -65,19 +65,19 @@ class DBcmds:
                         if len(portList) > 0:
                             self.subs.verbose_printer("##### {} Matches found in {} #####".format(len(portList),ip))
                         for port in portList:
-                            matchlist.append({'Ip':SwitchStatus.ip,'Port':port.portname, 'Desc':port.description,})
+                            matchlist.append({'Ip':SwitchStatus.ip,'Hostname':SwitchStatus.hostname,'Port':port.portname, 'Desc':port.description,})
 
             except Exception as err:  # currently a catch all to stop linux from having a conniption when reloading
                 print("FILE ERROR {}:{}".format(ip, err.args[0]))
         print("{} Matches found\n".format(len(matchlist)))
         if 'file' in self.cmdargs and self.cmdargs.file is None:
             if 'csv' in self.cmdargs and self.cmdargs.csv:
-                print ("Switch IP, Port, Description")
+                print ("Switch IP, Hostname, Port, Description")
                 for port in matchlist:
-                    print("{},{},{}".format(port['Ip'],port['Port'],port['Desc']))
+                    print("{},{},{}".format(port['Ip'],port['Hostname'],port['Port'],port['Desc']))
             else:
                 for port in matchlist:
-                    print("Switch:{}\nPort:{}\nDescription:{}\n".format(port['Ip'],port['Port'],port['Desc']))
+                    print("Switch:{}\nHostname:{}\nPort:{}\nDescription:{}\n".format(port['Ip'],port['Hostname'],port['Port'],port['Desc']))
         else:
             try:
                 with open(self.cmdargs.file, 'w') as f:
@@ -85,11 +85,11 @@ class DBcmds:
                     if 'csv' in self.cmdargs and self.cmdargs.csv:
                         self.subs.verbose_printer("Writing to file as CSV ")
                         for port in matchlist:
-                            f.write("{},{},{}".format(port['Ip'], port['Port'], port['Desc']))
+                            f.write("{},{},{},{}".format(port['Ip'],port['Hostname'], port['Port'], port['Desc']))
                     else:
                         self.subs.verbose_printer("Writing to file as raw text")
                         for port in matchlist:
-                            f.write("Switch:{}\nPort:{}\nDescription:{}\n".format(port['Ip'], port['Port'], port['Desc']))
+                            f.write("Switch:{}\nHostname:{}\nPort:{}\nDescription:{}\n".format(port['Ip'],port['Hostname'], port['Port'], port['Desc']))
                     f.close()
                     self.subs.verbose_printer("Writing Complete to CSV")
             except Exception as err:
