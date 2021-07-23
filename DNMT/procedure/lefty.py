@@ -276,7 +276,7 @@ class Lefty:
                                                                             fullint),
                                                'info': "Partial Match", 'csv': "{},"
                                                                                 "{},{},{}".format(foundmac['Mac'],
-                                                                                                  ipaddr,
+                                                                                                  ipaddr.rstrip(),
                                                                                                   fullint,
                                                                                                   "Partial Match")})
                         partialmatches += 1
@@ -286,7 +286,7 @@ class Lefty:
                                                                 "NA"),
                                    'info': "MAC not found", 'csv': "{},"
                                                                     "{},{},{}".format(foundmac['Mac'],
-                                                                                      ipaddr,
+                                                                                      ipaddr.rstrip(),
                                                                                       "NA",
                                                                                       "MAC not found")})
         return
