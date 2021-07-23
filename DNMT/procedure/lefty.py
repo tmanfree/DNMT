@@ -228,7 +228,7 @@ class Lefty:
                 # finishedmaclist =self.Mac_Check(searchmac,foundmaclist,foundmacintlist,finishedmaclist)
                 self.Mac_Check(ipaddr, searchmac, foundmaclist, foundmacintlist)
         else:
-            print("skipping {} Currently only works reliably with HP switches".format(ipaddr))
+            self.subs.custom_printer("verbose", "skipping {} Currently only works reliably with HP switches".format(ipaddr.rstrip()))
 
 
     def Mac_Count_Check(self,port,foundmacintlist):
