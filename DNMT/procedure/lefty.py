@@ -239,6 +239,7 @@ class Lefty:
         return numberOfMacs
 
     def Mac_Check(self,ipaddr, searchmac,foundmaclist, foundmacintlist):
+        ipaddr = ipaddr.rstrip() #get rid of possible newlines
         partialmatches = 0
         for foundmac in foundmaclist:
             if foundmac['Mac'] == searchmac:  # Complete Match
@@ -272,21 +273,21 @@ class Lefty:
                         fullint = self.subs.snmp_get_full_interface(ipaddr, macint['Port'])
                         # finishedmaclist.append({"Mac": foundmac['Mac'], "Port": macint["Port"], "Status": "Partial Match"})
                         self.log_array.append({'location': "MAC:{}, Switch:{}, "
-                                                           "Port:{}".format(foundmac['Mac'], ipaddr.rstrip(),
+                                                           "Port:{}".format(foundmac['Mac'], ipaddr,
                                                                             fullint),
                                                'info': "Partial Match", 'csv': "{},"
                                                                                 "{},{},{}".format(foundmac['Mac'],
-                                                                                                  ipaddr.rstrip(),
+                                                                                                  ipaddr,
                                                                                                   fullint,
                                                                                                   "Partial Match")})
                         partialmatches += 1
         if partialmatches == 0:
             self.log_array.append({'location': "MAC:{}, Switch:{}, "
-                                               "Port:{}".format(foundmac['Mac'], ipaddr.rstrip(),
+                                               "Port:{}".format(foundmac['Mac'], ipaddr,
                                                                 "NA"),
                                    'info': "MAC not found", 'csv': "{},"
                                                                     "{},{},{}".format(foundmac['Mac'],
-                                                                                      ipaddr.rstrip(),
+                                                                                      ipaddr,
                                                                                       "NA",
                                                                                       "MAC not found")})
         return
