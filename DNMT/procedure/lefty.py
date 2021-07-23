@@ -272,7 +272,7 @@ class Lefty:
                         fullint = self.subs.snmp_get_full_interface(ipaddr, macint['Port'])
                         # finishedmaclist.append({"Mac": foundmac['Mac'], "Port": macint["Port"], "Status": "Partial Match"})
                         self.log_array.append({'location': "MAC:{}, Switch:{}, "
-                                                           "Port:{}".format(foundmac['Mac'], ipaddr,
+                                                           "Port:{}".format(foundmac['Mac'], ipaddr.rstrip(),
                                                                             fullint),
                                                'info': "Partial Match", 'csv': "{},"
                                                                                 "{},{},{}".format(foundmac['Mac'],
@@ -282,7 +282,7 @@ class Lefty:
                         partialmatches += 1
         if partialmatches == 0:
             self.log_array.append({'location': "MAC:{}, Switch:{}, "
-                                               "Port:{}".format(foundmac['Mac'], ipaddr,
+                                               "Port:{}".format(foundmac['Mac'], ipaddr.rstrip(),
                                                                 "NA"),
                                    'info': "MAC not found", 'csv': "{},"
                                                                     "{},{},{}".format(foundmac['Mac'],
