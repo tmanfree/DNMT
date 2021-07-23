@@ -228,7 +228,7 @@ class Lefty:
                 # finishedmaclist =self.Mac_Check(searchmac,foundmaclist,foundmacintlist,finishedmaclist)
                 self.Mac_Check(ipaddr, searchmac, foundmaclist, foundmacintlist)
         else:
-            print("Currently only works reliably with HP switches")
+            print("skipping {} Currently only works reliably with HP switches".format(ipaddr))
 
 
     def Mac_Count_Check(self,port,foundmacintlist):
@@ -251,15 +251,22 @@ class Lefty:
 
                         fullint = self.subs.snmp_get_full_interface(ipaddr,macint['Port'])
                         # finishedmaclist.append({"Mac": foundmac['Mac'], "Port": macint["Port"], "Status": "Complete Match"})
-                        self.log_array.append({'location': "MAC:{}, Switch:{}, "
+                        logstring = {'location': "MAC:{}, Switch:{}, "
                                                            "Port:{}".format(foundmac['Mac'], ipaddr,
                                                                             fullint),
                                                'info': foundType, 'csv': "{},"
                                                                          "{},{},{}".format(foundmac['Mac'],
                                                                                            ipaddr,
-                                                                                           fullint, foundType)})
+                                                                                           fullint, foundType)}
+                        if 'suppress' in self.cmdargs and self.cmdargs.suppress:
+                            if foundType == "Complete Match":
+                                self.log_array.append(logstring)
+                            else:
+                                self.subs.custom_printer("verbose", "## DBG - {} ignoring {} on {} due to suppress flag##".format(ipaddr,foundmac['Mac'],fullint))
+                        else:
+                            self.log_array.append(logstring)
                         return
-            elif searchmac in foundmac['Mac']:
+            elif searchmac in foundmac['Mac']: #partial match
                 for macint in foundmacintlist:
                     if macint['Id'] == foundmac["Id"]:
                         fullint = self.subs.snmp_get_full_interface(ipaddr, macint['Port'])
