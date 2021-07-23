@@ -161,21 +161,28 @@ class Lefty:
     def begin_snmp_search(self):
         ipaddrlist = []
         if re.match("(\d{1,3}\.){3}\d{1,3}", self.cmdargs.ipaddr): #if a ipv4 address
+            self.subs.custom_printer("debug", "## DBG - source is an IP ##")
             ipaddrlist.append(self.cmdargs.ipaddr)
         elif re.match("^\S+\s\S+$",self.cmdargs.ipaddr): #a general area for example "coh-tr domain.ca"
+            self.subs.custom_printer("debug", "## DBG - source is a domain ##")
             #############STARTEDIT
             try:
                 searchstring = self.cmdargs.ipaddr.split(' ')
                 #Grab the name server first
+                self.subs.custom_printer("debug", "## DBG - search string:{} ##".format(searchstring))
                 soa_answer = dns.resolver.query(searchstring[0], 'SOA')
+                self.subs.custom_printer("debug", "## DBG - soa_answer:{} ##".format(soa_answer))
                 master_answer = dns.resolver.query(soa_answer[0].mname,'A')
+                self.subs.custom_printer("debug", "## DBG - master answer:{} ##".format(master_answer))
                 # could skip previous 2 lines by presetting Name server address
                 z = dns.zone.from_xfr(dns.query.xfr(master_answer[0].address,searchstring[0]))
                 names = z.nodes.keys()
                 # names.sort()
 
                 for n in names:
+                    self.subs.custom_printer("debug", "## DBG - checking name:{} ##".format(n))
                     if re.match(searchstring[1], str(n)):
+                        self.subs.custom_printer("debug", "## DBG - matched on name:{} ##".format(n))
                         ipaddrlist.append(socket.gethostbyname((str(n)+"."+searchstring[0])))
             except socket.error as e:
                 print('Failed to perform zone transfer:', e)

@@ -63,6 +63,7 @@ def dnmt():
     single_mac_check_parser.add_argument('ipaddr', metavar='IP',
                         help='The IP to start looking for the mac address at')
     single_mac_check_parser.add_argument('-v', '--verbose', help="run in verbose mode", default=False, action="store_true")
+    single_mac_check_parser.add_argument('-d', '--debug', help="run in debug mode", default=False,action="store_true")
     single_mac_check_parser.add_argument('-c', '--csv', help="save to a specified csv file" )
 
     batch_mac_check_parser = mac_search_parser.add_parser("batch", help="A single mac address to search for")
@@ -71,6 +72,7 @@ def dnmt():
                                          help='The IP to start looking for the mac address at')
     batch_mac_check_parser.add_argument('-v', '--verbose', help="run in verbose mode", default=False,
                                          action="store_true")
+    batch_mac_check_parser.add_argument('-d', '--debug', help="run in debug mode", default=False, action="store_true")
     batch_mac_check_parser.add_argument('-c', '--csv', help="save to a specified csv file")
 
     general_mac_search_parser = mac_search_parser.add_parser("general",
@@ -83,6 +85,7 @@ def dnmt():
     test_mac_check_parser.add_argument('-v', '--verbose', help="run in verbose mode", default=False,
                                          action="store_true")
     test_mac_check_parser.add_argument('-c', '--csv', help="save to a specified csv file")
+    test_mac_check_parser.add_argument('-d', '--debug', help="run in debug mode", default=False, action="store_true")
 
     test_batch_mac_check_parser = general_mac_search_parser.add_parser("batch", help="use snmpSearch for a batch of MAC addresses")
     test_batch_mac_check_parser.add_argument('batchfile', help='File with mac address for batch mode')
