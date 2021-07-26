@@ -1770,7 +1770,7 @@ class SubRoutines:
     #   Sets up a connection to the provided ip address. Currently setup to connect to cisco switches
     def create_connection_vendor(self, ipaddr, vendor):
         if 'verbose' in self.cmdargs and self.cmdargs.verbose:
-            print('------- CONNECTING to switch {}-------'.format(ipaddr))
+            print('------- CONNECTING to switch {} -------'.format(ipaddr))
 
         # Switch Parameters
         net_sw = {
@@ -1810,7 +1810,7 @@ class SubRoutines:
         #   Sets up a connection to the provided ip address. Currently setup to connect to cisco switches
     def create_connection_custom(self, ipaddr, vendor, username, password, enable, port):
         if 'verbose' in self.cmdargs and self.cmdargs.verbose:
-            print('------- CONNECTING to switch {}-------'.format(ipaddr))
+            print('------- CONNECTING to switch {} -------'.format(ipaddr))
 
         # Switch Parameters
         net_sw = {
@@ -1852,7 +1852,7 @@ class SubRoutines:
         #       dispatches back to netmiko. Used for ssh v1 switches with weird login promptsprompts
     def create_connection_manual(self, ipaddr, vendor, username, password, enable, port, un_prompt,pw_prompt):
         if 'verbose' in self.cmdargs and self.cmdargs.verbose:
-            print('------- CONNECTING to switch {}-------'.format(ipaddr))
+            print('------- CONNECTING to switch {} -------'.format(ipaddr))
 
         # Switch Parameters
         ConnectionClass = netmiko.terminal_server.TerminalServerTelnet
@@ -1901,7 +1901,7 @@ class SubRoutines:
         self.handle_banners(vendor,net_connect)
 
         if 'verbose' in self.cmdargs and self.cmdargs.verbose:
-            print('------- Successfully connected to switch {}-------'.format(ipaddr))
+            print('------- Successfully connected to switch {} -------'.format(ipaddr))
 
         return net_connect
 
