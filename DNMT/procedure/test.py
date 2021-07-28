@@ -159,6 +159,8 @@ class Test:
                     else:
                         result = net_connect.send_command(command)
                     print("COMMAND:{}\nRESPONSE:{}".format(command,result))
+                if 'write' in self.cmdargs and self.cmdargs.write:
+                    net_connect.save_config()
                 net_connect.disconnect()
                 print("-------- CLOSED CONNECTION TO {} --------".format(ipaddr))
             else:
@@ -413,12 +415,13 @@ class Test:
                         print("-------- PROCESSING {}  --------".format( ipaddr))
 
 
-                        for vlanEntry in current_vlan_list:
+                        for vlanEntry in current_vlan_list: #This can miss the case where nvram is not
                             if vlanEntry["NewName"] is not None and vlanEntry["NewName"] is not "":
                                 if (vlanEntry["NewName"] == vlanEntry["Name"]):
                                     self.subs.custom_printer("verbose", "###{}### vlan {} is the SAME: {} ".format(ipaddr, vlanEntry["ID"],vlanEntry["Name"]))
                                 else:
                                     result = net_connect.send_config_set(["vlan {}".format(vlanEntry["ID"]), "name {}".format(vlanEntry["NewName"])])
+                                    self.subs.custom_printer("debug","###{}### vlan {} change result:{}".format(ipaddr,vlanEntry["ID"],result))
                                     #self.subs.verbose_printer(result)
                                     #If the names are too long they won't apply, HP Procurve in ASH reporting a limit of 12 characters
                                     print("###{}### vlan {} changed from {} to {}".format(ipaddr, vlanEntry["ID"],
