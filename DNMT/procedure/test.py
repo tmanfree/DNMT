@@ -178,7 +178,10 @@ class Test:
         iplist = []
         file = open(self.cmdargs.file, "r")
         for ip in file:
-            iplist.append(ip.rstrip())
+            if len(ip.rstrip()) > 0:
+                iplist.append(ip.rstrip())
+            else:
+                self.subs.custom_printer("debug", "## DBG - Creating activitycheck/processedfiles directory ##")
         file.close()
 
         for ip in iplist:
