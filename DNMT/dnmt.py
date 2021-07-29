@@ -182,22 +182,22 @@ def dnmt():
     mac_tracking_parser = mac_checks_parser.add_parser("mac_tracking",
                                                                help="search for a mac address (SNMP)")
     mac_tracking_parser.add_argument('-f', '--file', help="specify iplist file to use if not using default")
-    mac_tracking_parser.add_argument('-e', '--email', help="specify which email to send file to")
-    mac_tracking_parser.add_argument('-i', '--ignorefield', help="specify which field(s) to ignore if empty")
-    mac_tracking_parser.add_argument('-n', '--numprocs', help="specify how many concurrent processes")
-    mac_tracking_parser.add_argument('-p', '--parallel', help="run grab processes in parallel", default=False,
-                                          action="store_true")
-    mac_tracking_parser.add_argument('-l', '--limit', help="only put switches specified in iplist in summary file",
-                                          default=False, action="store_true")
-    mac_tracking_parser.add_argument('-c', '--check', help="Operate on existing database, do not search",
-                                          default=False, action="store_true")
+    # mac_tracking_parser.add_argument('-e', '--email', help="specify which email to send file to")
+    # mac_tracking_parser.add_argument('-i', '--ignorefield', help="specify which field(s) to ignore if empty")
+    # mac_tracking_parser.add_argument('-n', '--numprocs', help="specify how many concurrent processes")
+    # mac_tracking_parser.add_argument('-p', '--parallel', help="run grab processes in parallel", default=False,
+    #                                       action="store_true")
+    # mac_tracking_parser.add_argument('-l', '--limit', help="only put switches specified in iplist in summary file",
+    #                                       default=False, action="store_true")
+    # mac_tracking_parser.add_argument('-c', '--check', help="Operate on existing database, do not search",
+    #                                       default=False, action="store_true")
     mac_tracking_parser.add_argument('-v', '--verbose', help="run in verbose mode", default=False,
                                           action="store_true")
     mac_tracking_parser.add_argument('-d', '--debug', help="run in debug mode (extremely verbose)", default=False,
                                           action="store_true")
-    mac_tracking_parser.add_argument('-m', '--maxentries', help="modify max number of historical entries")
-    mac_tracking_parser.add_argument('-x', '--xecutive', help="print out a modified summary file", default=False,
-                                          action="store_true")
+    # mac_tracking_parser.add_argument('-m', '--maxentries', help="modify max number of historical entries")
+    # mac_tracking_parser.add_argument('-x', '--xecutive', help="print out a modified summary file", default=False,
+    #                                       action="store_true")
 
 
 
@@ -254,8 +254,14 @@ def dnmt():
     db_cmds_find_mac_parser = db_cmds_find_parser.add_parser("mac", help="search for macs")
     db_cmds_find_mac_parser.add_argument('searchstring', help='text to search for')
     db_cmds_find_mac_parser.add_argument('-v', '--verbose', help="verbose output", default=False, action="store_true")
-    db_cmds_find_mac_parser.add_argument('-n', '--name', help=" name of switch to search (can be partial)")
-    db_cmds_find_mac_parser.add_argument('-i', '--ipfile', help="file to grap IPs from if not default")
+    db_cmds_find_mac_parser.add_argument('-d', '--debug', help="debug output", default=False, action="store_true")
+    db_cmds_find_mac_parser.add_argument('-c', '--csv', help="output to screen as csv", default=False,
+                 action="store_true")
+    # db_cmds_find_mac_parser.add_argument('-n', '--name', help=" name of switch to search (can be partial)")
+    # db_cmds_find_mac_parser.add_argument('-i', '--ipfile', help="file to grap IPs from if not default")
+
+
+
 
     #dbcmds reports
     db_cmds_reports_parser = db_cmds_parser.add_parser("reports", help="create various reports from statcheck files").add_subparsers(dest="reports")
@@ -525,7 +531,7 @@ def dnmt():
             if cmdargs.find == 'desc':
                 dbcmds.find_description()
             elif cmdargs.find == 'mac':
-                dbcmds.find_mac_address()
+                dbcmds.find_mac_address_in_db()
         if cmdargs.database_commands =='reports':
             if cmdargs.reports == 'fmnet':
                 if cmdargs.fmnet == 'psviolations':

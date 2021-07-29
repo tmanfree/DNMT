@@ -96,48 +96,88 @@ class DBcmds:
                 print("ERROR ### Something went wrong writing to file")
 
 
-    def find_mac_address(self):
-        totalstart = time.process_time()
-        if 'ipfile' in self.cmdargs and self.cmdargs.ipfile is not None:
-            ipList = open(os.path.join(self.cmdargs.ipfile), "r")
-        else:
-            ipList = open(os.path.abspath(os.path.join(os.sep, 'usr', 'lib', 'capt', "activitycheckIPlist")), "r")
-        for ip in ipList:
-
-            ipaddr = ip.rstrip()
-            if 'name' in self.cmdargs and self.cmdargs.name is not None:
-                hostname = self.subs.snmp_get_hostname(ipaddr)
-                if self.cmdargs.name.lower() in hostname.lower():
-                    self.Find_Mac_Table(ipaddr)
-
-            else:
-                self.Find_Mac_Table(ipaddr)
+    # def find_mac_address(self):
+    #     totalstart = time.process_time()
+    #     if 'ipfile' in self.cmdargs and self.cmdargs.ipfile is not None:
+    #         ipList = open(os.path.join(self.cmdargs.ipfile), "r")
+    #     else:
+    #         ipList = open(os.path.abspath(os.path.join(os.sep, 'usr', 'lib', 'capt', "activitycheckIPlist")), "r")
+    #     for ip in ipList:
+    #
+    #         ipaddr = ip.rstrip()
+    #         if 'name' in self.cmdargs and self.cmdargs.name is not None:
+    #             hostname = self.subs.snmp_get_hostname(ipaddr)
+    #             if self.cmdargs.name.lower() in hostname.lower():
+    #                 self.Find_Mac_Table(ipaddr)
+    #
+    #         else:
+    #             self.Find_Mac_Table(ipaddr)
 
 
         print("Total Time to search for Macs:{} seconds".format(time.process_time() - totalstart))
 
-    def Find_Mac_Table(self,ipaddr): #TODO merge functionality with MACSearch general
+    def find_mac_address_in_db(self):
         try:
-            match_entry_list = []
-            start = time.process_time()
-            if self.subs.ping_check(ipaddr):
-                vendor = self.subs.snmp_get_vendor_string(ipaddr)
+            self.subs.custom_printer("debug", "## DBG - Opening mac db file ##")
 
-                if vendor == "HP": #currently only search on HP switches
-                    self.subs.verbose_printer("{} searching for MAC:{}".format(ipaddr, self.subs.normalize_mac(self.cmdargs.searchstring)))
-                    list = self.subs.snmp_get_mac_table_bulk(ipaddr, vendor)
-                    self.subs.verbose_printer("{} Time to grab Macs:{} seconds".format(ipaddr, time.process_time() - start))
+            with bz2.open(os.path.join(self.subs.log_path, "maccheck", "rawfiles", "macs.db"),
+                          "rb") as historical_mac_file:
+                self.subs.custom_printer("debug", "## DBG - Loading historical mac data ##")
+                historical_mac_data = pickle.load(historical_mac_file)
+                historical_mac_file.close()
+                match_entry_list = [f for f in historical_mac_data if
+                                    self.subs.normalize_mac(self.cmdargs.searchstring) in self.subs.normalize_mac(
+                                        f["MAC"].hex())]
+                if len(match_entry_list) > 0:
+                    if 'csv' in self.cmdargs and not self.cmdargs.csv:
+                        print("\n### {} matches to \"{}\" found ###".format( len(match_entry_list), self.subs.normalize_mac(self.cmdargs.searchstring)))
 
-                    match_entry_list = [f for f in list if self.subs.normalize_mac(self.cmdargs.searchstring) in self.subs.normalize_mac(f["MAC"].hex())]
-                    if len(match_entry_list) > 0:
-                        print("\n### {} - {} matches to \"{}\" found ###".format(ipaddr, len(match_entry_list), self.subs.normalize_mac(self.cmdargs.searchstring)))
                         for match in match_entry_list:
-                            print("MAC:{} Interface:{} Vlan:{}".format(self.subs.normalize_mac(match["MAC"].hex()),
-                                                                       match["InterfaceID"], match["Vlan"]))
+                            print(
+                                "MAC:{}\nSwitch:{}\nInterface:{}\nMacs on interface:{}\nlast update:{}\n\n".format(
+                                    self.subs.normalize_mac(match["MAC"].hex()),
+                                    match['switchIP'], match["InterfaceID"], match["MACCount"], match['timestamp']))
                     else:
-                        self.subs.verbose_printer("{} - {} matches to \"{}\" found".format(ipaddr, len(match_entry_list), self.subs.normalize_mac(self.cmdargs.searchstring)))
-        except Exception as err:
-            print(err)
+                        print("MAC,Switch IP,Interface,#of Macs on interface,last update")
+
+                        for match in match_entry_list:
+                            print("{},{},{},{},{}".format(
+                                self.subs.normalize_mac(match["MAC"].hex()),
+                                match['switchIP'],
+                                match["InterfaceID"], match["MACCount"], match['timestamp']))
+                else:
+                    self.subs.verbose_printer(" {} matches to \"{}\" found".format(len(match_entry_list), self.subs.normalize_mac(self.cmdargs.searchstring)))
+
+        except FileNotFoundError as err:
+            print("##### {} -  No previous mac data found")
+
+
+
+    # def Find_Mac_Table(self,ipaddr): #TODO merge functionality with MACSearch general
+    #     try:
+    #         match_entry_list = []
+    #         start = time.process_time()
+    #         if self.subs.ping_check(ipaddr):
+    #             vendor = self.subs.snmp_get_vendor_string(ipaddr)
+    #
+    #             if vendor == "HP": #currently only search on HP switches
+    #                 self.subs.verbose_printer("{} searching for MAC:{}".format(ipaddr, self.subs.normalize_mac(self.cmdargs.searchstring)))
+    #                 list = self.subs.snmp_get_mac_table_bulk(ipaddr, vendor)
+    #                 self.subs.verbose_printer("{} Time to grab Macs:{} seconds".format(ipaddr, time.process_time() - start))
+    #
+    #                 match_entry_list = [f for f in list if self.subs.normalize_mac(self.cmdargs.searchstring) in self.subs.normalize_mac(f["MAC"].hex())]
+    #                 if len(match_entry_list) > 0:
+    #                     print("\n### {} - {} matches to \"{}\" found ###".format(ipaddr, len(match_entry_list), self.subs.normalize_mac(self.cmdargs.searchstring)))
+    #                     for match in match_entry_list:
+    #                         print("MAC:{} Interface:{} Vlan:{}".format(self.subs.normalize_mac(match["MAC"].hex()),
+    #                                                                    match["InterfaceID"], match["Vlan"]))
+    #                 else:
+    #                     self.subs.verbose_printer("{} - {} matches to \"{}\" found".format(ipaddr, len(match_entry_list), self.subs.normalize_mac(self.cmdargs.searchstring)))
+    #     except Exception as err:
+    #         print(err)
+
+
+
 
     def create_port_security_report(self): # similar to create readable activity file in statuschecks, combine both?
         try:
