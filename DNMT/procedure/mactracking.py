@@ -199,7 +199,12 @@ class MacTracking:
                     interface_list = defaultdict(list)
                     #process to find out how many on each port
                     for entry in mac_list:
-                        interface_list[entry["InterfaceID"]].append(entry["MAC"])
+                        # try:
+                        #     bytes(entry["MAC"])
+                        #     print("Good MAC:".format(entry["MAC"]))
+                        # except ValueError:
+                        #     print("BAD MAC:".format(entry["MAC"]))
+                        interface_list[entry["InterfaceID"]].append(bytes(entry["MAC"]))
                     for entry in mac_list:
                         entry["MACCount"] = len(interface_list[entry['InterfaceID']])
 

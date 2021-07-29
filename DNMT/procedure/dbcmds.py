@@ -125,6 +125,16 @@ class DBcmds:
                 self.subs.custom_printer("debug", "## DBG - Loading historical mac data ##")
                 historical_mac_data = pickle.load(historical_mac_file)
                 historical_mac_file.close()
+
+                ###test
+                for f in historical_mac_data:
+                    try:
+
+                        test = f['MAC'].hex()
+                    except Exception as err:
+                        print("{} : {} {}".format(f['switchIP'],f['MAC'],err))
+                ######test end
+
                 match_entry_list = [f for f in historical_mac_data if
                                     self.subs.normalize_mac(self.cmdargs.searchstring) in self.subs.normalize_mac(
                                         f["MAC"].hex())]
