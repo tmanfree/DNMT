@@ -84,46 +84,44 @@ class MacTracking:
             # results = pool.map(self.single_search, iplist)
 
             #TODO CHANGE to do them with individual processes
-            if 'check' in self.cmdargs and self.cmdargs.check is False:
-                # pool = Pool(len(iplist))  # 4 concurrent processes
-                for ip in iplist:
+            for ip in iplist:
 
-                    # self.subs.config.ro = self.config.ro #reset to default to ensure previous ones did not bork things
-                    custom_ro_check = ip.split(',')
-                    ro_string = self.subs.config.ro
-                    if len(custom_ro_check) > 1:
-                        ro_string = custom_ro_check[1]
-                        ip = custom_ro_check[0]
+                # self.subs.config.ro = self.config.ro #reset to default to ensure previous ones did not bork things
+                custom_ro_check = ip.split(',')
+                ro_string = self.subs.config.ro
+                if len(custom_ro_check) > 1:
+                    ro_string = custom_ro_check[1]
+                    ip = custom_ro_check[0]
 
-                    try:
-                        result = self.mac_tracking(ip,ro_string)
-                        if result[0]:
-                            self.successful_switches.append(result[1])
-                            #update macdb list with found macs
-                            for new_mac_entry in result[2]:
-                                try:
-                                    historical_mac_entry = next(entry for entry in historical_mac_data if entry['MAC'] == new_mac_entry['MAC'])
-                                    # if found_mac_entry[''] #if found_mac_entry_timestamp is bigger or the count is smaller, update list # if not 1, go for the largest mac count? this would catch the highest up the chain
-                                    if new_mac_entry['MACCount'] <= historical_mac_entry['MACCount']:
-                                        historical_mac_entry['MACCount'] = new_mac_entry['MACCount']
-                                        historical_mac_entry['timestamp'] = int(datetime.datetime.now().strftime('%Y%m%d%H%M'))
-                                        historical_mac_entry['switchIP'] = ip
-                                        historical_mac_entry['InterfaceID'] = new_mac_entry["InterfaceID"]
-                                except StopIteration:
-                                    self.subs.verbose_printer("##### MAC {} not found adding to list #####".format(new_mac_entry['MAC']))
-                                    historical_mac_data.append({'MAC': new_mac_entry['MAC'], "switchIP": ip,
-                                                                "InterfaceID":new_mac_entry["InterfaceID"],
-                                                                "MACCount": new_mac_entry["MACCount"], "timestamp": int(
-                                            datetime.datetime.now().strftime('%Y%m%d%H%M'))})
+                try:
+                    result = self.mac_tracking(ip,ro_string)
+                    if result[0]:
+                        self.successful_switches.append(result[1])
+                        #update macdb list with found macs
+                        for new_mac_entry in result[2]:
+                            try:
+                                historical_mac_entry = next(entry for entry in historical_mac_data if entry['MAC'] == new_mac_entry['MAC'])
+                                # if found_mac_entry[''] #if found_mac_entry_timestamp is bigger or the count is smaller, update list # if not 1, go for the largest mac count? this would catch the highest up the chain
+                                if new_mac_entry['MACCount'] <= historical_mac_entry['MACCount']:
+                                    historical_mac_entry['MACCount'] = new_mac_entry['MACCount']
+                                    historical_mac_entry['timestamp'] = int(datetime.datetime.now().strftime('%Y%m%d%H%M'))
+                                    historical_mac_entry['switchIP'] = ip
+                                    historical_mac_entry['InterfaceID'] = new_mac_entry["InterfaceID"]
+                            except StopIteration:
+                                self.subs.verbose_printer("##### MAC {} not found adding to list #####".format(new_mac_entry['MAC']))
+                                historical_mac_data.append({'MAC': new_mac_entry['MAC'], "switchIP": ip,
+                                                            "InterfaceID":new_mac_entry["InterfaceID"],
+                                                            "MACCount": new_mac_entry["MACCount"], "timestamp": int(
+                                        datetime.datetime.now().strftime('%Y%m%d%H%M'))})
 
-                                except Exception as err:
-                                    print("ERROR PROCESSING MAC ADDRESS RETURN {}:{}".format(ip, err))
+                            except Exception as err:
+                                print("ERROR PROCESSING MAC ADDRESS RETURN {}:{}".format(ip, err))
 
 
-                        else:
-                            self.failure_switches.append(result[1])
-                    except Exception as err:
-                        print("ERROR PROCESSING FILE {}:{}".format(ip, err))
+                    else:
+                        self.failure_switches.append(result[1])
+                except Exception as err:
+                    print("ERROR PROCESSING FILE {}:{}".format(ip, err))
             self.subs.verbose_printer("##### Total Processing Complete, Total Time:{} seconds #####".format( int((time.time() - total_start) * 100) / 100))
         except FileNotFoundError:
             print("##### ERROR iplist files not found #####")
