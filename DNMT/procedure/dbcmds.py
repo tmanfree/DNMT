@@ -126,18 +126,21 @@ class DBcmds:
                 historical_mac_data = pickle.load(historical_mac_file)
                 historical_mac_file.close()
 
-                ###test
-                for f in historical_mac_data:
+                match_entry_list = []
+
+                for entry in historical_mac_data:
                     try:
-
-                        test = f['MAC'].hex()
+                        normalized_entry = self.subs.normalize_mac(entry["MAC"].hex())
+                        if self.subs.normalize_mac(self.cmdargs.searchstring) in normalized_entry:
+                            match_entry_list.append(entry)
                     except Exception as err:
-                        print("{} : {} {}".format(f['switchIP'],f['MAC'],err))
-                ######test end
+                        self.subs.custom_printer("debug", "{} : {} {}".format(entry['switchIP'],entry['MAC'],err))
 
-                match_entry_list = [f for f in historical_mac_data if
-                                    self.subs.normalize_mac(self.cmdargs.searchstring) in self.subs.normalize_mac(
-                                        f["MAC"].hex())]
+                # match_entry_list = [f for f in historical_mac_data if
+                #                     self.subs.normalize_mac(self.cmdargs.searchstring) in self.subs.normalize_mac(
+                #                         f["MAC"].hex())]
+
+
                 if len(match_entry_list) > 0:
                     if 'csv' in self.cmdargs and not self.cmdargs.csv:
                         print("\n### {} matches to \"{}\" found ###".format( len(match_entry_list), self.subs.normalize_mac(self.cmdargs.searchstring)))
