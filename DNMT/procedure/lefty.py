@@ -214,7 +214,8 @@ class Lefty:
             maclist = [self.normalize_mac(self.cmdargs.mac)]
 
         for ipaddr in ipaddrlist:
-            self.HP_snmp_search(ipaddr,maclist)
+            if len(ipaddr.rstrip())>0:
+                self.HP_snmp_search(ipaddr,maclist)
         self.print_complete()
 
 
@@ -226,6 +227,7 @@ class Lefty:
 
             for searchmac in maclist:
                 # finishedmaclist =self.Mac_Check(searchmac,foundmaclist,foundmacintlist,finishedmaclist)
+                self.subs.custom_printer("verbose","## {} - searching for {}".format(ipaddr,searchmac))
                 self.Mac_Check(ipaddr, searchmac, foundmaclist, foundmacintlist)
         else:
             self.subs.custom_printer("verbose", "skipping {} Currently only works reliably with HP switches".format(ipaddr.rstrip()))
@@ -268,21 +270,23 @@ class Lefty:
                             self.log_array.append(logstring)
                         return
             elif searchmac in foundmac['Mac']: #partial match
-                for macint in foundmacintlist:
-                    if macint['Id'] == foundmac["Id"]:
-                        fullint = self.subs.snmp_get_full_interface(ipaddr, macint['Port'])
-                        # finishedmaclist.append({"Mac": foundmac['Mac'], "Port": macint["Port"], "Status": "Partial Match"})
-                        self.log_array.append({'location': "MAC:{}, Switch:{}, "
-                                                           "Port:{}".format(foundmac['Mac'], ipaddr,
-                                                                            fullint),
-                                               'info': "Partial Match", 'csv': "{},"
-                                                                                "{},{},{}".format(foundmac['Mac'],
-                                                                                                  ipaddr,
-                                                                                                  fullint,
-                                                                                                  "Partial Match")})
-                        partialmatches += 1
+                if 'suppress' in self.cmdargs and not self.cmdargs.suppress:
+                    for macint in foundmacintlist:
+                        if macint['Id'] == foundmac["Id"]:
+                            fullint = self.subs.snmp_get_full_interface(ipaddr, macint['Port'])
+                            # finishedmaclist.append({"Mac": foundmac['Mac'], "Port": macint["Port"], "Status": "Partial Match"})
+                            self.log_array.append({'location': "MAC:{}, Switch:{}, "
+                                                               "Port:{}".format(foundmac['Mac'], ipaddr,
+                                                                                fullint),
+                                                   'info': "Partial Match", 'csv': "{},"
+                                                                                    "{},{},{}".format(foundmac['Mac'],
+                                                                                                      ipaddr,
+                                                                                                      fullint,
+                                                                                                      "Partial Match")})
+                            partialmatches += 1
         if partialmatches == 0:
-            self.log_array.append({'location': "MAC:{}, Switch:{}, "
+            if 'suppress' in self.cmdargs and not self.cmdargs.suppress:
+                self.log_array.append({'location': "MAC:{}, Switch:{}, "
                                                "Port:{}".format(foundmac['Mac'], ipaddr,
                                                                 "NA"),
                                    'info': "MAC not found", 'csv': "{},"
