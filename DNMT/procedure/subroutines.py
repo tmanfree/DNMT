@@ -409,8 +409,12 @@ class SubRoutines:
                 vendor="Dell"
             elif (re.match("Neyland", vendorString)): # Ancient arts dells
                 vendor = "Ancient Dell"
+            elif (re.match('24/48 port 10/100/1000 Stackable Managed Switch with 2 X 10G uplinks', vendorString)):  # catch for SMC
+                vendor = "SMC"
             else:
                 vendor = "Unknown"
+
+
         else:
             vendor = "None Found"
 
@@ -544,6 +548,11 @@ class SubRoutines:
                     interface = self.regex_parser_var0(r"^g(\d+)$", portname)
                     returnList.append({'Switch': 1, 'Module': 0, 'Port': int(interface),
                                        'PortName': portname, 'Id': oidId})
+            elif vendor == "SMC":
+                if (re.match(r"^Port(\d+)$", portname)):
+                    interface = self.regex_parser_var0(r"^Port(\d+)$", portname)
+                    returnList.append({'Switch': 1, 'Module': 0, 'Port': int(interface),
+                                       'PortName': portname, 'Id': oidId})
 
 
                 # switchnum = self.regex_parser_varx(r"^\w{2}([1-9])((/\d))?/(\d+)", portname, 3)
@@ -633,7 +642,7 @@ class SubRoutines:
                 #     switchnum = self.regex_parser_var0(r"^Linecard\(slot ([0-9])\)?", varName)
                 #     if switchnum is not None:
                 #         returnList.append({'Switch': int(switchnum), 'Id': oidId})
-        elif vendor =="HP" or vendor == "Ancient Dell":
+        elif vendor =="HP" or vendor == "Ancient Dell" :
             ### Obsolete code for finding switch letter in 4000 series, moved to modules
             # for varBind in varBinds:
             #     varName = varBind._ObjectType__args[1]._value.decode("utf-8")
@@ -646,15 +655,15 @@ class SubRoutines:
             #             returnList.append({'Switch': switchnum, 'Id': oidId})
             if len(returnList) == 0:
                 returnList.append({'Switch': 1, 'Id': 1}) #Currently defaulting to using id of 1
-        elif vendor == "Dell":
+        elif vendor == "Dell" or vendor =='SMC':
             for varBind in varBinds:
                 varName = varBind._ObjectType__args[1]._value.decode("utf-8")
                 oidTuple = varBind._ObjectType__args[0]._ObjectIdentity__oid._value
                 oidId = oidTuple[len(oidTuple) - 1]
                 # if (re.match(r"^\w{2}[1-9](/\d)?/\d+", portname)):
 
-                if (re.match(r"^Unit [0-9]$", varName)):
-                    switchnum = self.regex_parser_var0(r"^Unit ([0-9])?", varName)
+                if (re.match(r"^[Uu]nit[ .][0-9]$", varName)):
+                    switchnum = self.regex_parser_var0(r"^[Uu]nit[ .]([0-9])?", varName)
                     if switchnum is not None:
                         returnList.append({'Switch': int(switchnum), 'Id': oidId})
 
@@ -1361,7 +1370,7 @@ class SubRoutines:
         oidstring = '1.3.6.1.2.1.17.4.3.1'
         macList=[]
 
-        if vendor == "HP":
+        if vendor == "HP" or vendor =="SMC":
             varBinds = self.snmp_walk(ipaddr, ObjectType(ObjectIdentity(oidstring)),ro=kwargs.get('ro'))
             i = 0
             while (i < len(varBinds) / 3):
