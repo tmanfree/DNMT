@@ -1396,7 +1396,7 @@ class SubRoutines:
         oidstring = '1.3.6.1.2.1.17.4.3.1'
         macList=[]
 
-        if vendor == "HP" or vendor =="SMC":
+        if vendor == "HP":
             varBinds = self.snmp_walk(ipaddr, ObjectType(ObjectIdentity(oidstring)),ro=kwargs.get('ro'))
             i = 0
             while (i < len(varBinds) / 3):
@@ -1420,6 +1420,43 @@ class SubRoutines:
                                     "Status": varBinds[i + int((len(varBinds)/3)*2)]._ObjectType__args[1]._value,
                                     "Vlan": vlan['ID']})
                     i += 1
+        elif vendor =="SMC": #similar to HP, but can't guarantee all fields return
+            split_list = []
+            varBinds = self.snmp_walk(ipaddr, ObjectType(ObjectIdentity(oidstring)),ro=kwargs.get('ro'))
+            # i = 0
+            for entry in varBinds:
+                split_list.append({"Value":entry._ObjectType__args[1]._value,
+                                   "Category":entry._ObjectType__args[0]._ObjectIdentity__oid._value[10],
+                                   "ID":''.join(map(str, entry._ObjectType__args[0]._ObjectIdentity__oid._value[-6:]))})
+
+
+
+            for entry in split_list:
+                if entry["Category"] == 1:
+                    # number = sum([1 for d in split_list if d['ID'] == entry["ID"]]) #TEMPOR
+
+                    if sum([1 for d in split_list if d['ID'] == entry["ID"]]) == 3: #make sure all entries exist (could ignore missing type though)
+                        id_list = [sub_entry for sub_entry in split_list if sub_entry["ID"] == entry["ID"]]
+                        interface_id = [sub_entry for sub_entry in id_list if sub_entry["Category"] == 2][0]["Value"]
+                        status = [sub_entry for sub_entry in id_list if sub_entry["Category"] == 3][0]["Value"]
+
+                        macList.append({"MAC": entry["Value"],
+                                        "InterfaceID": interface_id,
+                                        "Status": status,
+                                        "Vlan": "N/A"})
+
+
+                    # result = List.count(List[0]) == len(List)
+                # print(entry)
+
+
+
+            # while (i < len(varBinds) / 3):
+            #     macList.append({"MAC": varBinds[i]._ObjectType__args[1]._value,
+            #                     "InterfaceID": varBinds[i + int(len(varBinds) / 3)]._ObjectType__args[1]._value,
+            #                     "Status": varBinds[i + int((len(varBinds) / 3) * 2)]._ObjectType__args[1]._value,
+            #                     "Vlan": "N/A"})
+            #     i += 1
         elif vendor == 'Dell':
             self.verbose_printer("{} Not printing Dell switches. Need to enable them manually with enable-dot1d-mibwalk")
 
