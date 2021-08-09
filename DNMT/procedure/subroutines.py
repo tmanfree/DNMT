@@ -837,6 +837,15 @@ class SubRoutines:
                 for idx, val in enumerate(binaryArray):
                     if val ==1:
                         interfaceVlanList.append({'Id': idx+1, 'Vlan': intId})
+        elif vendor == "SMC": #use this for HP and DELL rather than the above? TODO
+            oidstring = '1.3.6.1.2.1.17.7.1.4.5.1.1'
+            varBinds = self.snmp_walk(ipaddr, ObjectType(ObjectIdentity(oidstring)),ro=kwargs.get('ro'))
+
+            for varBind in varBinds:
+                interfaceVlan = varBind._ObjectType__args[1]._value
+                oidTuple = varBind._ObjectType__args[0]._ObjectIdentity__oid._value
+                intId = oidTuple[len(oidTuple) - 1]
+                interfaceVlanList.append({'Id':intId,'Vlan':interfaceVlan})
 
 
 
@@ -1152,6 +1161,10 @@ class SubRoutines:
             oidString = '1.0.8802.1.1.2.1.4.1.1'
             typeList = [7,9] # add 10 to get some type info?
             categoryIndex = 10
+        elif vendor =="SMC":
+            oidString = '1.0.8802.1.1.2.1.4.1.1.8.0'
+            typeList = [8,9,10]#
+            categoryIndex = 10
         else:
             return interfaceCdpList
         varBinds = self.snmp_walk(ipaddr, ObjectType(ObjectIdentity(oidString)),ro=kwargs.get('ro'))
@@ -1159,6 +1172,10 @@ class SubRoutines:
         # add separate call to get IP, since Cisco doesn't like to give it with everything else
         if vendor == "Cisco":
             varBinds = varBinds + self.snmp_walk(ipaddr, ObjectType(ObjectIdentity("{}.4".format(oidString))),ro=kwargs.get('ro'))
+        elif vendor == "SMC":
+            for idnum in [9,10]: #this could be typelist instead, minus the first one
+                varBinds = varBinds + self.snmp_walk(ipaddr, ObjectType(ObjectIdentity("1.0.8802.1.1.2.1.4.1.1.{}.0".format(idnum))),
+                                                 ro=kwargs.get('ro'))
 
 
         for varBind in varBinds:
@@ -1183,8 +1200,17 @@ class SubRoutines:
                 #     cdpCategory = "Type"
                 # elif oidCategory == 9:
                 #     cdpCategory = "IP"
+            elif vendor =="SMC":
+                if oidCategory == 9:
+                    cdpCategory = "Name"
+                elif oidCategory == 8 :
+                    cdpCategory = "RemotePort"
+                elif oidCategory == 10:
+                    cdpCategory = "Type"
+                # elif oidCategory == 9:
+                #     cdpCategory = "IP"
 
-            if oidCategory  in typeList:  # only care about oids of 6,7 or 8
+            if oidCategory in typeList:  # only care about oids of 6,7 or 8
                 try:
                     if cdpCategory == "IP":
                         cdpValue = socket.inet_ntoa(varBind._ObjectType__args[1]._value)
