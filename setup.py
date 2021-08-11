@@ -6,7 +6,7 @@ DESCRIPTION = "Direct Network Management Tool"
 URL = "https://github.com/tmanfree/DNMT"
 EMAIL = "tmanfree@hotmail.com"
 AUTHOR = "Thomas Mandzie"
-VERSION = "0.2.40"
+VERSION = "0.2.41"
 
 
 with open("README.md", "r") as fh:
@@ -29,7 +29,8 @@ setuptools.setup(
         'requests>=2.24.0',
         'dnspython>=1.16.0',
         'graphviz>=0.14.2',
-        'pathos>=0.2.3'
+        'pathos>=0.2.3',
+        'filelock>=3.0.12'
             ],
     classifiers=[
         "Programming Language :: Python :: 3",

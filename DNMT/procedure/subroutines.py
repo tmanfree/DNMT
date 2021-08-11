@@ -1432,7 +1432,7 @@ class SubRoutines:
 
 
             for entry in split_list:
-                if entry["Category"] == 1:
+                if entry["Category"] == 1: #TODO change this to search for category 1 & 2, ignore 3?
                     # number = sum([1 for d in split_list if d['ID'] == entry["ID"]]) #TEMPOR
 
                     if sum([1 for d in split_list if d['ID'] == entry["ID"]]) == 3: #make sure all entries exist (could ignore missing type though)
@@ -1443,7 +1443,7 @@ class SubRoutines:
                         macList.append({"MAC": entry["Value"],
                                         "InterfaceID": interface_id,
                                         "Status": status,
-                                        "Vlan": "N/A"})
+                                        "Vlan": "N/A"}) #Status is unused currently. Unnecessary call
 
 
                     # result = List.count(List[0]) == len(List)

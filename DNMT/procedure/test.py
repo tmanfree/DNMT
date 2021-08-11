@@ -196,7 +196,7 @@ class Test:
                 sw_dict = {"ip": ipaddr}
                 sw_dict["int_return"] = net_connect.send_command('show power inline | include Ieee')
                 sw_dict["int_list"] = re.findall('(?:\s*)(\S+)(?:\s+.*)', sw_dict["int_return"], re.VERBOSE | re.MULTILINE)
-                if len(sw_dict["int_list"]) is not 0:
+                if len(sw_dict["int_list"]) != 0:
                     print("{} --- {} Ieee interfaces found".format(sw_dict["ip"], len(sw_dict["int_list"])))
                     for interface in sw_dict["int_list"]:
                         int_status = net_connect.send_command('show int {}'.format(interface)).split("\n")[0]
@@ -268,7 +268,7 @@ class Test:
                     portnum = self.subs.regex_parser_var0(r"Ethernet([0-9]/\d{1,2})", line)
                     if portnum is not None:
                         lastvar = portnum
-                    elif lastvar  is not "":
+                    elif lastvar != "":
                         innertemp = self.subs.regex_parser_varx(r"Last input (\S+),\s+output (\S+),", line)
                         if innertemp is not None:
                             pass
@@ -419,7 +419,7 @@ class Test:
 
 
                         for vlanEntry in current_vlan_list: #This can miss the case where nvram is not
-                            if vlanEntry["NewName"] is not None and vlanEntry["NewName"] is not "":
+                            if vlanEntry["NewName"] is not None and vlanEntry["NewName"] != "":
                                 if (vlanEntry["NewName"] == vlanEntry["Name"]):
                                     self.subs.custom_printer("verbose", "###{}### vlan {} is the SAME: {} ".format(ipaddr, vlanEntry["ID"],vlanEntry["Name"]))
                                 else:
@@ -441,7 +441,7 @@ class Test:
                 else: #just checking
                     print("-------- CHECKING VLANS ON {}  --------".format(ipaddr))
                     for vlanEntry in current_vlan_list:
-                        if vlanEntry["NewName"] is not None and vlanEntry["NewName"] is not "":
+                        if vlanEntry["NewName"] is not None and vlanEntry["NewName"] != "":
                             if (vlanEntry["NewName"] == vlanEntry["Name"]):
                                 self.subs.verbose_printer(
                                     "###{}### vlan {} is the SAME: {} ".format(ipaddr, vlanEntry["ID"],
