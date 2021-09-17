@@ -228,8 +228,8 @@ class HostNamer:
 
                 #success = snmpproc(ipaddr,dns_hostname,dns_domain,snmp_ro,snmp_rw,check_flag)
                 if not self.cmdargs.peek:
-                    # success = self.snmpproc(ipaddr[0], dns_hostname, dns_domain)
-                    success = False #REMOVE
+                    success = self.snmpproc(ipaddr[0], dns_hostname, dns_domain)
+
 
                     if not success:
                         print("SNMP failed, attempting through SSH")
