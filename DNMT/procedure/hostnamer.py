@@ -88,7 +88,7 @@ class HostNamer:
                 #add error handling here for if there is no domain name {TODO}
                 sw_reg_hostname = reg_FQDN.search(dns_value)
                 if sw_reg_hostname is None: # HP switches do not have the domain name in The Return
-                    sw_reg_hostname = dns_value
+                    sw_hostname = dns_value
                 else:
                     sw_hostname = sw_reg_hostname.group(1) #extract the hostname from the FQDN
                 #check to see if the hostname and dns are the same
@@ -119,7 +119,7 @@ class HostNamer:
                     return True
             #if sending was not successful
         except Exception as err:  # currently a catch all to stop linux from having a conniption when reloading
-            print("NETMIKO ERROR {}:{}".format(ipaddr, err.args[0]))
+            print("SNMP PROC ERROR {}:{}".format(ipaddr, err.args[0]))
         return False
 
 
@@ -129,14 +129,7 @@ class HostNamer:
 
         # SSH Connection
         try:
-
-            # ip_entry[row_titles.index("ip")],
-            # ip_entry[row_titles.index("type")],
-            # ip_entry[row_titles.index("user")],
-            # ip_entry[row_titles.index("pass")],
-            # ip_entry[row_titles.index("en")],
-            # ip_entry[row_titles.index("port")],
-            if 'manual' in self.cmdargs and self.cmdargs.manual is not None:
+            if 'manual' in self.cmdargs and self.cmdargs.manual:
                 manual_credentials = kwargs.get('manualcreds')
                 row_titles = kwargs.get('rowtitles')
                 net_connect = self.subs.create_connection_manual(ipaddr, manual_credentials[row_titles.index("type")],
@@ -235,7 +228,8 @@ class HostNamer:
 
                 #success = snmpproc(ipaddr,dns_hostname,dns_domain,snmp_ro,snmp_rw,check_flag)
                 if not self.cmdargs.peek:
-                    success = self.snmpproc(ipaddr[0], dns_hostname, dns_domain)
+                    # success = self.snmpproc(ipaddr[0], dns_hostname, dns_domain)
+                    success = False #REMOVE
 
                     if not success:
                         print("SNMP failed, attempting through SSH")
