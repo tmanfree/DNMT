@@ -110,6 +110,7 @@ def dnmt():
                              'specify "IP,hostname,domain" on each line of the file to not check dns for that ip')
     hostname_update_parser.add_argument('-c', '--check', help="Compare hostname, do not change", action="store_true")
     hostname_update_parser.add_argument('-p', '--peek', help="Peek at DNS, do not login to switch", action="store_true")
+    hostname_update_parser.add_argument('-m', '--manual', help="manually specify input", action="store_true")
     hostname_update_parser.add_argument('-d', '--debug', help="Extremely verbose mode", action="store_true")
     hostname_update_parser.add_argument('-v', '--verbose', help="verbose mode", action="store_true")
 

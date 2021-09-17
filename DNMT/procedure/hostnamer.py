@@ -76,7 +76,7 @@ class HostNamer:
     #             print ("oid:{}\nvalue:{}".format(str(dns_oid),str(dns_value)))
     #
     #
-    def snmpproc(self, ipaddr,dns_hostname,dns_domain):
+    def snmpproc(self, ipaddr,dns_hostname,dns_domain,**kwargs):
         try:
             reg_FQDN = re.compile("([^.]*)\.(.*)")  # Group 0: hostname, Group 1: domain name
 
@@ -87,7 +87,10 @@ class HostNamer:
                 dns_value=str(dns_value) # change dns_value to string rather than DisplayString
                 #add error handling here for if there is no domain name {TODO}
                 sw_reg_hostname = reg_FQDN.search(dns_value)
-                sw_hostname = sw_reg_hostname.group(1) #extract the hostname from the FQDN
+                if sw_reg_hostname is None: # HP switches do not have the domain name in The Return
+                    sw_reg_hostname = dns_value
+                else:
+                    sw_hostname = sw_reg_hostname.group(1) #extract the hostname from the FQDN
                 #check to see if the hostname and dns are the same
                 if dns_hostname.casefold() != sw_hostname.casefold():
                 #Send the new hostname if they are different
@@ -121,12 +124,29 @@ class HostNamer:
 
 
 
-    def loginproc(self, ipaddr,dns_hostname,dns_domain):
+    def loginproc(self, ipaddr,dns_hostname,dns_domain,**kwargs):
 
 
         # SSH Connection
         try:
-            net_connect = self.subs.create_connection(ipaddr)
+
+            # ip_entry[row_titles.index("ip")],
+            # ip_entry[row_titles.index("type")],
+            # ip_entry[row_titles.index("user")],
+            # ip_entry[row_titles.index("pass")],
+            # ip_entry[row_titles.index("en")],
+            # ip_entry[row_titles.index("port")],
+            if 'manual' in self.cmdargs and self.cmdargs.manual is not None:
+                manual_credentials = kwargs.get('manualcreds')
+                row_titles = kwargs.get('rowtitles')
+                net_connect = self.subs.create_connection_manual(ipaddr, manual_credentials[row_titles.index("type")],
+                                                                 manual_credentials[row_titles.index("user")],
+                                                                 manual_credentials[row_titles.index("pass")],
+                                                                 manual_credentials[row_titles.index("en")],
+                                                                 manual_credentials[row_titles.index("port")],
+                                                                 "sername", "assword")
+            else:
+                net_connect = self.subs.create_connection(ipaddr)
             #net_connect = ConnectHandler(**cisco_sw)
             if net_connect:
                 ### ADD ERROR HANDLING FOR FAILED CONNECTION
@@ -182,19 +202,33 @@ class HostNamer:
         #if not self.cmdargs.check:
         if self.cmdargs.peek:
             print("IP,Hostname")
+        if 'manual' in self.cmdargs and self.cmdargs.manual:
+            row_titles = next(file).split(',')  # grab the first row (the titles) use these to make the standardize switch call dynamic
+            row_titles[len(row_titles) - 1] = row_titles[len(row_titles) - 1].rstrip()  # remove the trailing newline
         for ipaddr in file:
             #have a check for gethostbyname or addr)
             try:
                 ipaddr = ipaddr.rstrip().replace(" ","").split(",")
+
                 if len(ipaddr) == 1:
                     dns_fqdn = socket.gethostbyaddr(ipaddr[0])
                     dns_reg_hostname = reg_FQDN.search(dns_fqdn[0])
                     dns_hostname = dns_reg_hostname.group(1)
                     dns_domain = dns_reg_hostname.group(2)
 
-                else:
+                elif len == 3:
                     dns_hostname = ipaddr[1]
                     dns_domain = ipaddr[2]
+                elif ('manual' in self.cmdargs and self.cmdargs.manual):
+                    try:
+                        dns_hostname = ipaddr[row_titles.index("host")]
+                        dns_domain = ipaddr[row_titles.index("domain")]
+                    except IndexError: #called if there is no host entry
+                        dns_fqdn = socket.gethostbyaddr(ipaddr[row_titles.index("ip")])
+                        dns_reg_hostname = reg_FQDN.search(dns_fqdn[0])
+                        dns_hostname = dns_reg_hostname.group(1)
+                        dns_domain = dns_reg_hostname.group(2)
+
 
                 if self.cmdargs.peek:
                     print("{},{}.{}".format(ipaddr[0], dns_hostname, dns_domain))
@@ -205,7 +239,11 @@ class HostNamer:
 
                     if not success:
                         print("SNMP failed, attempting through SSH")
-                        self.loginproc(ipaddr[0],dns_hostname,dns_domain)
+                        if ('manual' in self.cmdargs and self.cmdargs.manual):
+                            self.loginproc(ipaddr[0],dns_hostname,dns_domain,manualcreds=ipaddr,rowtitles=row_titles)
+                        else:
+                            self.loginproc(ipaddr[0], dns_hostname, dns_domain)
+
 
             except socket.herror:
                 if self.cmdargs.peek:
