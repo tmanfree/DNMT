@@ -77,50 +77,52 @@ class HostNamer:
     #
     #
     def snmpproc(self, ipaddr,dns_hostname,dns_domain):
-        reg_FQDN = re.compile("([^.]*)\.(.*)")  # Group 0: hostname, Group 1: domain name
+        try:
+            reg_FQDN = re.compile("([^.]*)\.(.*)")  # Group 0: hostname, Group 1: domain name
 
-        varBinds = self.subs.snmp_get(ipaddr, ObjectType(ObjectIdentity(
-            '1.3.6.1.2.1.1.5.0')))
-        if (varBinds): # if getting the hostname from snmp was successful
-            dns_oid, dns_value = varBinds[0] #grab dns value & oid
-            dns_value=str(dns_value) # change dns_value to string rather than DisplayString
-            #add error handling here for if there is no domain name {TODO}
-            sw_reg_hostname = reg_FQDN.search(dns_value)
-            sw_hostname = sw_reg_hostname.group(1) #extract the hostname from the FQDN
-            #check to see if the hostname and dns are the same
-            if dns_hostname.casefold() != sw_hostname.casefold():
-            #Send the new hostname if they are different
-                print("hostnames are different\n"
-                      "IP:{}\n"
-                      "DNS/Manual:{}\n"
-                      "Switch    :{}\n".format(ipaddr, dns_hostname, sw_hostname))
-                if not self.cmdargs.check:
-                    print("Attempting to update hostname on switch...")
-                    # varBinds = self.subs.snmp_get(ipaddr, ObjectType(ObjectIdentity(
-                    #     '1.3.6.1.2.1.1.5.0'),dns_hostname.upper()))
-                    varBinds = self.subs.snmp_set(ipaddr, ObjectType(ObjectIdentity(
-                        '1.3.6.1.2.1.1.5.0'), dns_hostname.upper()))
-                    self.subs.snmp_save_config(ipaddr)
-                    if (varBinds):#hostname was updated successfully
-                        #call itself to confirm it is updated.
-                        self.snmpproc(ipaddr, dns_hostname, dns_domain)
-                        return True
-                else: # if check flag is indicated
-                    return True # return true so that the program doesn't try to login to check again
-            else:  #they are the same
-                print("hostnames are up to date\n"
-                      "IP:{}\n"
-                      "DNS/Manual:{}\n"
-                      "Switch    :{}\n".format(ipaddr, dns_hostname, sw_hostname))
-                return True
+            varBinds = self.subs.snmp_get(ipaddr, ObjectType(ObjectIdentity(
+                '1.3.6.1.2.1.1.5.0')))
+            if (varBinds): # if getting the hostname from snmp was successful
+                dns_oid, dns_value = varBinds[0] #grab dns value & oid
+                dns_value=str(dns_value) # change dns_value to string rather than DisplayString
+                #add error handling here for if there is no domain name {TODO}
+                sw_reg_hostname = reg_FQDN.search(dns_value)
+                sw_hostname = sw_reg_hostname.group(1) #extract the hostname from the FQDN
+                #check to see if the hostname and dns are the same
+                if dns_hostname.casefold() != sw_hostname.casefold():
+                #Send the new hostname if they are different
+                    print("hostnames are different\n"
+                          "IP:{}\n"
+                          "DNS/Manual:{}\n"
+                          "Switch    :{}\n".format(ipaddr, dns_hostname, sw_hostname))
+                    if not self.cmdargs.check:
+                        print("Attempting to update hostname on switch...")
+                        # varBinds = self.subs.snmp_get(ipaddr, ObjectType(ObjectIdentity(
+                        #     '1.3.6.1.2.1.1.5.0'),dns_hostname.upper()))
+                        varBinds = self.subs.snmp_set(ipaddr, ObjectType(ObjectIdentity(
+                            '1.3.6.1.2.1.1.5.0'), dns_hostname.upper()))
+                        self.subs.snmp_save_config(ipaddr)
+                        if (varBinds):#hostname was updated successfully
+                            #call itself to confirm it is updated.
+                            self.snmpproc(ipaddr, dns_hostname, dns_domain)
+                            return True
+                    else: # if check flag is indicated
+                        return True # return true so that the program doesn't try to login to check again
+                else:  #they are the same
+                    print("hostnames are up to date\n"
+                          "IP:{}\n"
+                          "DNS/Manual:{}\n"
+                          "Switch    :{}\n".format(ipaddr, dns_hostname, sw_hostname))
+                    return True
             #if sending was not successful
+        except Exception as err:  # currently a catch all to stop linux from having a conniption when reloading
+            print("NETMIKO ERROR {}:{}".format(ipaddr, err.args[0]))
         return False
+
 
 
     def loginproc(self, ipaddr,dns_hostname,dns_domain):
 
-
-        print('------- CONNECTING to switch {}-------'.format(ipaddr))
 
         # SSH Connection
         try:
