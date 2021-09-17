@@ -161,7 +161,9 @@ class Test:
                     print("COMMAND:{}\nRESPONSE:{}".format(command,result))
                 if 'write' in self.cmdargs and self.cmdargs.write:
                     net_connect.save_config()
+                    self.subs.custom_printer("debug", "## DBG - {} config saved ##".format(ipaddr))
                 net_connect.disconnect()
+                self.subs.custom_printer("debug", "## DBG - {} disconnected ##".format(ipaddr))
                 print("-------- CLOSED CONNECTION TO {} --------".format(ipaddr))
             else:
                 print("-------- FAILED TO CONNECTED TO {} --------".format(ipaddr))

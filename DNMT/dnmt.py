@@ -308,13 +308,13 @@ def dnmt():
                                          action="store_true")
     command_blaster_parser.add_argument('-s', '--single', help="parses ipaddrfile as a single ip rather than file", default=False,
                                         action="store_true")
-    command_blaster_parser.add_argument('-m', '--manual', help="specify manual fields in iplist", default=False,
+    command_blaster_parser.add_argument('-m', '--manual', help="specify reading iplist format as csv file with the first line=ip,type,user,pass,en,port  [Example:10.0.0.1,hp_procurve,USERNAME,PASS,ENABLEPASS,22]", default=False,
                                          action="store_true")
     command_blaster_parser.add_argument('-v', '--verbose', help="verbose output", default=False,action="store_true")
     command_blaster_parser.add_argument('-w', '--write', help="saves the configuration after sending commands",
                                         default=False,
                                         action="store_true")
-    # command_blaster_parser.add_argument('-d', '--debug', help="debug output", default=False,action="store_true")
+    command_blaster_parser.add_argument('-d', '--debug', help="debug output", default=False,action="store_true")
 
     error_counter_parser = test_parser.add_parser("error_counter", help="check the errors of an interface")
     error_counter_parser.add_argument('ipaddr', help='address of switch to check')
@@ -388,7 +388,7 @@ def dnmt():
     standardize_tool_parser.add_argument('ipfile', help='The file with IPs to verify vlan names upstream. Format IP,username,Password')
     standardize_tool_parser.add_argument('-v', '--verbose', help="run in verbose mode", default=False, action="store_true")
     standardize_tool_parser.add_argument('-a', '--apply', help="apply changes", default=False, action="store_true")
-    standardize_tool_parser.add_argument('-m', '--manual', help="IP list file will specify vendors and login creds", default=False, action="store_true")
+    standardize_tool_parser.add_argument('-m', '--manual', help="specify reading iplist format as csv file with the first line=ip,type,user,pass,en,port  [Example:10.0.0.1,hp_procurve,USERNAME,PASS,ENABLEPASS,22]", default=False, action="store_true")
     standardize_tool_parser.add_argument('-c', '--cmdfile', help="custom file with standard configs if not default")
 
     #passchanger
@@ -402,7 +402,7 @@ def dnmt():
     passchanger_tool_parser.add_argument('-v', '--verbose', help="run in verbose mode", default=False,
                                          action="store_true")
     passchanger_tool_parser.add_argument('-a', '--apply', help="apply changes", default=False, action="store_true")
-    passchanger_tool_parser.add_argument('-m', '--manual', help="IP list file will specify vendors and login creds",
+    passchanger_tool_parser.add_argument('-m', '--manual', help="specify reading iplist format as csv file with the first line=ip,type,user,pass,en,port  [Example:10.0.0.1,hp_procurve,USERNAME,PASS,ENABLEPASS,22]",
                                          default=False, action="store_true")
 
     #arp_table check

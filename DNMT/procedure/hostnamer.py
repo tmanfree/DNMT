@@ -6,6 +6,7 @@ import re
 import socket
 import time
 from pysnmp.hlapi import *
+import netmiko
 #from procedure import subroutines
 ### absolute pathing
 #from DNMT.procedure import subroutines
@@ -122,41 +123,50 @@ class HostNamer:
         print('------- CONNECTING to switch {}-------'.format(ipaddr))
 
         # SSH Connection
-        net_connect = self.subs.create_connection(ipaddr)
-        #net_connect = ConnectHandler(**cisco_sw)
-        if net_connect:
-            ### ADD ERROR HANDLING FOR FAILED CONNECTION
-            print("-------- CONNECTED --------")
+        try:
+            net_connect = self.subs.create_connection(ipaddr)
+            #net_connect = ConnectHandler(**cisco_sw)
+            if net_connect:
+                ### ADD ERROR HANDLING FOR FAILED CONNECTION
+                print("-------- CONNECTED --------")
 
-            # grab hostname
-            sw_hostname = net_connect.find_prompt()
-            sw_hostname = sw_hostname.replace(">", "")
-            sw_hostname = sw_hostname.replace("#", "")
-            # output = net_connect.send_command('show ver | i uptime is')
-            # sw_hostname = reg_hostname.search(output)
+                # grab hostname
+                sw_hostname = net_connect.find_prompt()
+                sw_hostname = sw_hostname.replace(">", "")
+                sw_hostname = sw_hostname.replace("#", "")
+                # output = net_connect.send_command('show ver | i uptime is')
+                # sw_hostname = reg_hostname.search(output)
 
-            if sw_hostname.casefold() != dns_hostname.casefold():
-                print("hostnames are different\n"
-                      "IP:{}\n"
-                      "DNS   :{}\n"
-                      "Switch:{}\n".format(ipaddr, dns_hostname, sw_hostname))
-                if not self.cmdargs.check:
-                    command_str = "hostname " + dns_hostname.upper()
-                    net_connect.enable()
-                    output = net_connect.send_config_set([command_str])
-                    #net_connect.save_config()
-                    #net_connect.commit()
-                    #net_connect.send_command('wr mem')
-                    #print (output)
+                if sw_hostname.casefold() != dns_hostname.casefold():
+                    print("hostnames are different\n"
+                          "IP:{}\n"
+                          "DNS   :{}\n"
+                          "Switch:{}\n".format(ipaddr, dns_hostname, sw_hostname))
+                    if not self.cmdargs.check:
+                        command_str = "hostname " + dns_hostname.upper()
+                        net_connect.enable()
+                        output = net_connect.send_config_set([command_str])
+                        #net_connect.save_config()
+                        #net_connect.commit()
+                        #net_connect.send_command('wr mem')
+                        #print (output)
 
-            else:
-                print("hostnames are up to date\n"
-                      "IP:{}\n"
-                      "DNS   :{}\n"
-                      "Switch:{}\n".format(ipaddr, dns_hostname, sw_hostname))
+                else:
+                    print("hostnames are up to date\n"
+                          "IP:{}\n"
+                          "DNS   :{}\n"
+                          "Switch:{}\n".format(ipaddr, dns_hostname, sw_hostname))
 
-                # Close Connection
-            net_connect.disconnect()
+                    # Close Connection
+                net_connect.disconnect()
+        except netmiko.ssh_exception.NetMikoAuthenticationException as err:
+            self.subs.verbose_printer(err.args[0], "Netmiko Authentication Failure")
+        except netmiko.ssh_exception.NetMikoTimeoutException as err:
+            self.subs.verbose_printer(err.args[0], "Netmiko Timeout Failure")
+        except ValueError as err:
+            print(err.args[0])
+        except Exception as err:  # currently a catch all to stop linux from having a conniption when reloading
+            print("NETMIKO ERROR {}:{}".format(ipaddr, err.args[0]))
 
 
     #def hostname_update(iplist,username,password,snmp_ro,snmp_rw,check_flag):
