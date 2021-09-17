@@ -200,6 +200,7 @@ class HostNamer:
             row_titles[len(row_titles) - 1] = row_titles[len(row_titles) - 1].rstrip()  # remove the trailing newline
         for ipaddr in file:
             #have a check for gethostbyname or addr)
+            self.subs.custom_printer("verbose", "## processing entry - {} ##".format(ipaddr.rstrip()))
             try:
                 ipaddr = ipaddr.rstrip().replace(" ","").split(",")
 
@@ -209,7 +210,7 @@ class HostNamer:
                     dns_hostname = dns_reg_hostname.group(1)
                     dns_domain = dns_reg_hostname.group(2)
 
-                elif len == 3:
+                elif len(ipaddr) == 3:
                     dns_hostname = ipaddr[1]
                     dns_domain = ipaddr[2]
                 elif ('manual' in self.cmdargs and self.cmdargs.manual):
@@ -244,6 +245,7 @@ class HostNamer:
                     print("{},N/A".format(ipaddr[0]))
                 else:
                     print("Hostname not found in DNS for IP:{}".format(ipaddr))
+            self.subs.custom_printer("verbose", "## Finished processing entry - {} ##".format(ipaddr[0].rstrip()))
         file.close()
         return
 
