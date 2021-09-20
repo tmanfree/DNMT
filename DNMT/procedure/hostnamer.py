@@ -158,6 +158,7 @@ class HostNamer:
 
                 # grab hostname
                 sw_hostname = net_connect.find_prompt()
+                sw_mode = sw_hostname[-1]
                 sw_hostname = sw_hostname.replace(">", "")
                 sw_hostname = sw_hostname.replace("#", "")
                 # output = net_connect.send_command('show ver | i uptime is')
@@ -172,7 +173,9 @@ class HostNamer:
                           "Switch:{}\n".format(ipaddr, dns_hostname, sw_hostname))
                     if not self.cmdargs.check:
                         command_str = "hostname " + dns_hostname.upper()
-                        net_connect.enable()
+
+                        if sw_hostname == '>':  #fix for auto enabled switches
+                            net_connect.enable()
                         output = net_connect.send_config_set([command_str])
                         #net_connect.save_config()
                         #net_connect.commit()
