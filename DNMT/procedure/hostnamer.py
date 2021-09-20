@@ -176,21 +176,32 @@ class HostNamer:
                           "DNS   :{}\n"
                           "Switch:{}\n".format(ipaddr, dns_hostname, sw_hostname))
                     if not self.cmdargs.check:
+                        self.subs.custom_printer("verbose", "## {} - applying new hostname ##".format(ipaddr.rstrip()))
                         command_str = "hostname " + dns_hostname.upper()
                         if 'manual' in self.cmdargs and self.cmdargs.manual:
                             enable_success = self.subs.vendor_enable(manual_credentials[row_titles.index("type")], net_connect)
                         else:
                             net_connect.enable()
                         output = net_connect.send_config_set([command_str])
-                        net_connect.save_config()
+
+                        if 'manual' in self.cmdargs and self.cmdargs.manual:
+                            if "telnet" in manual_credentials[row_titles.index("type")]:
+                                save_output, new_sw_hostname = self.subs.hp_save_config(net_connect)
+                        else:
+                            net_connect.save_config()
                         #net_connect.commit()
                         #net_connect.send_command('wr mem')
                         #print (output)
-                        new_sw_hostname = net_connect.find_prompt()
-                        new_sw_hostname = sw_hostname.replace(">", "")
-                        new_sw_hostname = sw_hostname.replace("#", "")
+                        new_sw_hostname = new_sw_hostname.strip()
+                        new_sw_hostname = new_sw_hostname.replace(">", "")
+                        new_sw_hostname = new_sw_hostname.replace("#", "")
                         if new_sw_hostname.casefold() == dns_hostname.casefold():
-                            print("hostnames are up to date\n"
+                            print("SUCCESS, hostnames are up to date\n"
+                                  "IP:{}\n"
+                                  "DNS   :{}\n"
+                                  "Switch:{}\n".format(ipaddr, dns_hostname, sw_hostname))
+                        else:
+                            print("ERROR, hostnames are not up to date\n"
                                   "IP:{}\n"
                                   "DNS   :{}\n"
                                   "Switch:{}\n".format(ipaddr, dns_hostname, sw_hostname))

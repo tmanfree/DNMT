@@ -1877,6 +1877,24 @@ class SubRoutines:
             net_connect.send_command("\n")
         return
 
+    # Name: hp_save_config
+    # Input:
+    #   vendor: (string)
+    #       -The vendor or device type of the connection
+    #   net_connect (connection handler)
+    #      -The active connection to save
+    # Return:
+    #   output from command & output from enter (output 2 has a simple use of hostnamehostname)
+    # Summary:
+    #   allow hp switch to do a wr mem
+    #   TODO Add error handling
+    def hp_save_config(self,net_connect):
+        output = net_connect.send_command_timing(command_string="wr mem", strip_prompt=False, strip_command=False)
+        output2 = net_connect.send_command_timing(command_string="", strip_prompt=False, strip_command=False)
+
+        return output,output2
+
+
         # Name: vendor_enable
         # Input:
         #   vendor: (string)
