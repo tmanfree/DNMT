@@ -20,6 +20,7 @@ class HostNamer:
         self.cmdargs = cmdargs
         self.config = config
         self.subs = SubRoutines(cmdargs, config)
+        self.checklog = ""
 
 
 
@@ -94,6 +95,8 @@ class HostNamer:
                 #check to see if the hostname and dns are the same
                 if dns_hostname.casefold() != sw_hostname.casefold():
                 #Send the new hostname if they are different
+                    if self.cmdargs.check:
+                        self.checklog += "{} hostname is different\n".format(ipaddr)
                     print("hostnames are different\n"
                           "IP:{}\n"
                           "DNS/Manual:{}\n"
@@ -112,6 +115,8 @@ class HostNamer:
                     else: # if check flag is indicated
                         return True # return true so that the program doesn't try to login to check again
                 else:  #they are the same
+                    if self.cmdargs.check:
+                        self.checklog += "{} hostname is the same\n".format(ipaddr)
                     print("hostnames are up to date\n"
                           "IP:{}\n"
                           "DNS/Manual:{}\n"
@@ -153,6 +158,8 @@ class HostNamer:
                 # sw_hostname = reg_hostname.search(output)
 
                 if sw_hostname.casefold() != dns_hostname.casefold():
+                    if self.cmdargs.check:
+                        self.checklog += "{} hostname is different\n".format(ipaddr)
                     print("hostnames are different\n"
                           "IP:{}\n"
                           "DNS   :{}\n"
@@ -167,6 +174,8 @@ class HostNamer:
                         #print (output)
 
                 else:
+                    if self.cmdargs.check:
+                        self.checklog += "{} hostname is the same\n".format(ipaddr)
                     print("hostnames are up to date\n"
                           "IP:{}\n"
                           "DNS   :{}\n"
@@ -189,6 +198,11 @@ class HostNamer:
 
         # Regexs
         reg_FQDN = re.compile("([^.]*)\.(.*)")  # Group 0: hostname, Group 1: domain name
+
+        if self.cmdargs.check:
+            self.checklog = "SUMMARY of Hostnames:\n"
+
+
 
 
         file = open(self.cmdargs.iplist, "r")
@@ -247,5 +261,7 @@ class HostNamer:
                     print("Hostname not found in DNS for IP:{}".format(ipaddr))
             self.subs.custom_printer("verbose", "## Finished processing entry - {} ##".format(ipaddr[0].rstrip()))
         file.close()
+        if self.cmdargs.check:
+            print("{}".format(self.checklog))
         return
 
