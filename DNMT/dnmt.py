@@ -111,6 +111,7 @@ def dnmt():
     hostname_update_parser.add_argument('-c', '--check', help="Compare hostname, do not change", action="store_true")
     hostname_update_parser.add_argument('-p', '--peek', help="Peek at DNS, do not login to switch", action="store_true")
     hostname_update_parser.add_argument('-m', '--manual', help="manually specify input (1st line=ip,type,user,pass,en,port,host,domain) ", action="store_true")
+    hostname_update_parser.add_argument('-s', '--suppress', help="supress unecessary output in check logs", action="store_true")
     hostname_update_parser.add_argument('-d', '--debug', help="Extremely verbose mode", action="store_true")
     hostname_update_parser.add_argument('-v', '--verbose', help="verbose mode", action="store_true")
 

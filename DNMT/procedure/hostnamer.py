@@ -115,7 +115,7 @@ class HostNamer:
                     else: # if check flag is indicated
                         return True # return true so that the program doesn't try to login to check again
                 else:  #they are the same
-                    if self.cmdargs.check:
+                    if self.cmdargs.check and not self.cmdargs.suppress:
                         self.checklog += "{} hostname is the same\n".format(ipaddr)
                     print("hostnames are up to date\n"
                           "IP:{}\n"
@@ -174,7 +174,7 @@ class HostNamer:
                         #print (output)
 
                 else:
-                    if self.cmdargs.check:
+                    if self.cmdargs.check and not self.cmdargs.suppress:
                         self.checklog += "{} hostname is the same\n".format(ipaddr)
                     print("hostnames are up to date\n"
                           "IP:{}\n"
@@ -258,6 +258,8 @@ class HostNamer:
                 if self.cmdargs.peek:
                     print("{},N/A".format(ipaddr[0]))
                 else:
+                    if self.cmdargs.check:
+                        self.checklog += "{} hostname not in dns\n".format(ipaddr)
                     print("Hostname not found in DNS for IP:{}".format(ipaddr))
             self.subs.custom_printer("verbose", "## Finished processing entry - {} ##".format(ipaddr[0].rstrip()))
         file.close()
