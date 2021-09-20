@@ -137,18 +137,18 @@ class HostNamer:
             if 'manual' in self.cmdargs and self.cmdargs.manual:
                 manual_credentials = kwargs.get('manualcreds')
                 row_titles = kwargs.get('rowtitles')
-                net_connect = self.subs.create_connection_custom(ipaddr, manual_credentials[row_titles.index("type")],
-                                                                 manual_credentials[row_titles.index("user")],
-                                                                 manual_credentials[row_titles.index("pass")],
-                                                                 manual_credentials[row_titles.index("en")],
-                                                                 manual_credentials[row_titles.index("port")])
-
-                # net_connect = self.subs.create_connection_manual(ipaddr, manual_credentials[row_titles.index("type")],
+                # net_connect = self.subs.create_connection_custom(ipaddr, manual_credentials[row_titles.index("type")],
                 #                                                  manual_credentials[row_titles.index("user")],
                 #                                                  manual_credentials[row_titles.index("pass")],
                 #                                                  manual_credentials[row_titles.index("en")],
-                #                                                  manual_credentials[row_titles.index("port")],
-                #                                                  "sername", "assword")
+                #                                                  manual_credentials[row_titles.index("port")])
+
+                net_connect = self.subs.create_connection_manual(ipaddr, manual_credentials[row_titles.index("type")],
+                                                                 manual_credentials[row_titles.index("user")],
+                                                                 manual_credentials[row_titles.index("pass")],
+                                                                 manual_credentials[row_titles.index("en")],
+                                                                 manual_credentials[row_titles.index("port")],
+                                                                 "sername", "assword")
             else:
                 net_connect = self.subs.create_connection(ipaddr)
             #net_connect = ConnectHandler(**cisco_sw)
@@ -177,10 +177,18 @@ class HostNamer:
                         if sw_hostname == '>':  #fix for auto enabled switches
                             net_connect.enable()
                         output = net_connect.send_config_set([command_str])
-                        #net_connect.save_config()
+                        net_connect.save_config()
                         #net_connect.commit()
                         #net_connect.send_command('wr mem')
                         #print (output)
+                        new_sw_hostname = net_connect.find_prompt()
+                        new_sw_hostname = sw_hostname.replace(">", "")
+                        new_sw_hostname = sw_hostname.replace("#", "")
+                        if new_sw_hostname.casefold() == dns_hostname.casefold():
+                            print("hostnames are up to date\n"
+                                  "IP:{}\n"
+                                  "DNS   :{}\n"
+                                  "Switch:{}\n".format(ipaddr, dns_hostname, sw_hostname))
 
                 else:
                     if self.cmdargs.check and not self.cmdargs.suppress:
