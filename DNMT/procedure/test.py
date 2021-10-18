@@ -391,7 +391,7 @@ class Test:
         current_vlan_list = self.subs.snmp_get_vlan_database(ipaddr, vendor)
         if len(current_vlan_list) > 0:
             try:
-                new_vlan_list = self.Ipam_Rest_Get("https://ipam.ualberta.ca/solid.intranet/rest/vlmvlan_list",
+                new_vlan_list = self.Ipam_Rest_Get("DNS_DOMAIN_DUMMY",
                                                    {"WHERE": "vlmdomain_description like '{}'".format(building_code)})
 
                 if new_vlan_list is None:
@@ -518,7 +518,7 @@ class Test:
 
     def Ipam_Rest_Get(self,url,params):
 
-        # url = "https://ipam.ualberta.ca/solid.intranet/rest/vlmvlan_list"
+        # url = "IPAM_DUMMY_URL"
         # params = {"WHERE":"vlmdomain_description like 'VPL' and vlmvlan_vlan_id = 4031"}
         # params = {"WHERE": "vlmdomain_description like '{}'".format(buildingcode)}
 
